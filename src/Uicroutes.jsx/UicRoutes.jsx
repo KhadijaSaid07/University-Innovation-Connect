@@ -15,7 +15,7 @@ const UicRoutes = createBrowserRouter(
     createRoutesFromElements(
         <>
 
-            {/* Protected routes (only HR_MANAGER or ADMIN can access) */}
+           
             <Route path="" element={<HomeLayout />}> 
                 <Route
                     path="/"
@@ -35,12 +35,7 @@ const UicRoutes = createBrowserRouter(
                         <LeaderboardPage />
                     }
                 />
-                {/* <Route
-                    path="/perform"
-                    element={
-                        <Performance />
-                    }
-                /> */}
+                
                 <Route
                     path="/lecturers"
                     element={
