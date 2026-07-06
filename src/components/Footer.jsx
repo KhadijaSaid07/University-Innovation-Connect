@@ -5,11 +5,7 @@ const Footer = () => {
     <footer className="sticky-footer bg-white">
       <div className="container my-auto">
         {/* About UIC */}
-        <div className="text-center mb-2">
-          <span className="text-muted small">
-            🌊 University Innovation Connect (UIC) - Connecting SUZA Students with Real Community Challenges in Zanzibar
-          </span>
-        </div>
+        
 
         {/* Contact & Developers */}
         <div className="text-center mb-2">
