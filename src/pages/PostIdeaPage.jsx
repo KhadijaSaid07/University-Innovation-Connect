@@ -4,67 +4,123 @@ import { useNavigate } from 'react-router-dom'
 const PostIdeaPage = () => {
   const navigate = useNavigate()
   
-  // Form state
+  
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState('') // 'success' or 'error'
 
-  // Handle form submit
-  const handleSubmit = (e) => {
+
+  const goBack = () => {
+    navigate('/')
+  }
+
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
-    // Check if all fields are filled
+   
     if (!title || !category || !description) {
       setMessage('⚠️ Please fill in all fields')
+      setMessageType('error')
       return
     }
 
     setLoading(true)
     setMessage('')
+    setMessageType('')
 
-    // Simulate posting to database
-    setTimeout(() => {
-      setMessage('✅ Your idea was posted successfully! 🎉')
-      setTitle('')
-      setCategory('')
-      setDescription('')
-      setLoading(false)
-      
-      // Go back to dashboard after 2 seconds
+    try {
+     
+      // const token = localStorage.getItem('token')
+      // 
+      // const response = await fetch('http://localhost:8080/api/ideas', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Authorization': `Bearer ${token}`,
+      //     'Content-Type': 'application/json'
+      //   },
+      //   body: JSON.stringify({
+      //     title: title,
+      //     category: category,
+      //     description: description
+      //   })
+      // })
+      // 
+      // if (!response.ok) {
+      //   throw new Error('Failed to post idea')
+      // }
+      // 
+      // const data = await response.json()
+      // 
+      // setMessage('✅ Your idea was posted successfully! 🎉')
+      // setMessageType('success')
+      // setTitle('')
+      // setCategory('')
+      // setDescription('')
+      // setLoading(false)
+      // 
+      // // Go back to dashboard after 2 seconds
+      // setTimeout(() => {
+      //   navigate('/dashboard')
+      // }, 2000)
+    
+
+     
       setTimeout(() => {
-        navigate('/dashboard')
-      }, 2000)
-    }, 1500)
+        setMessage('✅ Your idea was posted successfully! 🎉')
+        setMessageType('success')
+        setTitle('')
+        setCategory('')
+        setDescription('')
+        setLoading(false)
+        
+        // Go back to dashboard after 2 seconds
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 2000)
+      }, 1500)
+
+    } catch (error) {
+      console.error('Error:', error)
+      setMessage('❌ Something went wrong. Please try again.')
+      setMessageType('error')
+      setLoading(false)
+    }
   }
 
-  // Go back to dashboard
-  const goBack = () => {
-    navigate('/dashboard')
+ 
+  const clearForm = () => {
+    setTitle('')
+    setCategory('')
+    setDescription('')
+    setMessage('')
+    setMessageType('')
   }
 
   return (
     <div className="container-fluid">
       
-      {/* Header with Back Button */}
+      {/* HEADER */}
       <div className="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 className="h3 mb-0 text-gray-800">💡 Post Your Idea</h1>
         <button 
           onClick={goBack} 
           className="btn btn-sm btn-secondary"
         >
-          ← Back to Dashboard
+          Back to Dashboard
         </button>
       </div>
 
-      {/* Main Form Card */}
+      
       <div className="row justify-content-center">
         <div className="col-lg-8">
           <div className="card shadow">
             <div className="card-body p-4">
               
-              {/* Motivational Header */}
+            
               <div className="text-center mb-4">
                 <div style={{ fontSize: '3.5rem' }}>🚀</div>
                 <h3 className="text-primary font-weight-bold">Share Your Innovation</h3>
@@ -73,17 +129,16 @@ const PostIdeaPage = () => {
                 </p>
               </div>
 
-              {/* Success or Error Message */}
+             
               {message && (
-                <div className={`alert ${message.includes('✅') ? 'alert-success' : 'alert-danger'} text-center`}>
+                <div className={`alert ${messageType === 'success' ? 'alert-success' : 'alert-danger'} text-center`}>
                   {message}
                 </div>
               )}
 
-              {/* Form */}
+             
               <form onSubmit={handleSubmit}>
                 
-                {/* Title */}
                 <div className="form-group">
                   <label className="font-weight-bold">📌 Idea Title</label>
                   <input
@@ -96,7 +151,6 @@ const PostIdeaPage = () => {
                   <small className="text-muted">Example: Solar-powered Water Filter for Rural Villages</small>
                 </div>
 
-                {/* Category */}
                 <div className="form-group">
                   <label className="font-weight-bold">🏷️ Category</label>
                   <select
@@ -121,7 +175,7 @@ const PostIdeaPage = () => {
                   </select>
                 </div>
 
-                {/* Description */}
+               
                 <div className="form-group">
                   <label className="font-weight-bold">📝 Description</label>
                   <textarea
@@ -134,7 +188,7 @@ const PostIdeaPage = () => {
                   <small className="text-muted">Be clear and specific so others can understand your vision</small>
                 </div>
 
-                {/* Submit & Clear Buttons */}
+               
                 <div className="text-center mt-4">
                   <button
                     type="submit"
@@ -152,26 +206,21 @@ const PostIdeaPage = () => {
                   </button>
                   
                   <button
-                    type="reset"
+                    type="button"
                     className="btn btn-secondary btn-lg px-4 ml-2"
-                    onClick={() => {
-                      setTitle('')
-                      setCategory('')
-                      setDescription('')
-                      setMessage('')
-                    }}
+                    onClick={clearForm}
                   >
                     🗑️ Clear
                   </button>
                 </div>
               </form>
 
-              {/* Motivational Quote */}
+             
               <div className="text-center mt-4 pt-3 border-top">
                 <p className="text-muted font-italic">
                   💡 "The best way to predict the future is to create it."
                 </p>
-              
+                <p className="text-muted small">- Peter Drucker</p>
               </div>
             </div>
           </div>

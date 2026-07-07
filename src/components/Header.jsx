@@ -1,182 +1,375 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 
 const Header = () => {
-  return (
-   <nav className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-  {/* Sidebar Toggle (Topbar) */}
-  <button id="sidebarToggleTop" className="btn btn-link d-md-none rounded-circle mr-3">
-    <i className="fa fa-bars" />
-  </button>
-  {/* Topbar Search */}
-  <form className="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
-    <div className="input-group">
-      <input type="text" className="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2" />
-      <div className="input-group-append">
-        <button className="btn btn-primary" type="button">
-          <i className="fas fa-search fa-sm" />
-        </button>
-      </div>
-    </div>
-  </form>
-  {/* Topbar Navbar */}
-  <ul className="navbar-nav ml-auto">
-    {/* Nav Item - Search Dropdown (Visible Only XS) */}
-    <li className="nav-item dropdown no-arrow d-sm-none">
-      <a className="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i className="fas fa-search fa-fw" />
-      </a>
-      {/* Dropdown - Messages */}
-      <div className="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in" aria-labelledby="searchDropdown">
-        <form className="form-inline mr-auto w-100 navbar-search">
-          <div className="input-group">
-            <input type="text" className="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2" />
-            <div className="input-group-append">
-              <button className="btn btn-primary" type="button">
-                <i className="fas fa-search fa-sm" />
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </li>
-    {/* Nav Item - Alerts */}
-    <li className="nav-item dropdown no-arrow mx-1">
-      <a className="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i className="fas fa-bell fa-fw" />
-        {/* Counter - Alerts */}
-        <span className="badge badge-danger badge-counter">3+</span>
-      </a>
-      {/* Dropdown - Alerts */}
-      <div className="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="alertsDropdown">
-        <h6 className="dropdown-header">
-          Alerts Center
-        </h6>
-        <a className="dropdown-item d-flex align-items-center" href="#">
-          <div className="mr-3">
-            <div className="icon-circle bg-primary">
-              <i className="fas fa-file-alt text-white" />
-            </div>
-          </div>
-          <div>
-            <div className="small text-gray-500">December 12, 2019</div>
-            <span className="font-weight-bold">A new monthly report is ready to download!</span>
-          </div>
-        </a>
-        <a className="dropdown-item d-flex align-items-center" href="#">
-          <div className="mr-3">
-            <div className="icon-circle bg-success">
-              <i className="fas fa-donate text-white" />
-            </div>
-          </div>
-          <div>
-            <div className="small text-gray-500">December 7, 2019</div>
-            $290.29 has been deposited into your account!
-          </div>
-        </a>
-        <a className="dropdown-item d-flex align-items-center" href="#">
-          <div className="mr-3">
-            <div className="icon-circle bg-warning">
-              <i className="fas fa-exclamation-triangle text-white" />
-            </div>
-          </div>
-          <div>
-            <div className="small text-gray-500">December 2, 2019</div>
-            Spending Alert: We've noticed unusually high spending for your account.
-          </div>
-        </a>
-        <a className="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
-      </div>
-    </li>
-    {/* Nav Item - Messages */}
-    <li className="nav-item dropdown no-arrow mx-1">
-      <a className="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i className="fas fa-envelope fa-fw" />
-        {/* Counter - Messages */}
-        <span className="badge badge-danger badge-counter">7</span>
-      </a>
-      {/* Dropdown - Messages */}
-      <div className="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="messagesDropdown">
-        <h6 className="dropdown-header">
-          Message Center
-        </h6>
-        <a className="dropdown-item d-flex align-items-center" href="#">
-          <div className="dropdown-list-image mr-3">
-            <img className="rounded-circle" src="img/undraw_profile_1.svg" alt="..." />
-            <div className="status-indicator bg-success" />
-          </div>
-          <div className="font-weight-bold">
-            <div className="text-truncate">Hi there! I am wondering if you can help me with a
-              problem I've been having.</div>
-            <div className="small text-gray-500">Emily Fowler · 58m</div>
-          </div>
-        </a>
-        <a className="dropdown-item d-flex align-items-center" href="#">
-          <div className="dropdown-list-image mr-3">
-            <img className="rounded-circle" src="img/undraw_profile_2.svg" alt="..." />
-            <div className="status-indicator" />
-          </div>
-          <div>
-            <div className="text-truncate">I have the photos that you ordered last month, how
-              would you like them sent to you?</div>
-            <div className="small text-gray-500">Jae Chun · 1d</div>
-          </div>
-        </a>
-        <a className="dropdown-item d-flex align-items-center" href="#">
-          <div className="dropdown-list-image mr-3">
-            <img className="rounded-circle" src="img/undraw_profile_3.svg" alt="..." />
-            <div className="status-indicator bg-warning" />
-          </div>
-          <div>
-            <div className="text-truncate">Last month's report looks great, I am very happy with
-              the progress so far, keep up the good work!</div>
-            <div className="small text-gray-500">Morgan Alvarez · 2d</div>
-          </div>
-        </a>
-        <a className="dropdown-item d-flex align-items-center" href="#">
-          <div className="dropdown-list-image mr-3">
-            <img className="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60" alt="..." />
-            <div className="status-indicator bg-success" />
-          </div>
-          <div>
-            <div className="text-truncate">Am I a good boy? The reason I ask is because someone
-              told me that people say this to all dogs, even if they aren't good...</div>
-            <div className="small text-gray-500">Chicken the Dog · 2w</div>
-          </div>
-        </a>
-        <a className="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
-      </div>
-    </li>
-    <div className="topbar-divider d-none d-sm-block" />
-    {/* Nav Item - User Information */}
-    <li className="nav-item dropdown no-arrow">
-      <a className="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span className="mr-2 d-none d-lg-inline text-gray-600 small">Douglas McGee</span>
-        <img className="img-profile rounded-circle" src="img/undraw_profile.svg" />
-      </a>
-      {/* Dropdown - User Information */}
-      <div className="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
-        <a className="dropdown-item" href="#">
-          <i className="fas fa-user fa-sm fa-fw mr-2 text-gray-400" />
-          Profile
-        </a>
-        <a className="dropdown-item" href="#">
-          <i className="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400" />
-          Settings
-        </a>
-        <a className="dropdown-item" href="#">
-          <i className="fas fa-list fa-sm fa-fw mr-2 text-gray-400" />
-          Activity Log
-        </a>
-        <div className="dropdown-divider" />
-        <a className="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
-          <i className="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400" />
-          Logout
-        </a>
-      </div>
-    </li>
-  </ul>
-</nav>
+  const navigate = useNavigate()
+  
+  // ----- STATE -----
+  const [user, setUser] = useState({
+    name: '',
+    email: '',
+    role: '',
+    profileImage: ''
+  })
+  const [notifications, setNotifications] = useState([])
+  const [messages, setMessages] = useState([])
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
+  const [loading, setLoading] = useState(true)
 
+  // ----- FETCH USER DATA FROM DATABASE -----
+  useEffect(() => {
+    // TODO: Replace with real API calls
+    // const fetchData = async () => {
+    //   try {
+    //     const token = localStorage.getItem('token')
+    //     
+    //     // Fetch user profile
+    //     const userRes = await fetch('http://localhost:8080/api/users/profile', {
+    //       headers: { 'Authorization': `Bearer ${token}` }
+    //     })
+    //     const userData = await userRes.json()
+    //     setUser({
+    //       name: userData.name,
+    //       email: userData.email,
+    //       role: userData.role,
+    //       profileImage: userData.profileImage || '/img/undraw_profile.svg'
+    //     })
+    //     
+    //     // Fetch notifications
+    //     const notifRes = await fetch('http://localhost:8080/api/notifications', {
+    //       headers: { 'Authorization': `Bearer ${token}` }
+    //     })
+    //     const notifData = await notifRes.json()
+    //     setNotifications(notifData)
+    //     setUnreadNotifications(notifData.filter(n => !n.read).length)
+    //     
+    //     // Fetch messages
+    //     const msgRes = await fetch('http://localhost:8080/api/messages', {
+    //       headers: { 'Authorization': `Bearer ${token}` }
+    //     })
+    //     const msgData = await msgRes.json()
+    //     setMessages(msgData)
+    //     setUnreadMessages(msgData.filter(m => !m.read).length)
+    //     
+    //   } catch (error) {
+    //     console.error('Error fetching data:', error)
+    //   } finally {
+    //     setLoading(false)
+    //   }
+    // }
+    // fetchData()
+
+    // For now - empty data (will come from database)
+    setUser({
+      name: '',
+      email: '',
+      role: '',
+      profileImage: '/img/undraw_profile.svg'
+    })
+    setNotifications([])
+    setMessages([])
+    setUnreadNotifications(0)
+    setUnreadMessages(0)
+    setLoading(false)
+  }, [])
+
+  // ----- MARK NOTIFICATION AS READ -----
+  const markNotificationAsRead = async (id) => {
+    // TODO: Call API to mark as read
+    // try {
+    //   const token = localStorage.getItem('token')
+    //   await fetch(`http://localhost:8080/api/notifications/${id}/read`, {
+    //     method: 'PUT',
+    //     headers: { 'Authorization': `Bearer ${token}` }
+    //   })
+    // } catch (error) {
+    //   console.error('Error marking notification:', error)
+    // }
+    
+    // Update local state
+    const updated = notifications.map(n => 
+      n.id === id ? { ...n, read: true } : n
+    )
+    setNotifications(updated)
+    setUnreadNotifications(updated.filter(n => !n.read).length)
+  }
+
+  // ----- MARK MESSAGE AS READ -----
+  const markMessageAsRead = async (id) => {
+    // TODO: Call API to mark as read
+    // try {
+    //   const token = localStorage.getItem('token')
+    //   await fetch(`http://localhost:8080/api/messages/${id}/read`, {
+    //     method: 'PUT',
+    //     headers: { 'Authorization': `Bearer ${token}` }
+    //   })
+    // } catch (error) {
+    //   console.error('Error marking message:', error)
+    // }
+    
+    // Update local state
+    const updated = messages.map(m => 
+      m.id === id ? { ...m, read: true } : m
+    )
+    setMessages(updated)
+    setUnreadMessages(updated.filter(m => !m.read).length)
+  }
+
+  // ----- LOGOUT -----
+  const handleLogout = () => {
+    // TODO: Call logout API
+    // const logout = async () => {
+    //   try {
+    //     const token = localStorage.getItem('token')
+    //     await fetch('http://localhost:8080/api/auth/logout', {
+    //       method: 'POST',
+    //       headers: { 'Authorization': `Bearer ${token}` }
+    //     })
+    //   } catch (error) {
+    //     console.error('Logout error:', error)
+    //   }
+    // }
+    // logout()
+    
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
+
+  // ----- HANDLE SEARCH -----
+  const handleSearch = (e) => {
+    e.preventDefault()
+    const query = e.target.search.value
+    if (query.trim()) {
+      navigate(`/dashboard?search=${query}`)
+    }
+  }
+
+  return (
+    <nav className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+      
+      {/* Sidebar Toggle */}
+      <button 
+        id="sidebarToggleTop" 
+        className="btn btn-link d-md-none rounded-circle mr-3"
+      >
+        <i className="fa fa-bars" />
+      </button>
+
+      {/* Search Bar */}
+      <form 
+        className="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search"
+        onSubmit={handleSearch}
+      >
+        <div className="input-group">
+          <input 
+            type="text" 
+            name="search"
+            className="form-control bg-light border-0 small" 
+            placeholder="Search ideas..." 
+            aria-label="Search"
+          />
+          <div className="input-group-append">
+            <button className="btn btn-primary" type="submit">
+              <i className="fas fa-search fa-sm" />
+            </button>
+          </div>
+        </div>
+      </form>
+
+      {/* Topbar Navbar */}
+      <ul className="navbar-nav ml-auto">
+
+        {/* Mobile Search */}
+        <li className="nav-item dropdown no-arrow d-sm-none">
+          <a className="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button" data-toggle="dropdown">
+            <i className="fas fa-search fa-fw" />
+          </a>
+          <div className="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in">
+            <form className="form-inline mr-auto w-100 navbar-search">
+              <div className="input-group">
+                <input type="text" className="form-control bg-light border-0 small" placeholder="Search..." />
+                <div className="input-group-append">
+                  <button className="btn btn-primary" type="button">
+                    <i className="fas fa-search fa-sm" />
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </li>
+
+        {/* NOTIFICATIONS */}
+        <li className="nav-item dropdown no-arrow mx-1">
+          <a 
+            className="nav-link dropdown-toggle" 
+            href="#" 
+            id="alertsDropdown" 
+            role="button" 
+            data-toggle="dropdown"
+          >
+            <i className="fas fa-bell fa-fw" />
+            {unreadNotifications > 0 && (
+              <span className="badge badge-danger badge-counter">
+                {unreadNotifications}
+              </span>
+            )}
+          </a>
+          
+          {/* Dropdown - Notifications */}
+          <div className="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
+            <h6 className="dropdown-header">
+              Notifications Center
+            </h6>
+            
+            {notifications.length === 0 ? (
+              <a className="dropdown-item text-center text-muted" href="#">
+                <div className="py-3">
+                  <i className="fas fa-bell-slash fa-2x mb-2" />
+                  <p className="mb-0">No notifications</p>
+                </div>
+              </a>
+            ) : (
+              notifications.slice(0, 5).map(notification => (
+                <a 
+                  key={notification.id}
+                  className={`dropdown-item d-flex align-items-center ${!notification.read ? 'bg-light' : ''}`}
+                  href="#"
+                  onClick={() => markNotificationAsRead(notification.id)}
+                >
+                  <div className="mr-3">
+                    <div className={`icon-circle ${notification.type === 'success' ? 'bg-success' : 
+                      notification.type === 'warning' ? 'bg-warning' : 
+                      notification.type === 'danger' ? 'bg-danger' : 'bg-primary'}`}>
+                      <i className={`fas ${notification.icon || 'fa-file-alt'} text-white`} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="small text-gray-500">{notification.time}</div>
+                    <span className={!notification.read ? 'font-weight-bold' : ''}>
+                      {notification.message}
+                    </span>
+                  </div>
+                </a>
+              ))
+            )}
+            
+            {notifications.length > 5 && (
+              <a className="dropdown-item text-center small text-gray-500" href="#">
+                Show All Notifications
+              </a>
+            )}
+          </div>
+        </li>
+
+        {/* MESSAGES */}
+        <li className="nav-item dropdown no-arrow mx-1">
+          <a 
+            className="nav-link dropdown-toggle" 
+            href="#" 
+            id="messagesDropdown" 
+            role="button" 
+            data-toggle="dropdown"
+          >
+            <i className="fas fa-envelope fa-fw" />
+            {unreadMessages > 0 && (
+              <span className="badge badge-danger badge-counter">
+                {unreadMessages}
+              </span>
+            )}
+          </a>
+          
+          {/* Dropdown - Messages */}
+          <div className="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
+            <h6 className="dropdown-header">
+              Message Center
+            </h6>
+            
+            {messages.length === 0 ? (
+              <a className="dropdown-item text-center text-muted" href="#">
+                <div className="py-3">
+                  <i className="fas fa-inbox fa-2x mb-2" />
+                  <p className="mb-0">No messages</p>
+                </div>
+              </a>
+            ) : (
+              messages.slice(0, 5).map(message => (
+                <a 
+                  key={message.id}
+                  className={`dropdown-item d-flex align-items-center ${!message.read ? 'bg-light' : ''}`}
+                  href="#"
+                  onClick={() => markMessageAsRead(message.id)}
+                >
+                  <div className="dropdown-list-image mr-3">
+                    <img 
+                      className="rounded-circle" 
+                      src={message.senderImage || '/img/undraw_profile_1.svg'} 
+                      alt={message.sender}
+                      style={{ width: '40px', height: '40px' }}
+                    />
+                    <div className={`status-indicator ${message.status || 'bg-success'}`} />
+                  </div>
+                  <div className="font-weight-bold">
+                    <div className="text-truncate">{message.content}</div>
+                    <div className="small text-gray-500">
+                      {message.sender} · {message.time}
+                    </div>
+                  </div>
+                </a>
+              ))
+            )}
+            
+            {messages.length > 5 && (
+              <a className="dropdown-item text-center small text-gray-500" href="#">
+                Read More Messages
+              </a>
+            )}
+          </div>
+        </li>
+
+        {/* Divider */}
+        <div className="topbar-divider d-none d-sm-block" />
+
+        {/* User Information */}
+        <li className="nav-item dropdown no-arrow">
+          <a 
+            className="nav-link dropdown-toggle" 
+            href="#" 
+            id="userDropdown" 
+            role="button" 
+            data-toggle="dropdown"
+          >
+            <span className="mr-2 d-none d-lg-inline text-gray-600 small">
+              {loading ? 'Loading...' : user.name || 'Guest User'}
+            </span>
+            <img 
+              className="img-profile rounded-circle" 
+              src={user.profileImage || '/img/undraw_profile.svg'} 
+              alt="Profile"
+              style={{ width: '32px', height: '32px' }}
+            />
+          </a>
+
+          {/* Dropdown - User */}
+          <div className="dropdown-menu dropdown-menu-right shadow animated--grow-in">
+            <Link className="dropdown-item" to="/profile">
+              <i className="fas fa-user fa-sm fa-fw mr-2 text-gray-400" />
+              Profile
+            </Link>
+            <div className="dropdown-divider" />
+            <button 
+              className="dropdown-item" 
+              onClick={handleLogout}
+            >
+              <i className="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400" />
+              Logout
+            </button>
+          </div>
+        </li>
+
+      </ul>
+    </nav>
   )
 }
 
