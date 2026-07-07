@@ -1,24 +1,30 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import './LandingPage.css'
 
 const LandingPage = () => {
   return (
     <div className="landing-page">
-      {/* Navigation */}
+      
+      {/* ===== NAVIGATION ===== */}
       <nav className="landing-nav">
         <div className="nav-container">
           <div className="nav-brand">
             <span className="brand-icon">🌊</span>
-            <span className="brand-text">University Innovation Connect - UIC</span>
+            <span className="brand-text">UIC</span>
           </div>
           <div className="nav-links">
-            <a href="/login" className="nav-link">Login</a>
-            <a href="/register" className="nav-btn">Get Started</a>
+            <Link to="/about" className="nav-link">About</Link>
+            <Link to="/mission" className="nav-link">Mission</Link>
+            <Link to="/terms" className="nav-link">Terms</Link>
+            <Link to="/privacy-policy" className="nav-link">Privacy</Link>
+            <Link to="/login" className="nav-link">Login</Link>
+            <Link to="/register" className="nav-btn">Get Started</Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* ===== HERO SECTION ===== */}
       <section className="hero-section">
         <div className="hero-container">
           <div className="hero-badge">
@@ -34,17 +40,17 @@ const LandingPage = () => {
             that matter.
           </p>
           <div className="hero-buttons">
-            <a href="/register" className="btn-primary">
+            <Link to="/register" className="btn-primary">
               🚀 Start Innovating
-            </a>
-            <a href="/login" className="btn-secondary">
+            </Link>
+            <Link to="/login" className="btn-secondary">
               Sign In
-            </a>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* ===== FEATURES SECTION ===== */}
       <section className="features-section">
         <div className="features-container">
           <h2 className="section-title">How It Works</h2>
@@ -68,10 +74,10 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Categories Section */}
+      {/* ===== CATEGORIES SECTION ===== */}
       <section className="categories-section">
         <div className="categories-container">
-          <h2 className="section-title">Explore Challenges in different Category</h2>
+          <h2 className="section-title">Explore Challenges by Category</h2>
           <div className="categories-grid">
             <span className="category-tag">🌊 Blue Economy</span>
             <span className="category-tag">🌾 Agriculture</span>
@@ -90,29 +96,90 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* ===== CTA SECTION ===== */}
       <section className="cta-section">
         <div className="cta-container">
           <h2>Ready to Make a Difference?</h2>
           <p>Join SUZA's innovation community and turn your ideas into reality.</p>
-          <a href="/register" className="btn-primary btn-large">
+          <Link to="/register" className="btn-primary btn-large">
             🌟 Join Now
-          </a>
+          </Link>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ===== FOOTER ===== */}
       <footer className="landing-footer">
         <div className="footer-container">
-          <div className="footer-text">
+          
+          {/* Footer Top - 4 Columns */}
+          <div className="footer-top">
+            
+            {/* Column 1: Brand */}
+            <div className="footer-col">
+              <div className="footer-brand">
+                <span className="footer-brand-icon">🌊</span>
+                <span className="footer-brand-text">UIC</span>
+              </div>
+              <p className="footer-brand-desc">
+                University Innovation Connect
+              </p>
+              <p className="footer-brand-location">
+                SUZA Zanzibar
+              </p>
+            </div>
+
+            {/* Column 2: Quick Links */}
+            <div className="footer-col">
+              <h4>Quick Links</h4>
+              <ul>
+                <li><Link to="/about">About</Link></li>
+                <li><Link to="/mission">Mission</Link></li>
+                <li><Link to="/terms">Terms</Link></li>
+                <li><Link to="/privacy-policy">Privacy</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Contact */}
+            <div className="footer-col">
+              <h4>Contact</h4>
+              <ul>
+                <li>
+                  <span className="footer-icon">📞</span>
+                  <span>0675788310</span>
+                </li>
+                <li>
+                  <span className="footer-icon">📧</span>
+                  <span>khadija09said09@gmail.com</span>
+                </li>
+                <li>
+                  <span className="footer-icon">📧</span>
+                  <span>rahma@gmail.com</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 4: Developers */}
+            <div className="footer-col">
+              <h4>Developers</h4>
+              <ul>
+                <li>
+                  <span className="footer-icon">👩‍💻</span>
+                  <span>Khadija Ali Said</span>
+                </li>
+                <li className="footer-reg">24BCS026</li>
+                <li>
+                  <span className="footer-icon">👩‍💻</span>
+                  <span>Rahma Suleiman</span>
+                </li>
+                <li className="footer-reg">24BIT038</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Footer Bottom */}
+          <div className="footer-bottom">
             <p className="footer-tagline">
               🎓 SUZA Innovation Hub - Where Ideas Become Reality
-            </p>
-            <p className="footer-contact">
-              📞 0675788310 | 📧 khadija09said09@gmail.com | 📧 rahma@gmail.com
-            </p>
-            <p className="footer-developers">
-              Khadija Ali Said (24BCS026) |  Rahma Suleiman Abdalla (24BIT038)
             </p>
             <p className="footer-copyright">
               © 2026 University Innovation Connect (UIC) - SUZA Zanzibar

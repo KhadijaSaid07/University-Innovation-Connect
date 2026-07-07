@@ -1,0 +1,294 @@
+
+.terms-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #F8F4FF;
+}
+
+
+.terms-nav {
+  padding: 16px 0;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(26, 10, 46, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-icon {
+  font-size: 1.8rem;
+}
+
+.brand-text {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1A0A2E;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  color: #4A4A6A;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: color 0.3s;
+}
+
+.nav-link:hover {
+  color: #7C3AED;
+}
+
+.nav-link.active {
+  color: #7C3AED;
+  font-weight: 700;
+}
+
+.nav-btn {
+  padding: 8px 24px;
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  color: #FFFFFF;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.nav-btn:hover {
+  background: linear-gradient(135deg, #6D28D9, #5B21B6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);
+}
+
+
+.terms-hero {
+  padding: 60px 20px;
+  background: linear-gradient(135deg, #1A0A2E 0%, #4A1A6B 50%, #7C3AED 100%);
+  text-align: center;
+}
+
+.terms-hero-container h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+}
+
+.terms-hero-container p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+
+.terms-content-section {
+  padding: 40px 20px 60px;
+  flex: 1;
+}
+
+.terms-content-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.terms-updated {
+  text-align: right;
+  color: #8B6BA8;
+  font-size: 0.9rem;
+  margin-bottom: 30px;
+}
+
+.terms-block {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 28px 35px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(26, 10, 46, 0.04);
+  border: 1px solid #EDE4F5;
+  transition: all 0.3s;
+}
+
+.terms-block:hover {
+  border-color: #7C3AED;
+  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.06);
+}
+
+.terms-block h2 {
+  font-size: 1.4rem;
+  color: #1A0A2E;
+  margin-bottom: 12px;
+}
+
+.terms-block p {
+  font-size: 1rem;
+  color: #4A4A6A;
+  line-height: 1.8;
+  margin-bottom: 10px;
+}
+
+
+.terms-list {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.terms-list li {
+  padding: 6px 0;
+  font-size: 1rem;
+  color: #4A4A6A;
+  line-height: 1.6;
+}
+
+
+.contact-block {
+  background: linear-gradient(135deg, #F8F4FF, #EDE4F5);
+  border: 1px solid #7C3AED;
+}
+
+.contact-info p {
+  margin-bottom: 6px;
+}
+
+.contact-info strong {
+  color: #1A0A2E;
+}
+
+
+.terms-back {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  display: inline-block;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  color: #FFFFFF;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #6D28D9, #5B21B6);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(124, 58, 237, 0.3);
+}
+
+.terms-footer {
+  padding: 24px 20px;
+  background: #1A0A2E;
+  color: #FFFFFF;
+  text-align: center;
+}
+
+.terms-footer .footer-tagline {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FCD34D;
+  margin-bottom: 8px;
+}
+
+.terms-footer .footer-copyright {
+  font-size: 0.8rem;
+  color: #8AA9C9;
+  margin: 0;
+}
+
+
+@media (max-width: 768px) {
+  .terms-hero-container h1 {
+    font-size: 2.2rem;
+  }
+
+  .terms-hero-container p {
+    font-size: 1rem;
+  }
+
+  .terms-block {
+    padding: 20px;
+  }
+
+  .terms-block h2 {
+    font-size: 1.2rem;
+  }
+
+  .terms-block p {
+    font-size: 0.95rem;
+  }
+
+  .terms-list li {
+    font-size: 0.95rem;
+  }
+
+  .nav-links {
+    gap: 10px;
+  }
+
+  .nav-link {
+    font-size: 0.8rem;
+  }
+
+  .nav-btn {
+    padding: 6px 16px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .terms-hero-container h1 {
+    font-size: 1.8rem;
+  }
+
+  .terms-hero {
+    padding: 40px 16px;
+  }
+
+  .terms-content-section {
+    padding: 20px 16px 40px;
+  }
+
+  .terms-block {
+    padding: 16px;
+  }
+
+  .terms-updated {
+    text-align: center;
+    font-size: 0.8rem;
+  }
+
+  .nav-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-links {
+    justify-content: center;
+  }
+
+  .brand-text {
+    font-size: 1.2rem;
+  }
+}

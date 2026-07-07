@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 
+
 const Sidebar = () => {
   return (
     <ul className="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
@@ -18,7 +19,7 @@ const Sidebar = () => {
 
       {/* Nav Item - Dashboard */}
       <li className="nav-item active">
-        <Link className="nav-link" to="/">
+        <Link className="nav-link" to="/dashboard">
           <i className="fas fa-fw fa-tachometer-alt" />
           <span>Dashboard</span>
         </Link>

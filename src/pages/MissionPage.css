@@ -1,0 +1,500 @@
+
+
+.mission-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #F8F4FF;
+}
+
+/* ---------- NAVIGATION ---------- */
+.mission-nav {
+  padding: 16px 0;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(26, 10, 46, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-icon {
+  font-size: 1.8rem;
+}
+
+.brand-text {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1A0A2E;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  color: #4A4A6A;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: color 0.3s;
+}
+
+.nav-link:hover {
+  color: #7C3AED;
+}
+
+.nav-link.active {
+  color: #7C3AED;
+  font-weight: 700;
+}
+
+.nav-btn {
+  padding: 8px 24px;
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  color: #FFFFFF;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.nav-btn:hover {
+  background: linear-gradient(135deg, #6D28D9, #5B21B6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);
+}
+
+
+.mission-hero {
+  padding: 60px 20px;
+  background: linear-gradient(135deg, #1A0A2E 0%, #4A1A6B 50%, #7C3AED 100%);
+  text-align: center;
+}
+
+.mission-hero-container h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+}
+
+.mission-hero-container p {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.mission-content-section {
+  padding: 40px 20px 60px;
+  flex: 1;
+}
+
+.mission-content-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.mission-block {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 30px 35px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(26, 10, 46, 0.04);
+  border: 1px solid #EDE4F5;
+}
+
+.mission-block h2 {
+  font-size: 1.5rem;
+  color: #1A0A2E;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.mission-block p {
+  font-size: 1rem;
+  color: #4A4A6A;
+  line-height: 1.8;
+}
+
+
+.main-mission {
+  text-align: center;
+  background: linear-gradient(135deg, #F8F4FF, #EDE4F5);
+  border: 2px solid #7C3AED;
+}
+
+.mission-icon-large {
+  font-size: 4rem;
+  margin-bottom: 12px;
+}
+
+.mission-statement {
+  font-size: 1.3rem !important;
+  font-weight: 600;
+  color: #1A0A2E !important;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.value-card {
+  text-align: center;
+  padding: 20px;
+  background: #F8F4FF;
+  border-radius: 12px;
+  border: 1px solid #EDE4F5;
+  transition: all 0.3s;
+}
+
+.value-card:hover {
+  transform: translateY(-4px);
+  border-color: #7C3AED;
+}
+
+.value-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+
+.value-card h4 {
+  color: #1A0A2E;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.value-card p {
+  font-size: 0.9rem;
+  color: #4A4A6A;
+  margin: 0;
+}
+
+
+.belief-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.belief-item {
+  padding: 20px;
+  background: #F8F4FF;
+  border-radius: 12px;
+  border-left: 4px solid #7C3AED;
+}
+
+.belief-number {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #7C3AED;
+  margin-bottom: 4px;
+}
+
+.belief-item h4 {
+  color: #1A0A2E;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.belief-item p {
+  font-size: 0.9rem;
+  color: #4A4A6A;
+  margin: 0;
+}
+
+
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.goal-card {
+  text-align: center;
+  padding: 20px;
+  background: #F8F4FF;
+  border-radius: 12px;
+  border: 1px solid #EDE4F5;
+  transition: all 0.3s;
+}
+
+.goal-card:hover {
+  transform: translateY(-4px);
+  border-color: #FCD34D;
+}
+
+.goal-number {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  border-radius: 50%;
+  margin-bottom: 8px;
+}
+
+.goal-card h4 {
+  color: #1A0A2E;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.goal-card p {
+  font-size: 0.9rem;
+  color: #4A4A6A;
+  margin: 0;
+}
+
+.why-block {
+  background: linear-gradient(135deg, #F8F4FF, #EDE4F5);
+  border: 1px solid #FCD34D;
+}
+
+.why-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.why-highlights span {
+  padding: 8px 20px;
+  background: #FFFFFF;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  color: #1A0A2E;
+  border: 1px solid #EDE4F5;
+  transition: all 0.3s;
+}
+
+.why-highlights span:hover {
+  border-color: #7C3AED;
+  transform: translateY(-2px);
+}
+
+
+.join-block {
+  text-align: center;
+  background: linear-gradient(135deg, #1A0A2E, #4A1A6B);
+  border: none;
+}
+
+.join-block h2 {
+  color: #FFFFFF;
+}
+
+.join-block p {
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 500px;
+  margin: 0 auto 20px;
+}
+
+.join-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.join-buttons .btn-primary {
+  background: #FCD34D;
+  color: #1A0A2E;
+}
+
+.join-buttons .btn-primary:hover {
+  background: #FBBF24;
+}
+
+.join-buttons .btn-secondary {
+  display: inline-block;
+  padding: 12px 32px;
+  background: transparent;
+  color: #FFFFFF;
+  text-decoration: none;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.join-buttons .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #FFFFFF;
+  transform: translateY(-3px);
+}
+
+
+.mission-back {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  display: inline-block;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  color: #FFFFFF;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #6D28D9, #5B21B6);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(124, 58, 237, 0.3);
+}
+
+
+.mission-footer {
+  padding: 24px 20px;
+  background: #1A0A2E;
+  color: #FFFFFF;
+  text-align: center;
+}
+
+.mission-footer .footer-tagline {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FCD34D;
+  margin-bottom: 8px;
+}
+
+.mission-footer .footer-copyright {
+  font-size: 0.8rem;
+  color: #8AA9C9;
+  margin: 0;
+}
+
+
+@media (max-width: 768px) {
+  .mission-hero-container h1 {
+    font-size: 2.2rem;
+  }
+
+  .mission-hero-container p {
+    font-size: 1rem;
+  }
+
+  .mission-block {
+    padding: 20px;
+  }
+
+  .mission-block h2 {
+    font-size: 1.3rem;
+  }
+
+  .mission-statement {
+    font-size: 1.1rem !important;
+  }
+
+  .values-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .belief-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .goals-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .nav-links {
+    gap: 10px;
+  }
+
+  .nav-link {
+    font-size: 0.8rem;
+  }
+
+  .nav-btn {
+    padding: 6px 16px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .mission-hero-container h1 {
+    font-size: 1.8rem;
+  }
+
+  .mission-hero {
+    padding: 40px 16px;
+  }
+
+  .mission-content-section {
+    padding: 20px 16px 40px;
+  }
+
+  .mission-block {
+    padding: 16px;
+  }
+
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .goals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .why-highlights span {
+    font-size: 0.8rem;
+    padding: 6px 14px;
+  }
+
+  .nav-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-links {
+    justify-content: center;
+  }
+
+  .brand-text {
+    font-size: 1.2rem;
+  }
+
+  .join-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .join-buttons .btn-primary,
+  .join-buttons .btn-secondary {
+    width: 100%;
+    max-width: 250px;
+    text-align: center;
+  }
+}
