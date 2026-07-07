@@ -14,10 +14,10 @@ const Sidebar = () => {
         <div className="sidebar-brand-text mx-3">UIC</div>
       </Link>
 
-      {/* Divider */}
+     
       <hr className="sidebar-divider my-0" />
 
-      {/* Nav Item - Dashboard */}
+     
       <li className="nav-item active">
         <Link className="nav-link" to="/dashboard">
           <i className="fas fa-fw fa-tachometer-alt" />
@@ -25,15 +25,15 @@ const Sidebar = () => {
         </Link>
       </li>
 
-      {/* Divider */}
+    
       <hr className="sidebar-divider" />
 
-      {/* Heading */}
+     
       <div className="sidebar-heading">
         Innovation
       </div>
 
-      {/* Nav Item - Post Idea */}
+     
       <li className="nav-item">
         <Link className="nav-link" to="post-idea">
           <i className="fas fa-fw fa-plus-circle" />
@@ -41,7 +41,7 @@ const Sidebar = () => {
         </Link>
       </li>
 
-      {/* Nav Item - My Ideas */}
+   
       <li className="nav-item">
         <Link className="nav-link" to="my-ideas">
           <i className="fas fa-fw fa-lightbulb" />
@@ -49,7 +49,7 @@ const Sidebar = () => {
         </Link>
       
       </li>
-      {/* Nav Item - IdeaDetailsPage */}
+     
       <li className="nav-item">
         <Link className="nav-link" to="/idea-details">
           <i className="fas fa-fw fa-sign-out-alt" />
@@ -57,15 +57,14 @@ const Sidebar = () => {
         </Link>
       </li>
 
-      {/* Divider */}
       <hr className="sidebar-divider" />
 
-      {/* Heading */}
+  
       <div className="sidebar-heading">
         Community
       </div>
 
-      {/* Nav Item - Leaderboard */}
+      
       <li className="nav-item">
         <Link className="nav-link" to="/leaderboard">
           <i className="fas fa-fw fa-trophy" />
@@ -73,7 +72,7 @@ const Sidebar = () => {
         </Link>
       </li>
 
-      {/* Nav Item - Lecturers */}
+      
       <li className="nav-item">
         <Link className="nav-link" to="/lecturers">
           <i className="fas fa-fw fa-chalkboard-teacher" />
@@ -81,15 +80,15 @@ const Sidebar = () => {
         </Link>
       </li>
 
-      {/* Divider */}
+    
       <hr className="sidebar-divider" />
 
-      {/* Heading */}
+    
       <div className="sidebar-heading">
         Account
       </div>
 
-      {/* Nav Item - Profile */}
+    
       <li className="nav-item">
         <Link className="nav-link" to="/profile">
           <i className="fas fa-fw fa-user" />
@@ -97,7 +96,7 @@ const Sidebar = () => {
         </Link>
       </li>
 
-      {/* Nav Item - Logout */}
+      
       <li className="nav-item">
         <Link className="nav-link" to="/login">
           <i className="fas fa-fw fa-sign-out-alt" />
@@ -105,15 +104,14 @@ const Sidebar = () => {
         </Link>
       </li>
 
-      {/* Divider */}
+     
       <hr className="sidebar-divider d-none d-md-block" />
 
-      {/* Sidebar Toggler (Sidebar) */}
+      
       <div className="text-center d-none d-md-inline">
         <button className="rounded-circle border-0" id="sidebarToggle" />
       </div>
-
-      {/* Sidebar Message */}
+     
       <div className="sidebar-card d-none d-lg-flex">
         <div className="sidebar-card-icon">🌊</div>
         <p className="text-center mb-2"><strong>University Innovation Connect</strong></p>
