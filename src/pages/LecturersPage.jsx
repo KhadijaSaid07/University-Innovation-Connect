@@ -49,7 +49,7 @@ const LecturersPage = () => {
 
   
   const goBack = () => {
-    navigate('/')
+    navigate('/dashboard')
   }
 
  

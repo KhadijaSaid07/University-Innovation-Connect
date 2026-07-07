@@ -14,7 +14,7 @@ const PostIdeaPage = () => {
 
 
   const goBack = () => {
-    navigate('/')
+    navigate('/dashboard')
   }
 
 
@@ -77,7 +77,7 @@ const PostIdeaPage = () => {
         setDescription('')
         setLoading(false)
         
-        // Go back to dashboard after 2 seconds
+      
         setTimeout(() => {
           navigate('/dashboard')
         }, 2000)
@@ -103,7 +103,7 @@ const PostIdeaPage = () => {
   return (
     <div className="container-fluid">
       
-      {/* HEADER */}
+      
       <div className="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 className="h3 mb-0 text-gray-800">💡 Post Your Idea</h1>
         <button 
@@ -220,7 +220,7 @@ const PostIdeaPage = () => {
                 <p className="text-muted font-italic">
                   💡 "The best way to predict the future is to create it."
                 </p>
-                <p className="text-muted small">- Peter Drucker</p>
+              
               </div>
             </div>
           </div>

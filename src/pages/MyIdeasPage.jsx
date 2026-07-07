@@ -75,7 +75,7 @@ const MyIdeasPage = () => {
 
   
   const goBack = () => {
-    navigate('/')
+    navigate('/dashboard')
   }
 
  
@@ -175,7 +175,7 @@ const MyIdeasPage = () => {
             onClick={goBack} 
             className="btn btn-sm btn-secondary mr-2"
           >
-             Back
+             Back to Dashboard
           </button>
           <button 
             onClick={goToPostIdea} 

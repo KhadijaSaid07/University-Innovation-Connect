@@ -199,7 +199,7 @@ const LoginPage = () => {
                 <p className="text-muted small font-italic">
                   💡 "Innovation distinguishes between a leader and a follower."
                 </p>
-                <p className="text-muted small">- Steve Jobs</p>
+        
               </div>
             </div>
           </div>

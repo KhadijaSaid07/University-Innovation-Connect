@@ -173,7 +173,7 @@ const IdeaDetailsPage = () => {
 
 
   const goBack = () => {
-    navigate('/')
+    navigate('/dashboard')
   }
 
 
@@ -265,7 +265,7 @@ const IdeaDetailsPage = () => {
                 <p className="mb-0">{idea.description}</p>
               </div>
 
-              {/* VOTE BUTTON */}
+              
               <div className="text-center mb-3">
                 <button 
                   className={`btn ${hasVoted ? 'btn-secondary' : 'btn-success'} btn-lg px-5`}
@@ -359,7 +359,6 @@ const IdeaDetailsPage = () => {
           </div>
         </div>
 
-        {/* SIDEBAR - Quick Info */}
         <div className="col-lg-4">
           <div className="card shadow mb-4">
             <div className="card-header">

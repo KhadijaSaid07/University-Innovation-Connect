@@ -48,7 +48,7 @@ const LeaderboardPage = () => {
 
  
   const goBack = () => {
-    navigate('/')
+    navigate('/dashboard')
   }
 
 

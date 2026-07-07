@@ -127,7 +127,7 @@ const ProfilePage = () => {
 
  
   const goBack = () => {
-    navigate('/')
+    navigate('/dashboard')
   }
 
   
