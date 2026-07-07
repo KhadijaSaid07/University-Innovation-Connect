@@ -19,6 +19,7 @@ import PrivacyPolicyPage from '../pages/PrivacyPolicyPage'
 import MissionPage from '../pages/MissionPage'
 import LoginPage from '../pages/LoginPage'
 import RegisterPage from '../pages/RegisterPage'
+import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 
 
 
@@ -114,6 +115,12 @@ const UicRoutes = createBrowserRouter(
         />
 
       </Route>
+      <Route
+  path="/forgot-password"
+  element={
+  <ForgotPasswordPage />
+  }
+/>
 
     </Route>
   )
