@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+
 const LoginPage = () => {
   const navigate = useNavigate()
   
@@ -99,10 +100,11 @@ const LoginPage = () => {
                 </div>
               )}
 
-              {/* Login Form */}
+             
               <form onSubmit={handleSubmit}>
                 
-                {/* Email */}
+               
+               
                 <div className="form-group">
                   <label className="font-weight-bold">📧 Email Address</label>
                   <input

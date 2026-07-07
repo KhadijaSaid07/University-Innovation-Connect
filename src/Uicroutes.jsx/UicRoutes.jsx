@@ -22,24 +22,23 @@ import RegisterPage from '../pages/RegisterPage'
 import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 
 
-
 const UicRoutes = createBrowserRouter(
   createRoutesFromElements(
     <Route>
       
-
+     
       <Route
         path="/"
         element={<LandingPage />}
       />
 
-   
+    
       <Route
         path="/about"
         element={<AboutPage />}
       />
 
-     
+      
       <Route
         path="/mission"
         element={<MissionPage />}
@@ -51,13 +50,13 @@ const UicRoutes = createBrowserRouter(
         element={<TermsPage />}
       />
 
-    
+      
       <Route
         path="/privacy-policy"
         element={<PrivacyPolicyPage />}
       />
 
-    
+      
       <Route
         path="/login"
         element={<LoginPage />}
@@ -69,40 +68,43 @@ const UicRoutes = createBrowserRouter(
         element={<RegisterPage />}
       />
 
-     
+      
+      <Route
+        path="/forgot-password"
+        element={<ForgotPasswordPage />}
+      />
 
       <Route path="/" element={<HomeLayout />}>
         
-        
+       
         <Route
           path="/dashboard"
           element={<DashboardPage />}
         />
 
-       
         <Route
           path="/idea-details"
           element={<IdeaDetailsPage />}
         />
 
-       
+      
         <Route
           path="/leaderboard"
           element={<LeaderboardPage />}
         />
 
-        
         <Route
           path="/lecturers"
           element={<LecturersPage />}
         />
 
-     
+        
         <Route
           path="/my-ideas"
           element={<MyIdeasPage />}
         />
 
+        
         <Route
           path="/post-idea"
           element={<PostIdeaPage />}
@@ -115,12 +117,6 @@ const UicRoutes = createBrowserRouter(
         />
 
       </Route>
-      <Route
-  path="/forgot-password"
-  element={
-  <ForgotPasswordPage />
-  }
-/>
 
     </Route>
   )

@@ -81,7 +81,7 @@ const ForgotPasswordPage = () => {
           <div className="card shadow-lg border-0">
             <div className="card-body p-5">
               
-              {/* Logo / Brand */}
+            
               <div className="text-center mb-4">
                 <div style={{ fontSize: '3rem' }}>🔐</div>
                 <h2 className="font-weight-bold text-gray-800">Forgot Password</h2>
