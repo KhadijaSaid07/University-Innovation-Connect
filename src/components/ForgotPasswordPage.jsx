@@ -4,13 +4,13 @@ import { Link, useNavigate } from 'react-router-dom'
 const ForgotPasswordPage = () => {
   const navigate = useNavigate()
   
-  // ----- STATE -----
+ 
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  // ----- HANDLE SUBMIT -----
+ 
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -24,10 +24,7 @@ const ForgotPasswordPage = () => {
     setMessage('')
 
     try {
-      // =============================================
-      // TODO: UNCOMMENT THIS WHEN API IS READY
-      // =============================================
-      // 
+      
       // const response = await fetch('http://localhost:8080/api/auth/forgot-password', {
       //   method: 'POST',
       //   headers: {
@@ -49,11 +46,9 @@ const ForgotPasswordPage = () => {
       // setTimeout(() => {
       //   navigate('/login')
       // }, 3000)
-      // =============================================
-      // REMOVE THIS COMMENT WHEN API IS READY
-      // =============================================
+   
 
-      // For now - simulate
+      // For now - 
       setTimeout(() => {
         setMessage('✅ Password reset link sent to your email!')
         setEmail('')
@@ -71,18 +66,18 @@ const ForgotPasswordPage = () => {
     }
   }
 
-  // ----- GO BACK -----
+ 
   const goBack = () => {
     navigate('/login')
   }
 
-  // ----- RENDER -----
+ 
   return (
     <div className="container-fluid" style={{ minHeight: '100vh', background: '#f5f0ff' }}>
       <div className="row justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
         <div className="col-lg-5 col-md-7">
           
-          {/* FORGOT PASSWORD CARD */}
+         
           <div className="card shadow-lg border-0">
             <div className="card-body p-5">
               
@@ -95,7 +90,7 @@ const ForgotPasswordPage = () => {
                 </p>
               </div>
 
-              {/* Messages */}
+            
               {message && (
                 <div className="alert alert-success text-center">
                   {message}
@@ -107,10 +102,10 @@ const ForgotPasswordPage = () => {
                 </div>
               )}
 
-              {/* Form */}
+              
               <form onSubmit={handleSubmit}>
                 
-                {/* Email */}
+               
                 <div className="form-group">
                   <label className="font-weight-bold">📧 Email Address</label>
                   <input
@@ -126,7 +121,7 @@ const ForgotPasswordPage = () => {
                   </small>
                 </div>
 
-                {/* Submit Button */}
+             
                 <button
                   type="submit"
                   className="btn btn-primary btn-lg btn-block"
@@ -143,7 +138,7 @@ const ForgotPasswordPage = () => {
                 </button>
               </form>
 
-              {/* Back to Login */}
+          
               <div className="text-center mt-4">
                 <p className="text-muted">
                   Remember your password?{' '}
@@ -157,7 +152,7 @@ const ForgotPasswordPage = () => {
                 </p>
               </div>
 
-              {/* Motivational Quote */}
+             
               <div className="text-center mt-4 pt-3 border-top">
                 <p className="text-muted small font-italic">
                   💡 "Innovation is the ability to see change as an opportunity, not a threat."
@@ -166,7 +161,7 @@ const ForgotPasswordPage = () => {
             </div>
           </div>
 
-          {/* Footer Links */}
+       
           <div className="text-center mt-3">
             <Link to="/about" className="text-muted small mx-2">About</Link>
             <span className="text-muted small">|</span>
@@ -175,10 +170,10 @@ const ForgotPasswordPage = () => {
             <Link to="/privacy-policy" className="text-muted small mx-2">Privacy</Link>
           </div>
 
-          {/* Footer Copyright */}
+         
           <div className="text-center mt-2">
             <p className="text-muted small">
-              © 2025 University Innovation Connect (UIC) - SUZA Zanzibar
+              © 2026 University Innovation Connect (UIC) - SUZA Zanzibar
             </p>
           </div>
         </div>
