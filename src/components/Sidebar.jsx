@@ -88,7 +88,7 @@ const Sidebar = () => {
         Account
       </div>
 
-    
+      {/* Nav Item - Profile */}
       <li className="nav-item">
         <Link className="nav-link" to="/profile">
           <i className="fas fa-fw fa-user" />
@@ -96,7 +96,7 @@ const Sidebar = () => {
         </Link>
       </li>
 
-      
+      {/* Nav Item - Logout */}
       <li className="nav-item">
         <Link className="nav-link" to="/login">
           <i className="fas fa-fw fa-sign-out-alt" />
@@ -107,10 +107,11 @@ const Sidebar = () => {
      
       <hr className="sidebar-divider d-none d-md-block" />
 
-      
+    
       <div className="text-center d-none d-md-inline">
         <button className="rounded-circle border-0" id="sidebarToggle" />
       </div>
+
      
       <div className="sidebar-card d-none d-lg-flex">
         <div className="sidebar-card-icon">🌊</div>
