@@ -1,9 +1,7 @@
 import React from 'react'
 import { createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom'
 
-// =============================================
-// PAGES WITH SIDEBAR & HEADER (Protected)
-// =============================================
+
 import HomeLayout from '../pages/HomeLayout'
 import DashboardPage from '../pages/DashboardPage'
 import IdeaDetailsPage from '../pages/IdeaDetailsPage'
@@ -13,17 +11,13 @@ import MyIdeasPage from '../pages/MyIdeasPage'
 import PostIdeaPage from '../pages/PostIdeaPage'
 import ProfilePage from '../pages/ProfilePage'
 
-// =============================================
-// LECTURER PAGES
-// =============================================
+
 import LecturerDashboardPage from '../pages/LecturerDashboardPage'
 import LecturerIdeaDetailsPage from '../pages/LecturerIdeaDetailsPage'
 import LecturerLeaderboardPage from '../pages/LecturerLeaderboardPage'
 import LecturerProfilePage from '../pages/LecturerProfilePage'
 
-// =============================================
-// PAGES WITHOUT SIDEBAR & HEADER (Public)
-// =============================================
+
 import LandingPage from '../pages/LandingPage'
 import AboutPage from '../pages/AboutPage'
 import TermsPage from '../pages/TermsPage'
@@ -33,9 +27,7 @@ import LoginPage from '../pages/LoginPage'
 import RegisterPage from '../pages/RegisterPage'
 import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 
-// =============================================
-// ROUTES
-// =============================================
+
 
 const UicRoutes = createBrowserRouter(
   createRoutesFromElements(
