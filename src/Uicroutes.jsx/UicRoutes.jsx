@@ -1,7 +1,9 @@
 import React from 'react'
 import { createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom'
 
-
+// =============================================
+// PAGES WITH SIDEBAR & HEADER (Protected)
+// =============================================
 import HomeLayout from '../pages/HomeLayout'
 import DashboardPage from '../pages/DashboardPage'
 import IdeaDetailsPage from '../pages/IdeaDetailsPage'
@@ -11,7 +13,17 @@ import MyIdeasPage from '../pages/MyIdeasPage'
 import PostIdeaPage from '../pages/PostIdeaPage'
 import ProfilePage from '../pages/ProfilePage'
 
+// =============================================
+// LECTURER PAGES
+// =============================================
+import LecturerDashboardPage from '../pages/LecturerDashboardPage'
+import LecturerIdeaDetailsPage from '../pages/LecturerIdeaDetailsPage'
+import LecturerLeaderboardPage from '../pages/LecturerLeaderboardPage'
+import LecturerProfilePage from '../pages/LecturerProfilePage'
 
+// =============================================
+// PAGES WITHOUT SIDEBAR & HEADER (Public)
+// =============================================
 import LandingPage from '../pages/LandingPage'
 import AboutPage from '../pages/AboutPage'
 import TermsPage from '../pages/TermsPage'
@@ -21,62 +33,59 @@ import LoginPage from '../pages/LoginPage'
 import RegisterPage from '../pages/RegisterPage'
 import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 
+// =============================================
+// ROUTES
+// =============================================
 
 const UicRoutes = createBrowserRouter(
   createRoutesFromElements(
     <Route>
       
-     
+
       <Route
         path="/"
         element={<LandingPage />}
       />
 
-    
       <Route
         path="/about"
         element={<AboutPage />}
       />
 
-      
       <Route
         path="/mission"
         element={<MissionPage />}
       />
 
-   
       <Route
         path="/terms"
         element={<TermsPage />}
       />
 
-      
       <Route
         path="/privacy-policy"
         element={<PrivacyPolicyPage />}
       />
 
-      
       <Route
         path="/login"
         element={<LoginPage />}
       />
 
-     
       <Route
         path="/register"
         element={<RegisterPage />}
       />
 
-      
       <Route
         path="/forgot-password"
         element={<ForgotPasswordPage />}
       />
 
+      
       <Route path="/" element={<HomeLayout />}>
         
-       
+        {/* Student Routes */}
         <Route
           path="/dashboard"
           element={<DashboardPage />}
@@ -87,7 +96,6 @@ const UicRoutes = createBrowserRouter(
           element={<IdeaDetailsPage />}
         />
 
-      
         <Route
           path="/leaderboard"
           element={<LeaderboardPage />}
@@ -98,25 +106,44 @@ const UicRoutes = createBrowserRouter(
           element={<LecturersPage />}
         />
 
-        
         <Route
           path="/my-ideas"
           element={<MyIdeasPage />}
         />
 
-        
         <Route
           path="/post-idea"
           element={<PostIdeaPage />}
         />
 
-       
         <Route
           path="/profile"
           element={<ProfilePage />}
         />
 
       </Route>
+
+
+
+      <Route
+        path="/lecturer-dashboard"
+        element={<LecturerDashboardPage />}
+      />
+
+      <Route
+        path="/lecturer-idea/:id"
+        element={<LecturerIdeaDetailsPage />}
+      />
+
+      <Route
+        path="/lecturer-leaderboard"
+        element={<LecturerLeaderboardPage />}
+      />
+
+      <Route
+        path="/lecturer-profile"
+        element={<LecturerProfilePage />}
+      />
 
     </Route>
   )

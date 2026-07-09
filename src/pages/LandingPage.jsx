@@ -6,7 +6,7 @@ const LandingPage = () => {
   return (
     <div className="landing-page">
       
-      {/* ===== NAVIGATION ===== */}
+      
       <nav className="landing-nav">
         <div className="nav-container">
           <div className="nav-brand">
@@ -24,7 +24,7 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* ===== HERO SECTION ===== */}
+     
       <section className="hero-section">
         <div className="hero-container">
           <div className="hero-badge">
@@ -50,7 +50,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ===== FEATURES SECTION ===== */}
+      
       <section className="features-section">
         <div className="features-container">
           <h2 className="section-title">How It Works</h2>
@@ -74,7 +74,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ===== CATEGORIES SECTION ===== */}
+     
       <section className="categories-section">
         <div className="categories-container">
           <h2 className="section-title">Explore Challenges by Category</h2>
@@ -96,7 +96,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ===== CTA SECTION ===== */}
+    
       <section className="cta-section">
         <div className="cta-container">
           <h2>Ready to Make a Difference?</h2>
@@ -107,14 +107,14 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ===== FOOTER ===== */}
+      
       <footer className="landing-footer">
         <div className="footer-container">
           
-          {/* Footer Top - 4 Columns */}
+        
           <div className="footer-top">
             
-            {/* Column 1: Brand */}
+          
             <div className="footer-col">
               <div className="footer-brand">
                 <span className="footer-brand-icon">🌊</span>
@@ -128,7 +128,7 @@ const LandingPage = () => {
               </p>
             </div>
 
-            {/* Column 2: Quick Links */}
+            
             <div className="footer-col">
               <h4>Quick Links</h4>
               <ul>
@@ -139,7 +139,7 @@ const LandingPage = () => {
               </ul>
             </div>
 
-            {/* Column 3: Contact */}
+          
             <div className="footer-col">
               <h4>Contact</h4>
               <ul>
@@ -158,7 +158,7 @@ const LandingPage = () => {
               </ul>
             </div>
 
-            {/* Column 4: Developers */}
+            
             <div className="footer-col">
               <h4>Developers</h4>
               <ul>
@@ -176,7 +176,7 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Footer Bottom */}
+         
           <div className="footer-bottom">
             <p className="footer-tagline">
               🎓 SUZA Innovation Hub - Where Ideas Become Reality

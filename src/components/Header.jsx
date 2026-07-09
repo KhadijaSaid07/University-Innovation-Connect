@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import './Header.css'
 
 const Header = () => {
   const navigate = useNavigate()
   
-  // ----- STATE -----
+
   const [user, setUser] = useState({
     name: '',
     email: '',
     role: '',
+    idNumber: '',
     profileImage: ''
   })
   const [notifications, setNotifications] = useState([])
@@ -17,77 +19,104 @@ const Header = () => {
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  // ----- FETCH USER DATA FROM DATABASE -----
-  useEffect(() => {
-    // TODO: Replace with real API calls
-    // const fetchData = async () => {
-    //   try {
-    //     const token = localStorage.getItem('token')
-    //     
-    //     // Fetch user profile
-    //     const userRes = await fetch('http://localhost:8080/api/users/profile', {
-    //       headers: { 'Authorization': `Bearer ${token}` }
-    //     })
-    //     const userData = await userRes.json()
-    //     setUser({
-    //       name: userData.name,
-    //       email: userData.email,
-    //       role: userData.role,
-    //       profileImage: userData.profileImage || '/img/undraw_profile.svg'
-    //     })
-    //     
-    //     // Fetch notifications
-    //     const notifRes = await fetch('http://localhost:8080/api/notifications', {
-    //       headers: { 'Authorization': `Bearer ${token}` }
-    //     })
-    //     const notifData = await notifRes.json()
-    //     setNotifications(notifData)
-    //     setUnreadNotifications(notifData.filter(n => !n.read).length)
-    //     
-    //     // Fetch messages
-    //     const msgRes = await fetch('http://localhost:8080/api/messages', {
-    //       headers: { 'Authorization': `Bearer ${token}` }
-    //     })
-    //     const msgData = await msgRes.json()
-    //     setMessages(msgData)
-    //     setUnreadMessages(msgData.filter(m => !m.read).length)
-    //     
-    //   } catch (error) {
-    //     console.error('Error fetching data:', error)
-    //   } finally {
-    //     setLoading(false)
-    //   }
-    // }
-    // fetchData()
+  const getLoggedInUser = () => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      try {
+        return JSON.parse(userStr)
+      } catch (e) {
+        return null
+      }
+    }
+    return null
+  }
 
-    // For now - empty data (will come from database)
-    setUser({
-      name: '',
-      email: '',
-      role: '',
-      profileImage: '/img/undraw_profile.svg'
-    })
-    setNotifications([])
-    setMessages([])
-    setUnreadNotifications(0)
-    setUnreadMessages(0)
-    setLoading(false)
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+      
+        const loggedInUser = getLoggedInUser()
+        
+        
+        // const token = localStorage.getItem('token')
+        // 
+        // // Fetch user profile
+        // const userRes = await fetch('http://localhost:8080/api/users/profile', {
+        //   headers: { 'Authorization': `Bearer ${token}` }
+        // })
+        // const userData = await userRes.json()
+        // setUser({
+        //   name: userData.name,
+        //   email: userData.email,
+        //   role: userData.role,
+        //   idNumber: userData.idNumber,
+        //   profileImage: userData.profileImage || '/img/undraw_profile.svg'
+        // })
+        // 
+        // // Fetch notifications
+        // const notifRes = await fetch('http://localhost:8080/api/notifications', {
+        //   headers: { 'Authorization': `Bearer ${token}` }
+        // })
+        // const notifData = await notifRes.json()
+        // setNotifications(notifData)
+        // setUnreadNotifications(notifData.filter(n => !n.read).length)
+        // 
+        // // Fetch messages
+        // const msgRes = await fetch('http://localhost:8080/api/messages', {
+        //   headers: { 'Authorization': `Bearer ${token}` }
+        // })
+        // const msgData = await msgRes.json()
+        // setMessages(msgData)
+        // setUnreadMessages(msgData.filter(m => !m.read).length)
+        // 
+        // setLoading(false)
+        
+
+        if (loggedInUser) {
+          setUser({
+            name: loggedInUser.name || '',
+            email: loggedInUser.email || '',
+            role: loggedInUser.role || '',
+            idNumber: loggedInUser.idNumber || '',
+            profileImage: loggedInUser.profileImage || '/img/undraw_profile.svg'
+          })
+        } else {
+          
+          const fallbackUser = {
+            name: '',
+            email: '',
+            role: '',
+            idNumber: '',
+            profileImage: '/img/undraw_profile.svg'
+          }
+          setUser(fallbackUser)
+        }
+        
+        setNotifications([])
+        setMessages([])
+        setUnreadNotifications(0)
+        setUnreadMessages(0)
+        setLoading(false)
+        
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        setLoading(false)
+      }
+    }
+    
+    fetchData()
   }, [])
 
-  // ----- MARK NOTIFICATION AS READ -----
+ 
   const markNotificationAsRead = async (id) => {
-    // TODO: Call API to mark as read
-    // try {
-    //   const token = localStorage.getItem('token')
-    //   await fetch(`http://localhost:8080/api/notifications/${id}/read`, {
-    //     method: 'PUT',
-    //     headers: { 'Authorization': `Bearer ${token}` }
-    //   })
-    // } catch (error) {
-    //   console.error('Error marking notification:', error)
-    // }
-    
-    // Update local state
+   
+    // const token = localStorage.getItem('token')
+    // await fetch(`http://localhost:8080/api/notifications/${id}/read`, {
+    //   method: 'PUT',
+    //   headers: { 'Authorization': `Bearer ${token}` }
+    // })
+   
     const updated = notifications.map(n => 
       n.id === id ? { ...n, read: true } : n
     )
@@ -95,20 +124,15 @@ const Header = () => {
     setUnreadNotifications(updated.filter(n => !n.read).length)
   }
 
-  // ----- MARK MESSAGE AS READ -----
   const markMessageAsRead = async (id) => {
-    // TODO: Call API to mark as read
-    // try {
-    //   const token = localStorage.getItem('token')
-    //   await fetch(`http://localhost:8080/api/messages/${id}/read`, {
-    //     method: 'PUT',
-    //     headers: { 'Authorization': `Bearer ${token}` }
-    //   })
-    // } catch (error) {
-    //   console.error('Error marking message:', error)
-    // }
+ 
+    // const token = localStorage.getItem('token')
+    // await fetch(`http://localhost:8080/api/messages/${id}/read`, {
+    //   method: 'PUT',
+    //   headers: { 'Authorization': `Bearer ${token}` }
+    // })
+
     
-    // Update local state
     const updated = messages.map(m => 
       m.id === id ? { ...m, read: true } : m
     )
@@ -116,28 +140,22 @@ const Header = () => {
     setUnreadMessages(updated.filter(m => !m.read).length)
   }
 
-  // ----- LOGOUT -----
+ 
   const handleLogout = () => {
-    // TODO: Call logout API
-    // const logout = async () => {
-    //   try {
-    //     const token = localStorage.getItem('token')
-    //     await fetch('http://localhost:8080/api/auth/logout', {
-    //       method: 'POST',
-    //       headers: { 'Authorization': `Bearer ${token}` }
-    //     })
-    //   } catch (error) {
-    //     console.error('Logout error:', error)
-    //   }
-    // }
-    // logout()
+    
+    // const token = localStorage.getItem('token')
+    // await fetch('http://localhost:8080/api/auth/logout', {
+    //   method: 'POST',
+    //   headers: { 'Authorization': `Bearer ${token}` }
+    // })
+    
     
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     navigate('/login')
   }
 
-  // ----- HANDLE SEARCH -----
+  
   const handleSearch = (e) => {
     e.preventDefault()
     const query = e.target.search.value
@@ -146,10 +164,11 @@ const Header = () => {
     }
   }
 
+ 
   return (
     <nav className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
       
-      {/* Sidebar Toggle */}
+      
       <button 
         id="sidebarToggleTop" 
         className="btn btn-link d-md-none rounded-circle mr-3"
@@ -157,7 +176,7 @@ const Header = () => {
         <i className="fa fa-bars" />
       </button>
 
-      {/* Search Bar */}
+     
       <form 
         className="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search"
         onSubmit={handleSearch}
@@ -178,10 +197,10 @@ const Header = () => {
         </div>
       </form>
 
-      {/* Topbar Navbar */}
+     
       <ul className="navbar-nav ml-auto">
 
-        {/* Mobile Search */}
+       
         <li className="nav-item dropdown no-arrow d-sm-none">
           <a className="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button" data-toggle="dropdown">
             <i className="fas fa-search fa-fw" />
@@ -200,7 +219,7 @@ const Header = () => {
           </div>
         </li>
 
-        {/* NOTIFICATIONS */}
+      
         <li className="nav-item dropdown no-arrow mx-1">
           <a 
             className="nav-link dropdown-toggle" 
@@ -217,7 +236,7 @@ const Header = () => {
             )}
           </a>
           
-          {/* Dropdown - Notifications */}
+       
           <div className="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
             <h6 className="dropdown-header">
               Notifications Center
@@ -263,7 +282,7 @@ const Header = () => {
           </div>
         </li>
 
-        {/* MESSAGES */}
+     
         <li className="nav-item dropdown no-arrow mx-1">
           <a 
             className="nav-link dropdown-toggle" 
@@ -328,10 +347,10 @@ const Header = () => {
           </div>
         </li>
 
-        {/* Divider */}
+  
         <div className="topbar-divider d-none d-sm-block" />
 
-        {/* User Information */}
+        {/* ===== USER INFORMATION - SHOWS REAL USER DATA ===== */}
         <li className="nav-item dropdown no-arrow">
           <a 
             className="nav-link dropdown-toggle" 
@@ -340,24 +359,47 @@ const Header = () => {
             role="button" 
             data-toggle="dropdown"
           >
+         
             <span className="mr-2 d-none d-lg-inline text-gray-600 small">
               {loading ? 'Loading...' : user.name || 'Guest User'}
             </span>
-            <img 
-              className="img-profile rounded-circle" 
-              src={user.profileImage || '/img/undraw_profile.svg'} 
-              alt="Profile"
-              style={{ width: '32px', height: '32px' }}
-            />
+           
+            <span 
+              className="img-profile rounded-circle d-flex align-items-center justify-content-center"
+              style={{
+                width: '32px',
+                height: '32px',
+                background: 'linear-gradient(135deg, #7C3AED, #6D28D9)',
+                color: '#FFFFFF',
+                fontSize: '14px',
+                fontWeight: '700'
+              }}
+            >
+              {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            </span>
           </a>
 
-          {/* Dropdown - User */}
           <div className="dropdown-menu dropdown-menu-right shadow animated--grow-in">
+            {/* ✅ Show user details in dropdown */}
+            <div className="dropdown-header">
+              <div className="font-weight-bold">{user.name || 'User'}</div>
+              <div className="small text-muted">{user.email || 'No email'}</div>
+              <div className="small text-muted">
+                <span className="badge badge-primary">
+                  {user.role || 'Role'}
+                </span>
+                {user.idNumber && (
+                  <span className="badge badge-secondary ml-1">
+                    {user.idNumber}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="dropdown-divider" />
             <Link className="dropdown-item" to="/profile">
               <i className="fas fa-user fa-sm fa-fw mr-2 text-gray-400" />
               Profile
             </Link>
-            <div className="dropdown-divider" />
             <button 
               className="dropdown-item" 
               onClick={handleLogout}

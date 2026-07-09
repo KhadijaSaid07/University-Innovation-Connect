@@ -1,0 +1,322 @@
+.lecturer-leaderboard-page {
+  min-height: 100vh;
+  background: #F8F4FF;
+  display: flex;
+}
+
+
+.lecturer-leaderboard-sidebar {
+  width: 250px;
+  background: linear-gradient(180deg, #1A0A2E 0%, #4A1A6B 100%);
+  min-height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  padding: 20px 0;
+  overflow-y: auto;
+  box-shadow: 2px 0 20px rgba(26, 10, 46, 0.15);
+}
+
+.lecturer-leaderboard-sidebar::-webkit-scrollbar { width: 4px; }
+.lecturer-leaderboard-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(252, 211, 77, 0.15);
+  border-radius: 10px;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 20px;
+}
+.sidebar-brand .brand-icon { font-size: 2rem; }
+.sidebar-brand .brand-text {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #FCD34D;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.sidebar-link:hover {
+  color: #FCD34D;
+  background: rgba(252, 211, 77, 0.08);
+}
+.sidebar-link.active {
+  color: #FCD34D;
+  background: rgba(252, 211, 77, 0.12);
+}
+.sidebar-link i {
+  width: 20px;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+.sidebar-link:hover i,
+.sidebar-link.active i {
+  color: #FCD34D;
+}
+
+
+.lecturer-leaderboard-header {
+  background: #FFFFFF;
+  padding: 12px 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 250px;
+  z-index: 999;
+  border-bottom: 1px solid rgba(124, 58, 237, 0.06);
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sidebar-toggle-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: #4A4A6A;
+  cursor: pointer;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.header-brand .brand-icon { font-size: 1.5rem; }
+.header-brand .brand-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1A0A2E;
+}
+
+.header-right .logout-btn {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.header-right .logout-btn:hover {
+  background: linear-gradient(135deg, #6D28D9, #5B21B6);
+  transform: translateY(-2px);
+}
+
+
+.lecturer-leaderboard-content {
+  margin-left: 250px;
+  margin-top: 80px;
+  padding: 30px;
+  flex: 1;
+}
+.leaderboard-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.leaderboard-header {
+  margin-bottom: 30px;
+}
+.leaderboard-header h1 {
+  font-size: 2rem;
+  color: #1A0A2E;
+  margin: 0;
+}
+.leaderboard-header p {
+  color: #8B6BA8;
+  margin: 4px 0 0;
+}
+
+.leaderboard-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(26, 10, 46, 0.04);
+  border: 1px solid rgba(124, 58, 237, 0.06);
+}
+
+.table-responsive { overflow-x: auto; }
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #8B6BA8;
+  text-transform: uppercase;
+  border-bottom: 2px solid #EDE4F5;
+}
+
+.leaderboard-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #EDE4F5;
+  color: #4A4A6A;
+}
+
+.leaderboard-table tbody tr:hover {
+  background: #F8F4FF;
+}
+
+.rank-badge {
+  font-size: 1.5rem;
+}
+
+.rank-gold {
+  background: rgba(252, 211, 77, 0.10) !important;
+}
+.rank-gold td:first-child {
+  border-left: 4px solid #FCD34D !important;
+}
+
+.rank-silver {
+  background: rgba(209, 213, 219, 0.10) !important;
+}
+.rank-silver td:first-child {
+  border-left: 4px solid #D1D5DB !important;
+}
+
+.rank-bronze {
+  background: rgba(251, 191, 36, 0.08) !important;
+}
+.rank-bronze td:first-child {
+  border-left: 4px solid #F59E0B !important;
+}
+
+.badge-votes {
+  padding: 4px 14px;
+  background: #D1FAE5;
+  color: #065F46;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.btn-view-idea {
+  padding: 4px 14px;
+  background: #7C3AED;
+  color: #FFFFFF;
+  border-radius: 50px;
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+}
+.btn-view-idea:hover {
+  background: #6D28D9;
+  color: #FFFFFF;
+}
+.btn-view-idea i {
+  margin-right: 4px;
+}
+
+.btn-back-dash {
+  display: inline-block;
+  padding: 10px 28px;
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  color: #FFFFFF;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 12px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+.btn-back-dash:hover {
+  background: linear-gradient(135deg, #6D28D9, #5B21B6);
+  color: #FFFFFF;
+  transform: translateY(-2px);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 0;
+}
+.empty-state h5 {
+  color: #1A0A2E;
+  margin-top: 12px;
+}
+.empty-state p {
+  color: #8B6BA8;
+}
+
+.lecturer-leaderboard-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #F8F4FF;
+}
+
+@media (max-width: 1024px) {
+  .lecturer-leaderboard-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  .lecturer-leaderboard-sidebar.show { transform: translateX(0); }
+  .lecturer-leaderboard-header { left: 0; }
+  .lecturer-leaderboard-content { margin-left: 0; }
+  .sidebar-toggle-btn { display: block !important; }
+}
+
+@media (max-width: 768px) {
+  .lecturer-leaderboard-header { padding: 10px 16px; }
+  .header-brand .brand-text { font-size: 1rem; }
+  .leaderboard-card { padding: 20px; }
+  .leaderboard-header h1 { font-size: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+  .leaderboard-card { padding: 16px; }
+  .leaderboard-table { font-size: 0.85rem; }
+  .leaderboard-table th,
+  .leaderboard-table td {
+    padding: 8px 10px;
+  }
+  .lecturer-leaderboard-content { padding: 16px; }
+  .rank-badge { font-size: 1.2rem; }
+}

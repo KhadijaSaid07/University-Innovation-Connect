@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import './ProfilePage.css'
+import { useNavigate, Link } from 'react-router-dom'
+import './LecturerProfilePage.css'
 
-const ProfilePage = () => {
+const LecturerProfilePage = () => {
   const navigate = useNavigate()
   
 
-  const [user, setUser] = useState({
+  const [lecturer, setLecturer] = useState({
     name: '',
     email: '',
-    registrationNumber: '',
+    idNumber: '',
     phone: '',
-    role: '',
     department: '',
-    bio: ''
+    bio: '',
+    specialization: ''
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
- 
+
   const getLoggedInUser = () => {
     const userStr = localStorage.getItem('user')
     if (userStr) {
@@ -33,16 +33,16 @@ const ProfilePage = () => {
     return null
   }
 
- 
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const loggedInUser = getLoggedInUser()
         
-     
+       
         // const token = localStorage.getItem('token')
         // 
-        // const response = await fetch('http://localhost:8080/api/users/profile', {
+        // const response = await fetch('http://localhost:8080/api/lecturers/profile', {
         //   headers: {
         //     'Authorization': `Bearer ${token}`,
         //     'Content-Type': 'application/json'
@@ -54,39 +54,27 @@ const ProfilePage = () => {
         // }
         // 
         // const data = await response.json()
-        // setUser({
+        // setLecturer({
         //   name: data.name || '',
         //   email: data.email || '',
-        //   registrationNumber: data.registrationNumber || '',
+        //   idNumber: data.idNumber || '',
         //   phone: data.phone || '',
-        //   role: data.role || '',
         //   department: data.department || '',
-        //   bio: data.bio || ''
+        //   bio: data.bio || '',
+        //   specialization: data.specialization || ''
         // })
         // setLoading(false)
-        
-
-        if (loggedInUser) {
-          setUser({
-            name: loggedInUser.name || '',
-            email: loggedInUser.email || '',
-            registrationNumber: loggedInUser.idNumber || '',
-            phone: loggedInUser.phone || '',
-            role: loggedInUser.role || '',
-            department: loggedInUser.department || '',
-            bio: loggedInUser.bio || ''
-          })
-        } else {
-          setUser({
-            name: '',
-            email: '',
-            registrationNumber: '',
-            phone: '',
-            role: '',
-            department: '',
-            bio: ''
-          })
-        }
+       
+        // For now 
+        setLecturer({
+          name: loggedInUser?.name || '',
+          email: loggedInUser?.email || '',
+          idNumber: loggedInUser?.idNumber || '',
+          phone: loggedInUser?.phone || '',
+          department: loggedInUser?.department || '',
+          bio: loggedInUser?.bio || '',
+          specialization: loggedInUser?.specialization || ''
+        })
         setLoading(false)
 
       } catch (err) {
@@ -99,16 +87,16 @@ const ProfilePage = () => {
     fetchProfile()
   }, [])
 
- 
+  
   const handleChange = (e) => {
     const { name, value } = e.target
-    setUser({
-      ...user,
+    setLecturer({
+      ...lecturer,
       [name]: value
     })
   }
 
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -119,17 +107,18 @@ const ProfilePage = () => {
        
       // const token = localStorage.getItem('token')
       // 
-      // const response = await fetch('http://localhost:8080/api/users/profile', {
+      // const response = await fetch('http://localhost:8080/api/lecturers/profile', {
       //   method: 'PUT',
       //   headers: {
       //     'Authorization': `Bearer ${token}`,
       //     'Content-Type': 'application/json'
       //   },
       //   body: JSON.stringify({
-      //     name: user.name,
-      //     phone: user.phone,
-      //     department: user.department,
-      //     bio: user.bio
+      //     name: lecturer.name,
+      //     phone: lecturer.phone,
+      //     department: lecturer.department,
+      //     bio: lecturer.bio,
+      //     specialization: lecturer.specialization
       //   })
       // })
       // 
@@ -138,39 +127,12 @@ const ProfilePage = () => {
       // }
       // 
       // const data = await response.json()
-      // 
-      // // Update localStorage with new data
-      // const loggedInUser = getLoggedInUser()
-      // if (loggedInUser) {
-      //   const updatedUser = {
-      //     ...loggedInUser,
-      //     name: data.name,
-      //     phone: data.phone,
-      //     department: data.department,
-      //     bio: data.bio
-      //   }
-      //   localStorage.setItem('user', JSON.stringify(updatedUser))
-      // }
-      // 
-      // setUser(data)
+      // setLecturer(data)
       // setMessage('✅ Profile updated successfully!')
       // setTimeout(() => setMessage(''), 3000)
-      
+     
 
-      // ✅ Update localStorage with new data (for demo)
-      const loggedInUser = getLoggedInUser()
-      if (loggedInUser) {
-        const updatedUser = {
-          ...loggedInUser,
-          name: user.name,
-          phone: user.phone,
-          department: user.department,
-          bio: user.bio
-        }
-        localStorage.setItem('user', JSON.stringify(updatedUser))
-      }
-
-      setMessage('✅ Profile updated successfully!')
+      setMessage('⚠️ Profile update will work when API is connected')
       setTimeout(() => setMessage(''), 3000)
 
     } catch (err) {
@@ -181,15 +143,22 @@ const ProfilePage = () => {
     }
   }
 
-  // ----- GO BACK -----
+  
   const goBack = () => {
-    navigate('/dashboard')
+    navigate('/lecturer-dashboard')
   }
 
-  // ----- LOADING -----
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
+
+ 
   if (loading) {
     return (
-      <div className="profile-loading">
+      <div className="lecturer-profile-loading">
         <div className="spinner-border text-primary" role="status">
           <span className="sr-only">Loading...</span>
         </div>
@@ -198,48 +167,54 @@ const ProfilePage = () => {
     )
   }
 
-  // ----- RENDER -----
+ 
   return (
-    <div className="profile-page">
+    <div className="lecturer-profile-page">
       
-      {/* HEADER */}
-      <div className="profile-header">
+     
+      <header className="lecturer-profile-header">
         <div className="header-container">
-          <h1 className="h3 mb-0 text-gray-800">
-            👤 My Profile
-          </h1>
-          <button 
-            onClick={goBack} 
-            className="btn-back-dashboard"
-          >
-            ← Back to Dashboard
-          </button>
+          <div className="header-left">
+            <button className="sidebar-toggle-btn">
+              <i className="fas fa-bars" />
+            </button>
+            <div className="header-brand">
+              <span className="brand-icon">👨‍🏫</span>
+              <span className="brand-text">Lecturer Profile</span>
+            </div>
+          </div>
+          <div className="header-right">
+            <button className="logout-btn" onClick={handleLogout}>
+              <i className="fas fa-sign-out-alt" /> Logout
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* CONTENT */}
-      <div className="profile-content">
+   
+      <div className="lecturer-profile-content">
         <div className="profile-container">
           
-          {/* Profile Card */}
+      
+          <button onClick={goBack} className="btn-back">
+            ← Back to Dashboard
+          </button>
+
+         
           <div className="profile-card">
             
-            {/* Avatar Section */}
+         
             <div className="profile-avatar-section">
               <div className="profile-avatar">
-                {user.name ? user.name.charAt(0).toUpperCase() : '👤'}
+                {lecturer.name ? lecturer.name.charAt(0).toUpperCase() : 'L'}
               </div>
-              <h4 className="profile-name">
-                {user.name || 'User'}
-              </h4>
-              <p className="profile-role">
-                <span className="badge-role">{user.role || 'Student'}</span>
-              </p>
+              <h2 className="profile-name">{lecturer.name || 'Lecturer'}</h2>
+              <span className="profile-role">👨‍🏫 Lecturer</span>
             </div>
 
-            {/* Messages */}
+           
             {message && (
-              <div className="alert alert-success">
+              <div className={`alert ${message.includes('✅') ? 'alert-success' : 'alert-warning'}`}>
                 {message}
               </div>
             )}
@@ -249,10 +224,10 @@ const ProfilePage = () => {
               </div>
             )}
 
-            {/* Form */}
+            
             <form onSubmit={handleSubmit} className="profile-form">
               
-              {/* Full Name */}
+           
               <div className="form-group">
                 <label className="font-weight-bold">👤 Full Name</label>
                 <input
@@ -260,40 +235,40 @@ const ProfilePage = () => {
                   name="name"
                   className="form-control"
                   placeholder="Enter your full name"
-                  value={user.name}
+                  value={lecturer.name}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Email - Read Only */}
+            
               <div className="form-group">
                 <label className="font-weight-bold">📧 Email</label>
                 <input
                   type="email"
                   name="email"
                   className="form-control"
-                  value={user.email}
+                  value={lecturer.email}
                   disabled
                   style={{ background: '#f8f9fa' }}
                 />
                 <small className="text-muted">Email cannot be changed</small>
               </div>
 
-              {/* Registration Number - Read Only */}
+              
               <div className="form-group">
-                <label className="font-weight-bold">🎓 Registration Number</label>
+                <label className="font-weight-bold">🆔 ID Number</label>
                 <input
                   type="text"
-                  name="registrationNumber"
+                  name="idNumber"
                   className="form-control"
-                  value={user.registrationNumber}
+                  value={lecturer.idNumber}
                   disabled
                   style={{ background: '#f8f9fa' }}
                 />
-                <small className="text-muted">Registration number cannot be changed</small>
+                <small className="text-muted">ID Number cannot be changed</small>
               </div>
 
-              {/* Phone */}
+           
               <div className="form-group">
                 <label className="font-weight-bold">📞 Phone Number</label>
                 <input
@@ -301,12 +276,13 @@ const ProfilePage = () => {
                   name="phone"
                   className="form-control"
                   placeholder="Enter your phone number"
-                  value={user.phone}
+                  value={lecturer.phone}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Department */}
+           
+           
               <div className="form-group">
                 <label className="font-weight-bold">🏛️ Department</label>
                 <input
@@ -314,12 +290,25 @@ const ProfilePage = () => {
                   name="department"
                   className="form-control"
                   placeholder="Enter your department"
-                  value={user.department}
+                  value={lecturer.department}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Bio */}
+           
+              <div className="form-group">
+                <label className="font-weight-bold">🎯 Specialization</label>
+                <input
+                  type="text"
+                  name="specialization"
+                  className="form-control"
+                  placeholder="e.g., AI & Machine Learning"
+                  value={lecturer.specialization}
+                  onChange={handleChange}
+                />
+              </div>
+
+             
               <div className="form-group">
                 <label className="font-weight-bold">📝 Bio</label>
                 <textarea
@@ -327,12 +316,12 @@ const ProfilePage = () => {
                   className="form-control"
                   rows="3"
                   placeholder="Tell us about yourself..."
-                  value={user.bio}
+                  value={lecturer.bio}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Buttons */}
+            
               <div className="form-buttons">
                 <button
                   type="submit"
@@ -352,12 +341,13 @@ const ProfilePage = () => {
                   type="reset"
                   className="btn-reset"
                   onClick={() => {
-                    setUser({
-                      ...user,
-                      name: user.name,
-                      phone: user.phone,
-                      department: user.department,
-                      bio: user.bio
+                    setLecturer({
+                      ...lecturer,
+                      name: lecturer.name,
+                      phone: lecturer.phone,
+                      department: lecturer.department,
+                      bio: lecturer.bio,
+                      specialization: lecturer.specialization
                     })
                     setMessage('')
                     setError('')
@@ -368,12 +358,12 @@ const ProfilePage = () => {
               </div>
             </form>
 
-            {/* Account Info */}
+       
             <div className="account-info">
               <h6 className="account-title">📋 Account Information</h6>
               <div className="account-details">
                 <div>
-                  <strong>Role:</strong> {user.role || 'Student'}
+                  <strong>Role:</strong> Lecturer
                 </div>
                 <div>
                   <strong>Status:</strong> Active
@@ -383,8 +373,37 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+
+    
+      <aside className="lecturer-profile-sidebar">
+        <div className="sidebar-menu">
+          <div className="sidebar-brand">
+            <span className="brand-icon">👨‍🏫</span>
+            <span className="brand-text">Lecturer</span>
+          </div>
+          <nav className="sidebar-nav">
+            <Link to="/lecturer-dashboard" className="sidebar-link">
+              <i className="fas fa-tachometer-alt" />
+              <span>Dashboard</span>
+            </Link>
+            <Link to="/lecturer-leaderboard" className="sidebar-link">
+              <i className="fas fa-trophy" />
+              <span>Leaderboard</span>
+            </Link>
+            <Link to="/lecturer-profile" className="sidebar-link active">
+              <i className="fas fa-user" />
+              <span>Profile</span>
+            </Link>
+            <button className="sidebar-link" onClick={handleLogout}>
+              <i className="fas fa-sign-out-alt" />
+              <span>Logout</span>
+            </button>
+          </nav>
+        </div>
+      </aside>
+
     </div>
   )
 }
 
-export default ProfilePage
+export default LecturerProfilePage

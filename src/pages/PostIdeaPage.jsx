@@ -4,24 +4,35 @@ import { useNavigate } from 'react-router-dom'
 const PostIdeaPage = () => {
   const navigate = useNavigate()
   
-  
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [messageType, setMessageType] = useState('') // 'success' or 'error'
+  const [messageType, setMessageType] = useState('')
 
-
+  
   const goBack = () => {
     navigate('/dashboard')
   }
 
+  
+  const getLoggedInUser = () => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      try {
+        return JSON.parse(userStr)
+      } catch (e) {
+        return null
+      }
+    }
+    return null
+  }
 
+ 
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-   
     if (!title || !category || !description) {
       setMessage('⚠️ Please fill in all fields')
       setMessageType('error')
@@ -33,7 +44,9 @@ const PostIdeaPage = () => {
     setMessageType('')
 
     try {
-     
+      const loggedInUser = getLoggedInUser()
+      
+    
       // const token = localStorage.getItem('token')
       // 
       // const response = await fetch('http://localhost:8080/api/ideas', {
@@ -45,7 +58,10 @@ const PostIdeaPage = () => {
       //   body: JSON.stringify({
       //     title: title,
       //     category: category,
-      //     description: description
+      //     description: description,
+      //     author: loggedInUser?.name || 'Anonymous',
+      //     authorReg: loggedInUser?.idNumber || '',
+      //     date: new Date().toLocaleString()
       //   })
       // })
       // 
@@ -54,34 +70,37 @@ const PostIdeaPage = () => {
       // }
       // 
       // const data = await response.json()
-      // 
-      // setMessage('✅ Your idea was posted successfully! 🎉')
-      // setMessageType('success')
-      // setTitle('')
-      // setCategory('')
-      // setDescription('')
-      // setLoading(false)
-      // 
-      // // Go back to dashboard after 2 seconds
-      // setTimeout(() => {
-      //   navigate('/dashboard')
-      // }, 2000)
-    
+     
+     
+      const newIdea = {
+        id: Date.now(),
+        title: title,
+        category: category,
+        description: description,
+        author: loggedInUser?.name || 'Anonymous',
+        authorReg: loggedInUser?.idNumber || '',
+        date: new Date().toLocaleString(),
+        votes: 0,
+        comments: 0,
+        status: 'Pending'
+      }
 
      
-      setTimeout(() => {
-        setMessage('✅ Your idea was posted successfully! 🎉')
-        setMessageType('success')
-        setTitle('')
-        setCategory('')
-        setDescription('')
-        setLoading(false)
-        
+      const existingIdeas = JSON.parse(localStorage.getItem('ideas') || '[]')
+      existingIdeas.unshift(newIdea) // Add to beginning
+      localStorage.setItem('ideas', JSON.stringify(existingIdeas))
+
+      setMessage('✅ Your idea was posted successfully! 🎉')
+      setMessageType('success')
+      setTitle('')
+      setCategory('')
+      setDescription('')
+      setLoading(false)
       
-        setTimeout(() => {
-          navigate('/dashboard')
-        }, 2000)
-      }, 1500)
+      // Redirect to dashboard after 2 seconds
+      setTimeout(() => {
+        navigate('/dashboard')
+      }, 2000)
 
     } catch (error) {
       console.error('Error:', error)
@@ -91,7 +110,7 @@ const PostIdeaPage = () => {
     }
   }
 
- 
+
   const clearForm = () => {
     setTitle('')
     setCategory('')
@@ -103,24 +122,21 @@ const PostIdeaPage = () => {
   return (
     <div className="container-fluid">
       
-      
+    
       <div className="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 className="h3 mb-0 text-gray-800">💡 Post Your Idea</h1>
-        <button 
-          onClick={goBack} 
-          className="btn btn-sm btn-secondary"
-        >
-          Back to Dashboard
+        <button onClick={goBack} className="btn btn-primary btn-sm">
+          ← Back to Dashboard
         </button>
       </div>
 
-      
+     
       <div className="row justify-content-center">
         <div className="col-lg-8">
           <div className="card shadow">
             <div className="card-body p-4">
               
-            
+           
               <div className="text-center mb-4">
                 <div style={{ fontSize: '3.5rem' }}>🚀</div>
                 <h3 className="text-primary font-weight-bold">Share Your Innovation</h3>
@@ -129,16 +145,16 @@ const PostIdeaPage = () => {
                 </p>
               </div>
 
-             
+            
               {message && (
                 <div className={`alert ${messageType === 'success' ? 'alert-success' : 'alert-danger'} text-center`}>
                   {message}
                 </div>
               )}
 
-             
               <form onSubmit={handleSubmit}>
                 
+               
                 <div className="form-group">
                   <label className="font-weight-bold">📌 Idea Title</label>
                   <input
@@ -151,6 +167,7 @@ const PostIdeaPage = () => {
                   <small className="text-muted">Example: Solar-powered Water Filter for Rural Villages</small>
                 </div>
 
+             
                 <div className="form-group">
                   <label className="font-weight-bold">🏷️ Category</label>
                   <select
@@ -175,7 +192,7 @@ const PostIdeaPage = () => {
                   </select>
                 </div>
 
-               
+                
                 <div className="form-group">
                   <label className="font-weight-bold">📝 Description</label>
                   <textarea
@@ -188,7 +205,6 @@ const PostIdeaPage = () => {
                   <small className="text-muted">Be clear and specific so others can understand your vision</small>
                 </div>
 
-               
                 <div className="text-center mt-4">
                   <button
                     type="submit"
@@ -215,12 +231,11 @@ const PostIdeaPage = () => {
                 </div>
               </form>
 
-             
+              
               <div className="text-center mt-4 pt-3 border-top">
                 <p className="text-muted font-italic">
                   💡 "The best way to predict the future is to create it."
                 </p>
-              
               </div>
             </div>
           </div>

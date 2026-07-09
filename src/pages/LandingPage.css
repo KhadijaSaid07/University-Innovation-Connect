@@ -1,8 +1,4 @@
-/* ============================================
-   LANDING PAGE - UIC Theme
-   ============================================ */
 
-/* ---------- NAVIGATION ---------- */
 .landing-nav {
   padding: 16px 0;
   background: #FFFFFF;
@@ -316,9 +312,7 @@
   box-shadow: 0 8px 28px rgba(255, 255, 255, 0.2);
 }
 
-/* ============================================
-   FOOTER - IMPROVED VERSION
-   ============================================ */
+
 
 .landing-footer {
   background: #0F0A1A;
@@ -331,7 +325,7 @@
   margin: 0 auto;
 }
 
-/* Footer Top - 4 Columns */
+
 .footer-top {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -378,7 +372,7 @@
   min-width: 24px;
 }
 
-/* Brand Column */
+
 .footer-brand {
   display: flex;
   align-items: center;
@@ -416,7 +410,7 @@
   margin-bottom: 10px;
 }
 
-/* Footer Bottom */
+
 .footer-bottom {
   padding-top: 20px;
   text-align: center;
@@ -435,7 +429,7 @@
   margin: 0;
 }
 
-/* ---------- RESPONSIVE ---------- */
+
 @media (max-width: 992px) {
   .footer-top {
     grid-template-columns: 1fr 1fr;

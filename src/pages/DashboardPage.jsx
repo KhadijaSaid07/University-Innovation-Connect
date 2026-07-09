@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 const DashboardPage = () => {
   const navigate = useNavigate()
   
-  // All data starts at 0 - we will update when API connects
+ 
   const [ideas, setIdeas] = useState([])
   const [stats, setStats] = useState({
     totalIdeas: 0,
@@ -19,10 +19,10 @@ const DashboardPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-      
+       
         // const token = localStorage.getItem('token')
         // 
-        // // Fetch ideas from backend
+        // // ✅ Fetch all ideas
         // const response = await fetch('http://localhost:8080/api/ideas', {
         //   headers: {
         //     'Authorization': `Bearer ${token}`,
@@ -36,34 +36,29 @@ const DashboardPage = () => {
         // 
         // const data = await response.json()
         // setIdeas(data)
-        // 
-        // // Calculate stats from data
-        // const totalVotes = data.reduce((sum, idea) => sum + (idea.votes || 0), 0)
-        // const totalComments = data.reduce((sum, idea) => sum + (idea.comments || 0), 0)
-        // const categories = new Set(data.map(idea => idea.category))
-        // 
-        // setStats({
-        //   totalIdeas: data.length,
-        //   totalVotes: totalVotes,
-        //   totalComments: totalComments,
-        //   totalCategories: categories.size
-        // })
-        // 
-        // setLoading(false)
-   
+        
 
-        setIdeas([])
+        // ✅ For now 
+        const storedIdeas = JSON.parse(localStorage.getItem('ideas') || '[]')
+        setIdeas(storedIdeas)
+
+       
+        const totalVotes = storedIdeas.reduce((sum, idea) => sum + (idea.votes || 0), 0)
+        const totalComments = storedIdeas.reduce((sum, idea) => sum + (idea.comments || 0), 0)
+        const categories = new Set(storedIdeas.map(idea => idea.category))
+
         setStats({
-          totalIdeas: 0,
-          totalVotes: 0,
-          totalComments: 0,
-          totalCategories: 0
+          totalIdeas: storedIdeas.length,
+          totalVotes: totalVotes,
+          totalComments: totalComments,
+          totalCategories: categories.size
         })
+
         setLoading(false)
 
       } catch (err) {
         console.error('Error:', err)
-        setError('Could not load data')
+        setError('Could not load dashboard data')
         setLoading(false)
       }
     }
@@ -71,12 +66,12 @@ const DashboardPage = () => {
     fetchData()
   }, [])
 
- 
+
   const goToPostIdea = () => {
     navigate('/post-idea')
   }
 
-
+ 
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -104,7 +99,7 @@ const DashboardPage = () => {
     )
   }
 
-
+ 
   return (
     <>
      
@@ -114,15 +109,14 @@ const DashboardPage = () => {
         </h1>
         <button
           onClick={goToPostIdea}
-          className="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
+          className="btn btn-sm btn-primary shadow-sm"
         >
           <i className="fas fa-plus fa-sm text-white-50" /> Post New Idea
         </button>
       </div>
 
-     
+    
       <div className="row">
-      
         <div className="col-xl-3 col-md-6 mb-4">
           <div className="card border-left-primary shadow h-100 py-2">
             <div className="card-body">
@@ -163,7 +157,6 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        
         <div className="col-xl-3 col-md-6 mb-4">
           <div className="card border-left-info shadow h-100 py-2">
             <div className="card-body">
@@ -184,7 +177,6 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        
         <div className="col-xl-3 col-md-6 mb-4">
           <div className="card border-left-warning shadow h-100 py-2">
             <div className="card-body">
@@ -206,7 +198,7 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      
+     
       <div className="row">
         <div className="col-12">
           <div className="card shadow mb-4">
@@ -217,7 +209,6 @@ const DashboardPage = () => {
             </div>
             <div className="card-body">
               {ideas.length === 0 ? (
-               
                 <div className="text-center py-5">
                   <div style={{ fontSize: '4rem' }}>💡</div>
                   <h5 className="text-gray-800 mt-3">No Ideas Yet</h5>
@@ -232,15 +223,14 @@ const DashboardPage = () => {
                   </button>
                 </div>
               ) : (
-               
                 <div className="table-responsive">
                   <table className="table table-bordered">
                     <thead>
                       <tr>
                         <th>#</th>
                         <th>Title</th>
-                        <th>Category</th>
                         <th>Author</th>
+                        <th>Category</th>
                         <th>Votes</th>
                         <th>Comments</th>
                         <th>Date</th>
@@ -256,8 +246,8 @@ const DashboardPage = () => {
                               {idea.title}
                             </Link>
                           </td>
-                          <td>{idea.category}</td>
                           <td>{idea.author}</td>
+                          <td>{idea.category}</td>
                           <td>
                             <span className="badge badge-success">
                               ⭐ {idea.votes || 0}

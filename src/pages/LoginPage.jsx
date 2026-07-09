@@ -1,22 +1,26 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-
 const LoginPage = () => {
   const navigate = useNavigate()
   
- 
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
- 
+  
+  const getUserByEmail = (email) => {
+    const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
+    return users.find(user => user.email === email)
+  }
+
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    // Validate form
     if (!email || !password) {
       setError('⚠️ Please fill in all fields')
       return
@@ -45,23 +49,45 @@ const LoginPage = () => {
       // 
       // const data = await response.json()
       // 
-      // // Save token and user data
+      // // Save user data
       // localStorage.setItem('token', data.token)
-      // localStorage.setItem('user', JSON.stringify(data.user))
+      // localStorage.setItem('user', JSON.stringify({
+      //   name: data.user.name,
+      //   email: data.user.email,
+      //   role: data.user.role,
+      //   idNumber: data.user.idNumber
+      // }))
       // 
-      // // Redirect to dashboard
-      // navigate('/dashboard')
+      // // Redirect based on role
+      // if (data.user.role === 'Lecturer') {
+      //   navigate('/lecturer-dashboard')
+      // } else {
+      //   navigate('/dashboard')
+      // }
      
-
       // For now 
       setTimeout(() => {
+        // ✅ Check if user exists in registered users
+        const user = getUserByEmail(email)
+        
+        if (!user) {
+          setError('❌ Account not found. Please register first.')
+          setLoading(false)
+          return
+        }
+        
+       
+        
+        // Set current user
         localStorage.setItem('token', 'demo-token-123456')
-        localStorage.setItem('user', JSON.stringify({
-          name: 'user',
-          email: email,
-          role: 'Student'
-        }))
-        navigate('/dashboard')
+        localStorage.setItem('user', JSON.stringify(user))
+        
+     
+        if (user.role === 'Lecturer') {
+          navigate('/lecturer-dashboard')
+        } else {
+          navigate('/dashboard')
+        }
       }, 1500)
 
     } catch (err) {
@@ -71,29 +97,28 @@ const LoginPage = () => {
     }
   }
 
- 
+
   const togglePassword = () => {
     setShowPassword(!showPassword)
   }
 
- 
   return (
     <div className="container-fluid" style={{ minHeight: '100vh', background: '#f5f0ff' }}>
       <div className="row justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
         <div className="col-lg-5 col-md-7">
           
-          
+        
           <div className="card shadow-lg border-0">
             <div className="card-body p-5">
               
-            
+             
               <div className="text-center mb-4">
                 <div style={{ fontSize: '3rem' }}>🌊</div>
                 <h2 className="font-weight-bold text-gray-800">Welcome Back</h2>
                 <p className="text-muted">Sign in to continue innovating</p>
               </div>
 
-            
+             
               {error && (
                 <div className="alert alert-danger text-center">
                   {error}
@@ -102,21 +127,20 @@ const LoginPage = () => {
 
              
               <form onSubmit={handleSubmit}>
-                
-               
-               
+             
                 <div className="form-group">
                   <label className="font-weight-bold">📧 Email Address</label>
                   <input
                     type="email"
                     className="form-control"
-                    placeholder="Enter your email"
+                    placeholder="Enter your registered email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
 
-            
+             
                 <div className="form-group">
                   <label className="font-weight-bold">🔒 Password</label>
                   <div className="input-group">
@@ -126,6 +150,7 @@ const LoginPage = () => {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      required
                     />
                     <div className="input-group-append">
                       <button
@@ -138,6 +163,7 @@ const LoginPage = () => {
                     </div>
                   </div>
                 </div>
+
 
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <div className="custom-control custom-checkbox">
@@ -155,7 +181,7 @@ const LoginPage = () => {
                   </Link>
                 </div>
 
-              
+                
                 <button
                   type="submit"
                   className="btn btn-primary btn-lg btn-block"
@@ -182,7 +208,7 @@ const LoginPage = () => {
                 </p>
               </div>
 
-           
+          
               <div className="text-center mt-3">
                 <p className="text-muted small">
                   By continuing, you agree to our{' '}
@@ -201,7 +227,7 @@ const LoginPage = () => {
                 <p className="text-muted small font-italic">
                   💡 "Innovation distinguishes between a leader and a follower."
                 </p>
-        
+                <p className="text-muted small">- Steve Jobs</p>
               </div>
             </div>
           </div>
@@ -217,7 +243,7 @@ const LoginPage = () => {
             <Link to="/privacy-policy" className="text-muted small mx-2">Privacy</Link>
           </div>
 
-          
+       
           <div className="text-center mt-2">
             <p className="text-muted small">
               © 2026 University Innovation Connect (UIC) - SUZA Zanzibar
