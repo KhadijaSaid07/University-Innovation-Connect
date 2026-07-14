@@ -1,22 +1,16 @@
 import React from 'react'
 import { createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom'
 
-
 import HomeLayout from '../pages/HomeLayout'
 import DashboardPage from '../pages/DashboardPage'
-import IdeaDetailsPage from '../pages/IdeaDetailsPage'
 import LeaderboardPage from '../pages/LeaderboardPage'
-import LecturersPage from '../pages/LecturersPage'
 import MyIdeasPage from '../pages/MyIdeasPage'
 import PostIdeaPage from '../pages/PostIdeaPage'
 import ProfilePage from '../pages/ProfilePage'
 
-
 import LecturerDashboardPage from '../pages/LecturerDashboardPage'
-import LecturerIdeaDetailsPage from '../pages/LecturerIdeaDetailsPage'
 import LecturerLeaderboardPage from '../pages/LecturerLeaderboardPage'
 import LecturerProfilePage from '../pages/LecturerProfilePage'
-
 
 import LandingPage from '../pages/LandingPage'
 import AboutPage from '../pages/AboutPage'
@@ -25,15 +19,16 @@ import PrivacyPolicyPage from '../pages/PrivacyPolicyPage'
 import MissionPage from '../pages/MissionPage'
 import LoginPage from '../pages/LoginPage'
 import RegisterPage from '../pages/RegisterPage'
-import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 
-
+import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
+import AdminUsersPage from '../pages/admin/AdminUsersPage'
+import AdminIdeasPage from '../pages/admin/AdminIdeasPage'
+import AdminLecturersPage from '../pages/admin/AdminLecturersPage'
 
 const UicRoutes = createBrowserRouter(
   createRoutesFromElements(
     <Route>
       
-
       <Route
         path="/"
         element={<LandingPage />}
@@ -69,33 +64,16 @@ const UicRoutes = createBrowserRouter(
         element={<RegisterPage />}
       />
 
-      <Route
-        path="/forgot-password"
-        element={<ForgotPasswordPage />}
-      />
-
-      
       <Route path="/" element={<HomeLayout />}>
         
-        {/* Student Routes */}
         <Route
           path="/dashboard"
           element={<DashboardPage />}
         />
 
         <Route
-          path="/idea-details"
-          element={<IdeaDetailsPage />}
-        />
-
-        <Route
           path="/leaderboard"
           element={<LeaderboardPage />}
-        />
-
-        <Route
-          path="/lecturers"
-          element={<LecturersPage />}
         />
 
         <Route
@@ -115,16 +93,9 @@ const UicRoutes = createBrowserRouter(
 
       </Route>
 
-
-
       <Route
         path="/lecturer-dashboard"
         element={<LecturerDashboardPage />}
-      />
-
-      <Route
-        path="/lecturer-idea/:id"
-        element={<LecturerIdeaDetailsPage />}
       />
 
       <Route
@@ -135,6 +106,26 @@ const UicRoutes = createBrowserRouter(
       <Route
         path="/lecturer-profile"
         element={<LecturerProfilePage />}
+      />
+
+      <Route
+        path="/admin-dashboard"
+        element={<AdminDashboardPage />}
+      />
+
+      <Route
+        path="/admin-users"
+        element={<AdminUsersPage />}
+      />
+
+      <Route
+        path="/admin-ideas"
+        element={<AdminIdeasPage />}
+      />
+
+      <Route
+        path="/admin-lecturers"
+        element={<AdminLecturersPage />}
       />
 
     </Route>

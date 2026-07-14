@@ -1,341 +1,297 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import IdeaModal from '../components/IdeaModal'
+
+const API = 'http://localhost:8080/api/v2/innovationConnect'
 
 const MyIdeasPage = () => {
   const navigate = useNavigate()
   
-  
+  // State
   const [ideas, setIdeas] = useState([])
+  const [stats, setStats] = useState({ total: 0, votes: 0, comments: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [stats, setStats] = useState({
-    total: 0,
-    totalVotes: 0,
-    totalComments: 0
-  })
+  const [selectedIdea, setSelectedIdea] = useState(null)
 
+  // Get logged in user
+  const getUser = () => {
+    const data = localStorage.getItem('user')
+    if (data) {
+      try { return JSON.parse(data) } catch { return null }
+    }
+    return null
+  }
 
+  // Fetch my ideas from backend
   useEffect(() => {
     const fetchMyIdeas = async () => {
       try {
-   
-        // const token = localStorage.getItem('token')
-        // 
-        // // Fetch user's ideas from backend
-        // const response = await fetch('http://localhost:8080/api/ideas/my-ideas', {
-        //   headers: {
-        //     'Authorization': `Bearer ${token}`,
-        //     'Content-Type': 'application/json'
-        //   }
-        // })
-        // 
-        // if (!response.ok) {
-        //   throw new Error('Failed to fetch your ideas')
-        // }
-        // 
-        // const data = await response.json()
-        // setIdeas(data)
-        // 
-        // // Calculate stats
-        // const totalVotes = data.reduce((sum, idea) => sum + (idea.votes || 0), 0)
-        // const totalComments = data.reduce((sum, idea) => sum + (idea.comments || 0), 0)
-        // 
-        // setStats({
-        //   total: data.length,
-        //   totalVotes: totalVotes,
-        //   totalComments: totalComments
-        // })
-        // 
-        // setLoading(false)
-
-
-      
-        setIdeas([])
-        setStats({
-          total: 0,
-          totalVotes: 0,
-          totalComments: 0
+        const user = getUser()
+        const token = localStorage.getItem('token')
+        
+        // Fetch all ideas and filter by user
+        const res = await fetch(`${API}/idea`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         })
-        setLoading(false)
-
-      } catch (err) {
-        console.error('Error:', err)
+        
+        if (!res.ok) throw new Error('Failed to fetch')
+        
+        const data = await res.json()
+        
+        // Filter ideas by current user
+        const myIdeas = data.filter(idea => idea.user?.id === user?.id)
+        setIdeas(myIdeas)
+        
+        // Calculate stats
+        const votes = myIdeas.reduce((sum, i) => sum + (i.votes?.length || 0), 0)
+        const comments = myIdeas.reduce((sum, i) => sum + (i.comments?.length || 0), 0)
+        setStats({ total: myIdeas.length, votes, comments })
+        
+      } catch {
         setError('Could not load your ideas')
+      } finally {
         setLoading(false)
       }
     }
-    
     fetchMyIdeas()
   }, [])
 
-  
-  const goToPostIdea = () => {
-    navigate('/post-idea')
-  }
+  // Navigate to post idea
+  const goToPost = () => navigate('/post-idea')
 
-  
-  const goBack = () => {
-    navigate('/dashboard')
-  }
+  // Go back to dashboard
+  const goBack = () => navigate('/dashboard')
 
- 
-  const deleteIdea = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this idea?')) {
-      return
-    }
-
+  // Delete idea
+  const deleteIdea = async (id, title) => {
+    if (!window.confirm(`Delete "${title}"?`)) return
+    
     try {
-  
-      // const token = localStorage.getItem('token')
-      // 
-      // const response = await fetch(`http://localhost:8080/api/ideas/${id}`, {
-      //   method: 'DELETE',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Failed to delete idea')
-      // }
-      // 
-      // // Remove from state
-      // const updatedIdeas = ideas.filter(idea => idea.id !== id)
-      // setIdeas(updatedIdeas)
-      // 
-      // // Update stats
-      // const totalVotes = updatedIdeas.reduce((sum, idea) => sum + (idea.votes || 0), 0)
-      // const totalComments = updatedIdeas.reduce((sum, idea) => sum + (idea.comments || 0), 0)
-      // 
-      // setStats({
-      //   total: updatedIdeas.length,
-      //   totalVotes: totalVotes,
-      //   totalComments: totalComments
-      // })
-  
-
-     
-      const updatedIdeas = ideas.filter(idea => idea.id !== id)
-      setIdeas(updatedIdeas)
-      
-      const totalVotes = updatedIdeas.reduce((sum, idea) => sum + (idea.votes || 0), 0)
-      const totalComments = updatedIdeas.reduce((sum, idea) => sum + (idea.comments || 0), 0)
-      
-      setStats({
-        total: updatedIdeas.length,
-        totalVotes: totalVotes,
-        totalComments: totalComments
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${API}/idea/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
       })
-
-    } catch (err) {
-      console.error('Error:', err)
-      alert('Could not delete idea')
+      
+      if (!res.ok) throw new Error('Delete failed')
+      
+      // Update local state
+      const updated = ideas.filter(i => i.id !== id)
+      setIdeas(updated)
+      
+      const votes = updated.reduce((sum, i) => sum + (i.votes?.length || 0), 0)
+      const comments = updated.reduce((sum, i) => sum + (i.comments?.length || 0), 0)
+      setStats({ total: updated.length, votes, comments })
+      
+    } catch {
+      alert('Failed to delete idea')
     }
   }
 
+  // Open modal
+  const openModal = (idea) => setSelectedIdea(idea)
+  const closeModal = () => setSelectedIdea(null)
 
+  // Handle vote
+  const handleVote = async (id) => {
+    try {
+      const user = getUser()
+      const token = localStorage.getItem('token')
+      
+      const res = await fetch(`${API}/vote`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ideaId: id, userId: user?.id || 1 })
+      })
+      
+      if (!res.ok) throw new Error('Vote failed')
+      
+      // Update local state
+      setIdeas(ideas.map(i => 
+        i.id === id ? { ...i, votes: [...(i.votes || []), {}] } : i
+      ))
+      if (selectedIdea?.id === id) {
+        setSelectedIdea({ ...selectedIdea, votes: [...(selectedIdea.votes || []), {}] })
+      }
+      
+    } catch {
+      alert('Failed to vote')
+    }
+  }
+
+  // Handle feedback
+  const handleFeedback = async (id, comment, callback) => {
+    try {
+      const user = getUser()
+      const token = localStorage.getItem('token')
+      
+      const res = await fetch(`${API}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          comment: comment,
+          idea: id,
+          lecturer: user?.id || 1
+        })
+      })
+      
+      if (!res.ok) throw new Error('Feedback failed')
+      
+      const data = await res.json()
+      
+      setIdeas(ideas.map(i => 
+        i.id === id ? { ...i, feedbacks: [...(i.feedbacks || []), data] } : i
+      ))
+      if (selectedIdea?.id === id) {
+        setSelectedIdea({ ...selectedIdea, feedbacks: [...(selectedIdea.feedbacks || []), data] })
+      }
+      
+      if (callback) callback()
+      
+    } catch {
+      alert('Failed to submit feedback')
+    }
+  }
+
+  // Loading state
   if (loading) {
     return (
       <div className="text-center py-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="sr-only">Loading...</span>
-        </div>
+        <div className="spinner-border text-primary" />
         <p className="mt-2 text-muted">Loading your ideas...</p>
       </div>
     )
   }
 
-  
+  // Error state
   if (error) {
     return (
       <div className="text-center py-5">
         <div style={{ fontSize: '3rem' }}>⚠️</div>
         <h5 className="text-danger mt-3">{error}</h5>
-        <button 
-          className="btn btn-primary mt-3"
-          onClick={() => window.location.reload()}
-        >
+        <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
           Try Again
         </button>
       </div>
     )
   }
 
- 
   return (
     <div className="container-fluid">
       
-     
-      <div className="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 className="h3 mb-0 text-gray-800">
-          📁 My Ideas
-        </h1>
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="h3 mb-0">📁 My Ideas</h1>
         <div>
-          <button 
-            onClick={goBack} 
-            className="btn btn-sm btn-secondary mr-2"
-          >
-             Back to Dashboard
+          <button onClick={goBack} className="btn btn-secondary btn-sm mr-2">
+            ← Back
           </button>
-          <button 
-            onClick={goToPostIdea} 
-            className="btn btn-sm btn-primary"
-          >
-            <i className="fas fa-plus fa-sm text-white-50" /> New Idea
+          <button onClick={goToPost} className="btn btn-primary btn-sm">
+            <i className="fas fa-plus" /> New Idea
           </button>
         </div>
       </div>
 
+      {/* Stats */}
       <div className="row">
-        {/* Total My Ideas */}
-        <div className="col-xl-4 col-md-6 mb-4">
-          <div className="card border-left-primary shadow h-100 py-2">
+        <div className="col-md-4 mb-3">
+          <div className="card border-left-primary shadow h-100">
             <div className="card-body">
-              <div className="row no-gutters align-items-center">
-                <div className="col mr-2">
-                  <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                    💡 My Ideas
-                  </div>
-                  <div className="h5 mb-0 font-weight-bold text-gray-800">
-                    {stats.total}
-                  </div>
-                </div>
-                <div className="col-auto">
-                  <i className="fas fa-lightbulb fa-2x text-gray-300" />
-                </div>
-              </div>
+              <div className="text-xs font-weight-bold text-primary text-uppercase">💡 My Ideas</div>
+              <div className="h5 font-weight-bold">{stats.total}</div>
             </div>
           </div>
         </div>
-
-       
-        <div className="col-xl-4 col-md-6 mb-4">
-          <div className="card border-left-success shadow h-100 py-2">
+        <div className="col-md-4 mb-3">
+          <div className="card border-left-success shadow h-100">
             <div className="card-body">
-              <div className="row no-gutters align-items-center">
-                <div className="col mr-2">
-                  <div className="text-xs font-weight-bold text-success text-uppercase mb-1">
-                    ⭐ Total Votes
-                  </div>
-                  <div className="h5 mb-0 font-weight-bold text-gray-800">
-                    {stats.totalVotes}
-                  </div>
-                </div>
-                <div className="col-auto">
-                  <i className="fas fa-star fa-2x text-gray-300" />
-                </div>
-              </div>
+              <div className="text-xs font-weight-bold text-success text-uppercase">⭐ Total Votes</div>
+              <div className="h5 font-weight-bold">{stats.votes}</div>
             </div>
           </div>
         </div>
-
-      
-        <div className="col-xl-4 col-md-6 mb-4">
-          <div className="card border-left-info shadow h-100 py-2">
+        <div className="col-md-4 mb-3">
+          <div className="card border-left-info shadow h-100">
             <div className="card-body">
-              <div className="row no-gutters align-items-center">
-                <div className="col mr-2">
-                  <div className="text-xs font-weight-bold text-info text-uppercase mb-1">
-                    💬 Total Comments
-                  </div>
-                  <div className="h5 mb-0 font-weight-bold text-gray-800">
-                    {stats.totalComments}
-                  </div>
-                </div>
-                <div className="col-auto">
-                  <i className="fas fa-comments fa-2x text-gray-300" />
-                </div>
-              </div>
+              <div className="text-xs font-weight-bold text-info text-uppercase">💬 Total Comments</div>
+              <div className="h5 font-weight-bold">{stats.comments}</div>
             </div>
           </div>
         </div>
       </div>
 
-    
-      <div className="row">
-        <div className="col-12">
-          <div className="card shadow mb-4">
-            <div className="card-header py-3">
-              <h6 className="m-0 font-weight-bold text-primary">
-                📝 Ideas You've Posted
-              </h6>
+      {/* Ideas Table */}
+      <div className="card shadow">
+        <div className="card-header py-3">
+          <h6 className="m-0 font-weight-bold text-primary">📝 Ideas You've Posted</h6>
+        </div>
+        <div className="card-body">
+          {ideas.length === 0 ? (
+            <div className="text-center py-5">
+              <div style={{ fontSize: '4rem' }}>📭</div>
+              <h5 className="text-gray-800 mt-3">No Ideas Yet</h5>
+              <button onClick={goToPost} className="btn btn-primary mt-2">
+                Post Your First Idea
+              </button>
             </div>
-            <div className="card-body">
-              {ideas.length === 0 ? (
-               
-                <div className="text-center py-5">
-                  <div style={{ fontSize: '4rem' }}>📭</div>
-                  <h5 className="text-gray-800 mt-3">No Ideas Yet</h5>
-                  <p className="text-muted">
-                    You haven't posted any ideas yet.
-                  </p>
-                  <button 
-                    className="btn btn-primary mt-2"
-                    onClick={goToPostIdea}
-                  >
-                    🚀 Post Your First Idea
-                  </button>
-                </div>
-              ) : (
-               
-                <div className="table-responsive">
-                  <table className="table table-bordered">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Title</th>
-                        <th>Category</th>
-                        <th>Votes</th>
-                        <th>Comments</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ideas.map((idea, index) => (
-                        <tr key={idea.id}>
-                          <td>{index + 1}</td>
-                          <td>
-                            <Link to={`/idea/${idea.id}`} className="text-primary">
-                              {idea.title}
-                            </Link>
-                          </td>
-                          <td>{idea.category}</td>
-                          <td>
-                            <span className="badge badge-success">
-                              ⭐ {idea.votes || 0}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="badge badge-info">
-                              💬 {idea.comments || 0}
-                            </span>
-                          </td>
-                          <td>{idea.date || 'Just now'}</td>
-                          <td>
-                            <Link 
-                              to={`/idea/${idea.id}`} 
-                              className="btn btn-sm btn-primary mr-1"
-                            >
-                              View
-                            </Link>
-                            <button 
-                              className="btn btn-sm btn-danger"
-                              onClick={() => deleteIdea(idea.id)}
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Votes</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ideas.map((idea, i) => (
+                    <tr key={idea.id}>
+                      <td>{i + 1}</td>
+                      <td>{idea.title}</td>
+                      <td>{idea.category}</td>
+                      <td>⭐ {idea.votes?.length || 0}</td>
+                      <td>{idea.createdDate || 'Just now'}</td>
+                      <td>
+                        <button 
+                          className="btn btn-sm btn-primary mr-1"
+                          onClick={() => openModal(idea)}
+                        >
+                          <i className="fas fa-eye" /> View
+                        </button>
+                        <button 
+                          className="btn btn-sm btn-danger"
+                          onClick={() => deleteIdea(idea.id, idea.title)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
+          )}
         </div>
       </div>
+
+      {/* Idea Modal */}
+      <IdeaModal
+        idea={selectedIdea}
+        onClose={closeModal}
+        onVote={handleVote}
+        onFeedback={handleFeedback}
+      />
     </div>
   )
 }

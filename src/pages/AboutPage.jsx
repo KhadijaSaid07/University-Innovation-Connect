@@ -133,7 +133,7 @@ const AboutPage = () => {
           {/* Back to Home */}
           <div className="about-back">
             <Link to="/" className="btn-primary">
-              ← Back to Home
+               Back to Home
             </Link>
           </div>
 
@@ -145,7 +145,7 @@ const AboutPage = () => {
         <div className="footer-container">
           <p className="footer-tagline">🎓 SUZA Innovation Hub - Where Ideas Become Reality</p>
           <p className="footer-copyright">
-            © 2025 University Innovation Connect (UIC) - SUZA Zanzibar
+            © 2026 University Innovation Connect (UIC) - SUZA Zanzibar
           </p>
         </div>
       </footer>

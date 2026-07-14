@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './ProfilePage.css'
 
+const API = 'http://localhost:8080/api/v2/innovationConnect'
+
 const ProfilePage = () => {
   const navigate = useNavigate()
   
-
+  // State
   const [user, setUser] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    registrationNumber: '',
-    phone: '',
     role: '',
+    phone: '',
     department: '',
     bio: ''
   })
@@ -20,95 +22,70 @@ const ProfilePage = () => {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
- 
-  const getLoggedInUser = () => {
-    const userStr = localStorage.getItem('user')
-    if (userStr) {
-      try {
-        return JSON.parse(userStr)
-      } catch (e) {
-        return null
-      }
+  // Get logged in user
+  const getUser = () => {
+    const data = localStorage.getItem('user')
+    if (data) {
+      try { return JSON.parse(data) } catch { return null }
     }
     return null
   }
 
- 
+  // Fetch profile from backend
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const loggedInUser = getLoggedInUser()
+        const userData = getUser()
+        const token = localStorage.getItem('token')
         
-     
-        // const token = localStorage.getItem('token')
-        // 
-        // const response = await fetch('http://localhost:8080/api/users/profile', {
-        //   headers: {
-        //     'Authorization': `Bearer ${token}`,
-        //     'Content-Type': 'application/json'
-        //   }
-        // })
-        // 
-        // if (!response.ok) {
-        //   throw new Error('Failed to fetch profile')
-        // }
-        // 
-        // const data = await response.json()
-        // setUser({
-        //   name: data.name || '',
-        //   email: data.email || '',
-        //   registrationNumber: data.registrationNumber || '',
-        //   phone: data.phone || '',
-        //   role: data.role || '',
-        //   department: data.department || '',
-        //   bio: data.bio || ''
-        // })
-        // setLoading(false)
-        
-
-        if (loggedInUser) {
+        if (userData?.id) {
+          const res = await fetch(`${API}/user/${userData.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          
+          if (!res.ok) throw new Error('Failed to fetch')
+          
+          const data = await res.json()
+          
           setUser({
-            name: loggedInUser.name || '',
-            email: loggedInUser.email || '',
-            registrationNumber: loggedInUser.idNumber || '',
-            phone: loggedInUser.phone || '',
-            role: loggedInUser.role || '',
-            department: loggedInUser.department || '',
-            bio: loggedInUser.bio || ''
+            firstName: data.firstName || '',
+            lastName: data.lastName || '',
+            email: data.email || '',
+            role: data.role || '',
+            phone: data.phone || '',
+            department: data.department || '',
+            bio: data.bio || ''
           })
         } else {
-          setUser({
-            name: '',
-            email: '',
-            registrationNumber: '',
-            phone: '',
-            role: '',
-            department: '',
-            bio: ''
-          })
+          const localUser = getUser()
+          if (localUser) {
+            setUser({
+              firstName: localUser.firstName || '',
+              lastName: localUser.lastName || '',
+              email: localUser.email || '',
+              role: localUser.role || '',
+              phone: localUser.phone || '',
+              department: localUser.department || '',
+              bio: localUser.bio || ''
+            })
+          }
         }
-        setLoading(false)
-
-      } catch (err) {
-        console.error('Error:', err)
+      } catch {
         setError('Could not load profile')
+      } finally {
         setLoading(false)
       }
     }
-    
     fetchProfile()
   }, [])
 
- 
+  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target
-    setUser({
-      ...user,
-      [name]: value
-    })
+    setUser({ ...user, [name]: value })
   }
 
-
+  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -116,161 +93,125 @@ const ProfilePage = () => {
     setMessage('')
 
     try {
-       
-      // const token = localStorage.getItem('token')
-      // 
-      // const response = await fetch('http://localhost:8080/api/users/profile', {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     name: user.name,
-      //     phone: user.phone,
-      //     department: user.department,
-      //     bio: user.bio
-      //   })
-      // })
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Failed to update profile')
-      // }
-      // 
-      // const data = await response.json()
-      // 
-      // // Update localStorage with new data
-      // const loggedInUser = getLoggedInUser()
-      // if (loggedInUser) {
-      //   const updatedUser = {
-      //     ...loggedInUser,
-      //     name: data.name,
-      //     phone: data.phone,
-      //     department: data.department,
-      //     bio: data.bio
-      //   }
-      //   localStorage.setItem('user', JSON.stringify(updatedUser))
-      // }
-      // 
-      // setUser(data)
-      // setMessage('✅ Profile updated successfully!')
-      // setTimeout(() => setMessage(''), 3000)
+      const userData = getUser()
+      const token = localStorage.getItem('token')
       
-
-      // ✅ Update localStorage with new data (for demo)
-      const loggedInUser = getLoggedInUser()
-      if (loggedInUser) {
-        const updatedUser = {
-          ...loggedInUser,
-          name: user.name,
-          phone: user.phone,
+      const res = await fetch(`${API}/user/${userData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          firstName: user.firstName,
+          lastName: user.lastName,
           department: user.department,
           bio: user.bio
-        }
-        localStorage.setItem('user', JSON.stringify(updatedUser))
+        })
+      })
+      
+      if (!res.ok) throw new Error('Update failed')
+      
+      const data = await res.json()
+      
+      const updatedUser = {
+        ...userData,
+        firstName: data.firstName || user.firstName,
+        lastName: data.lastName || user.lastName,
+        department: data.department || user.department,
+        bio: data.bio || user.bio
       }
-
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      
       setMessage('✅ Profile updated successfully!')
       setTimeout(() => setMessage(''), 3000)
-
-    } catch (err) {
-      console.error('Error:', err)
+      
+    } catch {
       setError('Could not update profile')
     } finally {
       setSaving(false)
     }
   }
 
-  // ----- GO BACK -----
-  const goBack = () => {
-    navigate('/dashboard')
-  }
+  // Go back
+  const goBack = () => navigate('/dashboard')
 
-  // ----- LOADING -----
+  // Loading state
   if (loading) {
     return (
       <div className="profile-loading">
-        <div className="spinner-border text-primary" role="status">
-          <span className="sr-only">Loading...</span>
-        </div>
+        <div className="spinner-border text-primary" />
         <p className="mt-2 text-muted">Loading profile...</p>
       </div>
     )
   }
 
-  // ----- RENDER -----
+  // Get full name
+  const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
+  const initial = user.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'
+
   return (
     <div className="profile-page">
       
-      {/* HEADER */}
+      {/* Header */}
       <div className="profile-header">
         <div className="header-container">
-          <h1 className="h3 mb-0 text-gray-800">
-            👤 My Profile
-          </h1>
-          <button 
-            onClick={goBack} 
-            className="btn-back-dashboard"
-          >
-            ← Back to Dashboard
+          <h1 className="h3 mb-0">👤 My Profile</h1>
+          <button onClick={goBack} className="btn btn-secondary btn-sm">
+            ← Back
           </button>
         </div>
       </div>
 
-      {/* CONTENT */}
+      {/* Content */}
       <div className="profile-content">
         <div className="profile-container">
           
           {/* Profile Card */}
           <div className="profile-card">
             
-            {/* Avatar Section */}
+            {/* Avatar */}
             <div className="profile-avatar-section">
-              <div className="profile-avatar">
-                {user.name ? user.name.charAt(0).toUpperCase() : '👤'}
-              </div>
-              <h4 className="profile-name">
-                {user.name || 'User'}
-              </h4>
+              <div className="profile-avatar">{initial}</div>
+              <h4 className="profile-name">{fullName}</h4>
               <p className="profile-role">
                 <span className="badge-role">{user.role || 'Student'}</span>
               </p>
             </div>
 
             {/* Messages */}
-            {message && (
-              <div className="alert alert-success">
-                {message}
-              </div>
-            )}
-            {error && (
-              <div className="alert alert-danger">
-                {error}
-              </div>
-            )}
+            {message && <div className="alert alert-success">{message}</div>}
+            {error && <div className="alert alert-danger">{error}</div>}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="profile-form">
               
-              {/* Full Name */}
               <div className="form-group">
-                <label className="font-weight-bold">👤 Full Name</label>
+                <label>👤 First Name</label>
                 <input
                   type="text"
-                  name="name"
+                  name="firstName"
                   className="form-control"
-                  placeholder="Enter your full name"
-                  value={user.name}
+                  value={user.firstName}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Email - Read Only */}
               <div className="form-group">
-                <label className="font-weight-bold">📧 Email</label>
+                <label>👤 Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  className="form-control"
+                  value={user.lastName}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>📧 Email</label>
                 <input
                   type="email"
-                  name="email"
                   className="form-control"
                   value={user.email}
                   disabled
@@ -279,86 +220,53 @@ const ProfilePage = () => {
                 <small className="text-muted">Email cannot be changed</small>
               </div>
 
-              {/* Registration Number - Read Only */}
-              <div className="form-group">
-                <label className="font-weight-bold">🎓 Registration Number</label>
-                <input
-                  type="text"
-                  name="registrationNumber"
-                  className="form-control"
-                  value={user.registrationNumber}
-                  disabled
-                  style={{ background: '#f8f9fa' }}
-                />
-                <small className="text-muted">Registration number cannot be changed</small>
-              </div>
+            
 
-              {/* Phone */}
               <div className="form-group">
-                <label className="font-weight-bold">📞 Phone Number</label>
+                <label>📞 Phone Number</label>
                 <input
                   type="text"
                   name="phone"
                   className="form-control"
-                  placeholder="Enter your phone number"
-                  value={user.phone}
+                  placeholder="Enter phone number"
+                  value={user.phone || ''}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Department */}
               <div className="form-group">
-                <label className="font-weight-bold">🏛️ Department</label>
+                <label>🏛️ Department</label>
                 <input
                   type="text"
                   name="department"
                   className="form-control"
-                  placeholder="Enter your department"
-                  value={user.department}
+                  placeholder="Enter department"
+                  value={user.department || ''}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Bio */}
               <div className="form-group">
-                <label className="font-weight-bold">📝 Bio</label>
+                <label>📝 Bio</label>
                 <textarea
                   name="bio"
                   className="form-control"
                   rows="3"
                   placeholder="Tell us about yourself..."
-                  value={user.bio}
+                  value={user.bio || ''}
                   onChange={handleChange}
                 />
               </div>
 
-              {/* Buttons */}
               <div className="form-buttons">
-                <button
-                  type="submit"
-                  className="btn-save"
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    '💾 Save Changes'
-                  )}
+                <button type="submit" className="btn-save" disabled={saving}>
+                  {saving ? 'Saving...' : '💾 Save Changes'}
                 </button>
                 <button
                   type="reset"
                   className="btn-reset"
                   onClick={() => {
-                    setUser({
-                      ...user,
-                      name: user.name,
-                      phone: user.phone,
-                      department: user.department,
-                      bio: user.bio
-                    })
+                    setUser({ ...user })
                     setMessage('')
                     setError('')
                   }}
@@ -368,16 +276,12 @@ const ProfilePage = () => {
               </div>
             </form>
 
-            {/* Account Info */}
+          
             <div className="account-info">
               <h6 className="account-title">📋 Account Information</h6>
               <div className="account-details">
-                <div>
-                  <strong>Role:</strong> {user.role || 'Student'}
-                </div>
-                <div>
-                  <strong>Status:</strong> Active
-                </div>
+                <div><strong>Role:</strong> {user.role || 'Student'}</div>
+                <div><strong>Status:</strong> Active</div>
               </div>
             </div>
           </div>

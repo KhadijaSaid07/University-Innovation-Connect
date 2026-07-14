@@ -1,181 +1,179 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import IdeaModal from '../components/IdeaModal'
 import './LecturerDashboardPage.css'
+
+const API = 'http://localhost:8080/api/v2/innovationConnect'
 
 const LecturerDashboardPage = () => {
   const navigate = useNavigate()
   
-
-  const [lecturer, setLecturer] = useState({
-    name: '',
-    email: '',
-    idNumber: '',
-    department: ''
-  })
-  const [stats, setStats] = useState({
-    totalIdeas: 0,
-    pendingReviews: 0,
-    reviewed: 0,
-    totalStudents: 0
-  })
-  const [recentIdeas, setRecentIdeas] = useState([])
+  // State
+  const [lecturer, setLecturer] = useState({ name: '', email: '', department: '' })
+  const [stats, setStats] = useState({ total: 0, pending: 0, reviewed: 0 })
+  const [ideas, setIdeas] = useState([])
   const [loading, setLoading] = useState(true)
-  const [notifications, setNotifications] = useState([])
-  const [unreadNotifications, setUnreadNotifications] = useState(0)
-  const [messages, setMessages] = useState([])
-  const [unreadMessages, setUnreadMessages] = useState(0)
+  const [error, setError] = useState('')
+  const [selectedIdea, setSelectedIdea] = useState(null)
 
-  
-  const getLoggedInUser = () => {
-    const userStr = localStorage.getItem('user')
-    if (userStr) {
-      try {
-        return JSON.parse(userStr)
-      } catch (e) {
-        return null
-      }
+  // Get logged in user
+  const getUser = () => {
+    const data = localStorage.getItem('user')
+    if (data) {
+      try { return JSON.parse(data) } catch { return null }
     }
     return null
   }
 
-  
+  // Fetch data from backend
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const loggedInUser = getLoggedInUser()
+        const user = getUser()
+        const token = localStorage.getItem('token')
         
-      
-        // const token = localStorage.getItem('token')
-        // 
-        // // 1. Get lecturer profile
-        // const profileRes = await fetch('http://localhost:8080/api/lecturers/profile', {
-        //   headers: { 'Authorization': `Bearer ${token}` }
-        // })
-        // const profileData = await profileRes.json()
-        // setLecturer(profileData)
-        // 
-        // // 2. Get stats
-        // const statsRes = await fetch('http://localhost:8080/api/lecturers/stats', {
-        //   headers: { 'Authorization': `Bearer ${token}` }
-        // })
-        // const statsData = await statsRes.json()
-        // setStats(statsData)
-        // 
-        // // 3. Get recent ideas
-        // const ideasRes = await fetch('http://localhost:8080/api/ideas/recent', {
-        //   headers: { 'Authorization': `Bearer ${token}` }
-        // })
-        // const ideasData = await ideasRes.json()
-        // setRecentIdeas(ideasData)
-        // 
-        // // 4. Get notifications
-        // const notifRes = await fetch('http://localhost:8080/api/notifications', {
-        //   headers: { 'Authorization': `Bearer ${token}` }
-        // })
-        // const notifData = await notifRes.json()
-        // setNotifications(notifData)
-        // setUnreadNotifications(notifData.filter(n => !n.read).length)
-        // 
-        // // 5. Get messages
-        // const msgRes = await fetch('http://localhost:8080/api/messages', {
-        //   headers: { 'Authorization': `Bearer ${token}` }
-        // })
-        // const msgData = await msgRes.json()
-        // setMessages(msgData)
-        // setUnreadMessages(msgData.filter(m => !m.read).length)
-        // 
-        // setLoading(false)
-        
-        // For now - empty state (all data from database)
-        setLecturer({
-          name: loggedInUser?.name || '',
-          email: loggedInUser?.email || '',
-          idNumber: loggedInUser?.idNumber || '',
-          department: loggedInUser?.department || ''
+        // Fetch all ideas
+        const res = await fetch(`${API}/idea`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         })
+        
+        if (!res.ok) throw new Error('Failed to fetch')
+        
+        const data = await res.json()
+        setIdeas(data)
+        
+        // Calculate stats
+        const pending = data.filter(i => i.status === 'PENDING').length
+        const reviewed = data.filter(i => i.status === 'APPROVED' || i.status === 'REJECTED').length
         
         setStats({
-          totalIdeas: 0,
-          pendingReviews: 0,
-          reviewed: 0,
-          totalStudents: 0
+          total: data.length,
+          pending: pending,
+          reviewed: reviewed
         })
         
-        setRecentIdeas([])
-        setNotifications([])
-        setUnreadNotifications(0)
-        setMessages([])
-        setUnreadMessages(0)
-        setLoading(false)
+        // Set lecturer info
+        if (user) {
+          setLecturer({
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Lecturer',
+            email: user.email || '',
+            department: user.department || ''
+          })
+        }
         
-      } catch (err) {
-        console.error('Error:', err)
+      } catch {
+        setError('Could not load dashboard')
+      } finally {
         setLoading(false)
       }
     }
-    
     fetchData()
   }, [])
 
-  // ----- MARK NOTIFICATION AS READ -----
-  const markNotificationAsRead = (id) => {
-    // =============================================
-    // TODO: UNCOMMENT WHEN API IS READY
-    // =============================================
-    // const token = localStorage.getItem('token')
-    // await fetch(`http://localhost:8080/api/notifications/${id}/read`, {
-    //   method: 'PUT',
-    //   headers: { 'Authorization': `Bearer ${token}` }
-    // })
-    // =============================================
-    
-    const updated = notifications.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    )
-    setNotifications(updated)
-    setUnreadNotifications(updated.filter(n => !n.read).length)
-  }
-
- 
-  const markMessageAsRead = (id) => {
-
-    // const token = localStorage.getItem('token')
-    // await fetch(`http://localhost:8080/api/messages/${id}/read`, {
-    //   method: 'PUT',
-    //   headers: { 'Authorization': `Bearer ${token}` }
-    // })
-    
-    const updated = messages.map(m => 
-      m.id === id ? { ...m, read: true } : m
-    )
-    setMessages(updated)
-    setUnreadMessages(updated.filter(m => !m.read).length)
-  }
-
-  
+  // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     navigate('/login')
   }
 
+  // Modal functions
+  const openModal = (idea) => setSelectedIdea(idea)
+  const closeModal = () => setSelectedIdea(null)
 
+  // Handle vote
+  const handleVote = async (id) => {
+    try {
+      const user = getUser()
+      const token = localStorage.getItem('token')
+      
+      const res = await fetch(`${API}/vote`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ideaId: id, userId: user?.id || 1 })
+      })
+      
+      if (!res.ok) throw new Error('Vote failed')
+      
+      setIdeas(ideas.map(i => 
+        i.id === id ? { ...i, votes: [...(i.votes || []), {}] } : i
+      ))
+      if (selectedIdea?.id === id) {
+        setSelectedIdea({ ...selectedIdea, votes: [...(selectedIdea.votes || []), {}] })
+      }
+      
+    } catch {
+      alert('Failed to vote')
+    }
+  }
+
+  // Handle feedback
+  const handleFeedback = async (id, comment, callback) => {
+    try {
+      const user = getUser()
+      const token = localStorage.getItem('token')
+      
+      const res = await fetch(`${API}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          comment: comment,
+          idea: id,
+          lecturer: user?.id || 1
+        })
+      })
+      
+      if (!res.ok) throw new Error('Feedback failed')
+      
+      const data = await res.json()
+      
+      setIdeas(ideas.map(i => 
+        i.id === id ? { ...i, feedbacks: [...(i.feedbacks || []), data] } : i
+      ))
+      if (selectedIdea?.id === id) {
+        setSelectedIdea({ ...selectedIdea, feedbacks: [...(selectedIdea.feedbacks || []), data] })
+      }
+      
+      if (callback) callback()
+      
+    } catch {
+      alert('Failed to submit feedback')
+    }
+  }
+
+  // Loading state
   if (loading) {
     return (
-      <div className="lecturer-loading">
-        <div className="spinner-border text-primary" role="status">
-          <span className="sr-only">Loading...</span>
-        </div>
+      <div className="text-center py-5">
+        <div className="spinner-border text-primary" />
         <p className="mt-2 text-muted">Loading dashboard...</p>
       </div>
     )
   }
 
- 
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-5">
+        <div style={{ fontSize: '3rem' }}>⚠️</div>
+        <h5 className="text-danger mt-3">{error}</h5>
+        <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
+          Try Again
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="lecturer-dashboard">
       
-     
+      {/* Header */}
       <header className="lecturer-header">
         <div className="header-container">
           <div className="header-left">
@@ -187,89 +185,7 @@ const LecturerDashboardPage = () => {
               <span className="brand-text">Lecturer Portal</span>
             </div>
           </div>
-          
           <div className="header-right">
-          
-            <div className="header-dropdown">
-              <button className="dropdown-btn" data-toggle="dropdown">
-                <i className="fas fa-bell" />
-                {unreadNotifications > 0 && (
-                  <span className="badge-counter">{unreadNotifications}</span>
-                )}
-              </button>
-              <div className="dropdown-menu dropdown-menu-right">
-                <h6 className="dropdown-header">Notifications</h6>
-                {notifications.length === 0 ? (
-                  <a className="dropdown-item text-center text-muted" href="#">
-                    <p className="mb-0">No notifications</p>
-                  </a>
-                ) : (
-                  notifications.slice(0, 5).map(notif => (
-                    <a 
-                      key={notif.id}
-                      className={`dropdown-item ${!notif.read ? 'bg-light' : ''}`}
-                      href="#"
-                      onClick={() => markNotificationAsRead(notif.id)}
-                    >
-                      <div className="dropdown-item-content">
-                        <div className={`icon-circle ${notif.type === 'success' ? 'bg-success' : notif.type === 'warning' ? 'bg-warning' : 'bg-info'}`}>
-                          <i className="fas fa-info-circle text-white" />
-                        </div>
-                        <div>
-                          <div className="small text-gray-500">{notif.time}</div>
-                          <span className={!notif.read ? 'font-weight-bold' : ''}>{notif.message}</span>
-                        </div>
-                      </div>
-                    </a>
-                  ))
-                )}
-                {notifications.length > 5 && (
-                  <a className="dropdown-item text-center small text-gray-500" href="#">View All</a>
-                )}
-              </div>
-            </div>
-
-         
-            <div className="header-dropdown">
-              <button className="dropdown-btn" data-toggle="dropdown">
-                <i className="fas fa-envelope" />
-                {unreadMessages > 0 && (
-                  <span className="badge-counter">{unreadMessages}</span>
-                )}
-              </button>
-              <div className="dropdown-menu dropdown-menu-right">
-                <h6 className="dropdown-header">Messages</h6>
-                {messages.length === 0 ? (
-                  <a className="dropdown-item text-center text-muted" href="#">
-                    <p className="mb-0">No messages</p>
-                  </a>
-                ) : (
-                  messages.slice(0, 5).map(msg => (
-                    <a 
-                      key={msg.id}
-                      className={`dropdown-item ${!msg.read ? 'bg-light' : ''}`}
-                      href="#"
-                      onClick={() => markMessageAsRead(msg.id)}
-                    >
-                      <div className="dropdown-item-content">
-                        <div className="message-avatar">
-                          <i className="fas fa-user-circle" />
-                        </div>
-                        <div>
-                          <div className="small text-gray-500">{msg.sender} · {msg.time}</div>
-                          <span className={!msg.read ? 'font-weight-bold' : ''}>{msg.content}</span>
-                        </div>
-                      </div>
-                    </a>
-                  ))
-                )}
-                {messages.length > 5 && (
-                  <a className="dropdown-item text-center small text-gray-500" href="#">View All</a>
-                )}
-              </div>
-            </div>
-
-       
             <div className="header-user">
               <div className="user-avatar">
                 {lecturer.name ? lecturer.name.charAt(0).toUpperCase() : 'L'}
@@ -286,35 +202,34 @@ const LecturerDashboardPage = () => {
         </div>
       </header>
 
-  
+      {/* Content */}
       <div className="lecturer-content">
         <div className="content-container">
           
-         
+          {/* Welcome Banner */}
           <div className="welcome-banner">
             <div className="welcome-text">
               <h1>👋 Welcome, {lecturer.name || 'Lecturer'}!</h1>
               <p>Review student ideas and provide feedback.</p>
             </div>
             <div className="welcome-badge">
-              {lecturer.idNumber && <span>🆔 {lecturer.idNumber}</span>}
               {lecturer.email && <span>📧 {lecturer.email}</span>}
             </div>
           </div>
 
-       
+          {/* Stats */}
           <div className="stats-grid">
             <div className="stat-card stat-primary">
               <div className="stat-icon">💡</div>
               <div className="stat-info">
-                <h3>{stats.totalIdeas}</h3>
+                <h3>{stats.total}</h3>
                 <p>Total Ideas</p>
               </div>
             </div>
             <div className="stat-card stat-warning">
               <div className="stat-icon">⏳</div>
               <div className="stat-info">
-                <h3>{stats.pendingReviews}</h3>
+                <h3>{stats.pending}</h3>
                 <p>Pending Review</p>
               </div>
             </div>
@@ -325,16 +240,9 @@ const LecturerDashboardPage = () => {
                 <p>Reviewed</p>
               </div>
             </div>
-            <div className="stat-card stat-info">
-              <div className="stat-icon">🎓</div>
-              <div className="stat-info">
-                <h3>{stats.totalStudents}</h3>
-                <p>Students</p>
-              </div>
-            </div>
           </div>
 
-         
+          {/* Ideas Table */}
           <div className="recent-ideas">
             <div className="section-header">
               <h3>📝 Student Ideas for Review</h3>
@@ -347,33 +255,34 @@ const LecturerDashboardPage = () => {
                     <th>Title</th>
                     <th>Student</th>
                     <th>Category</th>
-                    <th>Date</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentIdeas.length === 0 ? (
+                  {ideas.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="text-center">No ideas submitted yet</td>
+                      <td colSpan="6" className="text-center">No ideas submitted yet</td>
                     </tr>
                   ) : (
-                    recentIdeas.map((idea, index) => (
+                    ideas.map((idea, index) => (
                       <tr key={idea.id}>
                         <td>{index + 1}</td>
                         <td>{idea.title}</td>
-                        <td>{idea.author}</td>
+                        <td>{idea.user?.firstName || 'Unknown'}</td>
                         <td>{idea.category}</td>
-                        <td>{idea.date}</td>
                         <td>
-                          <span className={`status-badge ${idea.status === 'Pending' ? 'status-pending' : 'status-reviewed'}`}>
-                            {idea.status}
+                          <span className={`status-badge ${idea.status === 'PENDING' ? 'status-pending' : 'status-reviewed'}`}>
+                            {idea.status || 'PENDING'}
                           </span>
                         </td>
                         <td>
-                          <Link to={`/lecturer-idea/${idea.id}`} className="btn-review-idea">
-                            <i className="fas fa-check-circle" /> Review & Feedback
-                          </Link>
+                          <button 
+                            className="btn-review-idea"
+                            onClick={() => openModal(idea)}
+                          >
+                            <i className="fas fa-check-circle" /> Review
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -385,6 +294,7 @@ const LecturerDashboardPage = () => {
         </div>
       </div>
 
+      {/* Sidebar */}
       <aside className="lecturer-sidebar">
         <div className="sidebar-menu">
           <div className="sidebar-brand">
@@ -393,25 +303,28 @@ const LecturerDashboardPage = () => {
           </div>
           <nav className="sidebar-nav">
             <Link to="/lecturer-dashboard" className="sidebar-link active">
-              <i className="fas fa-tachometer-alt" />
-              <span>Dashboard</span>
+              <i className="fas fa-tachometer-alt" /> Dashboard
             </Link>
             <Link to="/lecturer-leaderboard" className="sidebar-link">
-              <i className="fas fa-trophy" />
-              <span>Leaderboard</span>
+              <i className="fas fa-trophy" /> Leaderboard
             </Link>
             <Link to="/lecturer-profile" className="sidebar-link">
-              <i className="fas fa-user" />
-              <span>Profile</span>
+              <i className="fas fa-user" /> Profile
             </Link>
             <button className="sidebar-link" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt" />
-              <span>Logout</span>
+              <i className="fas fa-sign-out-alt" /> Logout
             </button>
           </nav>
         </div>
       </aside>
 
+      {/* Modal */}
+      <IdeaModal
+        idea={selectedIdea}
+        onClose={closeModal}
+        onVote={handleVote}
+        onFeedback={handleFeedback}
+      />
     </div>
   )
 }
