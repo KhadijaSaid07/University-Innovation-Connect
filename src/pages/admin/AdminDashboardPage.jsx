@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import AdminSidebar from './AdminSidebar'
 import './AdminDashboardPage.css'
 
@@ -36,24 +37,23 @@ const AdminDashboardPage = () => {
     }
   }, [navigate])
 
-  // Fetch data from backend
+  // Fetch data from backend using axios
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token')
-        
         // Fetch users
-        const usersRes = await fetch(`${API}/user`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        const users = await usersRes.json()
+        const usersRes = await axios.get(`${API}/user`)
+        const users = usersRes.data
         
         // Fetch ideas
-        const ideasRes = await fetch(`${API}/idea`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        const ideas = await ideasRes.json()
+        const ideasRes = await axios.get(`${API}/idea`)
+        const ideas = ideasRes.data
         
+        // Fetch votes
+        const votesRes = await axios.get(`${API}/vote`)
+        const votes = votesRes.data
+        
+        // Calculate stats
         const students = users.filter(u => u.role === 'STUDENT').length
         const lecturers = users.filter(u => u.role === 'LECTURER').length
         const totalVotes = ideas.reduce((sum, i) => sum + (i.votes?.length || 0), 0)
@@ -71,7 +71,8 @@ const AdminDashboardPage = () => {
         setRecentUsers(users.slice(-5).reverse())
         setRecentIdeas(ideas.slice(-5).reverse())
         
-      } catch {
+      } catch (err) {
+        console.error('Error fetching admin data:', err)
         // Keep zeros if fetch fails
       } finally {
         setLoading(false)
@@ -112,7 +113,7 @@ const AdminDashboardPage = () => {
           </div>
         </header>
 
-        
+        {/* Row 1 - 3 Cards */}
         <div className="admin-stats-grid admin-stats-row-1">
           <div className="admin-stat-card admin-stat-primary">
             <div className="admin-stat-icon">👥</div>
@@ -137,7 +138,7 @@ const AdminDashboardPage = () => {
           </div>
         </div>
 
-        
+        {/* Row 2 - 3 Cards */}
         <div className="admin-stats-grid admin-stats-row-2">
           <div className="admin-stat-card admin-stat-info">
             <div className="admin-stat-icon">🎓</div>
@@ -162,7 +163,7 @@ const AdminDashboardPage = () => {
           </div>
         </div>
 
-        //Recent Activity 
+        {/* Recent Activity */}
         <div className="admin-recent-grid">
           <div className="admin-recent-card">
             <h3>👥 Recent Users</h3>
@@ -223,3 +224,4 @@ const AdminDashboardPage = () => {
 }
 
 export default AdminDashboardPage
+

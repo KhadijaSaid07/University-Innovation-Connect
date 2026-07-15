@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
 
 const API = 'http://localhost:8080/api/v2/innovationConnect'
@@ -13,19 +14,23 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedIdea, setSelectedIdea] = useState(null)
+  const [showModal, setShowModal] = useState(false)
+
+  // Get logged in user
+  const getUser = () => {
+    const data = localStorage.getItem('user')
+    if (data) {
+      try { return JSON.parse(data) } catch { return null }
+    }
+    return null
+  }
 
   // Fetch ideas from backend
   useEffect(() => {
     const fetchIdeas = async () => {
       try {
-        const token = localStorage.getItem('token')
-        const res = await fetch(`${API}/idea`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        
-        if (!res.ok) throw new Error('Failed to fetch')
-        
-        const data = await res.json()
+        const res = await axios.get(`${API}/idea`)
+        const data = res.data
         setIdeas(data)
         
         // Calculate stats
@@ -46,76 +51,122 @@ const DashboardPage = () => {
   const goToPost = () => navigate('/post-idea')
 
   // Open modal for idea details
-  const openModal = (idea) => setSelectedIdea(idea)
+  const openModal = (idea) => {
+    setSelectedIdea(idea)
+    setShowModal(true)
+  }
 
   // Close modal
-  const closeModal = () => setSelectedIdea(null)
+  const closeModal = () => {
+    setSelectedIdea(null)
+    setShowModal(false)
+  }
 
   // Handle vote on idea
   const handleVote = async (id) => {
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${API}/vote`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ ideaId: id, userId: 1 })
-      })
+      const user = getUser()
       
-      if (!res.ok) throw new Error('Vote failed')
-      
-      // Update local state
-      setIdeas(ideas.map(i => 
-        i.id === id ? { ...i, votes: [...(i.votes || []), {}] } : i
-      ))
-      if (selectedIdea?.id === id) {
-        setSelectedIdea({ ...selectedIdea, votes: [...(selectedIdea.votes || []), {}] })
+      if (!user) {
+        alert('Please login to vote')
+        return
       }
       
-    } catch {
-      alert('Failed to vote')
+      if (user?.role !== 'STUDENT') {
+        alert('Only students can vote!')
+        return
+      }
+      
+      const res = await axios.post(`${API}/vote`, {
+        ideaId: id,
+        userId: user?.id
+      })
+      
+      if (res.data) {
+        const updatedIdeas = ideas.map(i => 
+          i.id === id ? { ...i, votes: [...(i.votes || []), res.data] } : i
+        )
+        setIdeas(updatedIdeas)
+        
+        if (selectedIdea && selectedIdea.id === id) {
+          setSelectedIdea({ ...selectedIdea, votes: [...(selectedIdea.votes || []), res.data] })
+        }
+        
+        setStats(prev => ({ ...prev, votes: prev.votes + 1 }))
+      }
+      
+    } catch (error) {
+      console.error('Vote error:', error)
+      if (error.response?.status === 400) {
+        alert('You have already voted for this idea')
+      } else {
+        alert('Failed to vote. Please try again.')
+      }
     }
   }
 
   // Handle feedback submission
   const handleFeedback = async (id, comment, callback) => {
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${API}/feedback`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          comment: comment,
-          idea: id,
-          lecturer: 1
-        })
+      const user = getUser()
+      
+      if (!user) {
+        alert('Please login to give feedback')
+        return
+      }
+      
+      if (user?.role !== 'LECTURER' && user?.role !== 'ADMIN') {
+        alert('Only lecturers can give feedback!')
+        return
+      }
+      
+      const res = await axios.post(`${API}/feedback`, {
+        comment: comment,
+        idea: id,
+        lecturer: user?.id
       })
       
-      if (!res.ok) throw new Error('Feedback failed')
+      const data = res.data
       
-      const data = await res.json()
-      
-      // Update local state
-      setIdeas(ideas.map(i => 
+      const updatedIdeas = ideas.map(i => 
         i.id === id ? { ...i, feedbacks: [...(i.feedbacks || []), data] } : i
-      ))
-      if (selectedIdea?.id === id) {
+      )
+      setIdeas(updatedIdeas)
+      
+      if (selectedIdea && selectedIdea.id === id) {
         setSelectedIdea({ ...selectedIdea, feedbacks: [...(selectedIdea.feedbacks || []), data] })
       }
       
       if (callback) callback()
       
-    } catch {
-      alert('Failed to submit feedback')
+    } catch (error) {
+      console.error('Feedback error:', error)
+      alert('Failed to submit feedback. Please try again.')
     }
   }
 
-  // Show loading spinner
+  // Get author name
+  const getAuthorName = (idea) => {
+    if (idea.userName) {
+      return idea.userName
+    }
+    if (idea.user) {
+      const firstName = idea.user.firstName || ''
+      const lastName = idea.user.lastName || ''
+      const fullName = `${firstName} ${lastName}`.trim()
+      if (fullName) return fullName
+    }
+    return 'Student'
+  }
+
+  // Check if current user is the author
+  const isAuthor = (idea) => {
+    const user = getUser()
+    if (!user) return false
+    return idea.userId === user.id
+  }
+
+  // Loading state
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -125,7 +176,7 @@ const DashboardPage = () => {
     )
   }
 
-  // Show error message
+  // Error state
   if (error) {
     return (
       <div className="text-center py-5">
@@ -138,7 +189,7 @@ const DashboardPage = () => {
     )
   }
 
-  // Main render
+  // Render
   return (
     <>
       {/* Header */}
@@ -184,16 +235,15 @@ const DashboardPage = () => {
         </div>
         <div className="card-body">
           {ideas.length === 0 ? (
-            // Empty state
             <div className="text-center py-5">
               <div style={{ fontSize: '4rem' }}>💡</div>
               <h5 className="text-gray-800 mt-3">No Ideas Yet</h5>
+              <p className="text-muted">Be the first to share an idea!</p>
               <button onClick={goToPost} className="btn btn-primary mt-2">
-                Post Your First Idea
+                🚀 Post Your First Idea
               </button>
             </div>
           ) : (
-            // Ideas table
             <div className="table-responsive">
               <table className="table table-bordered">
                 <thead>
@@ -202,6 +252,7 @@ const DashboardPage = () => {
                     <th>Title</th>
                     <th>Author</th>
                     <th>Category</th>
+                    <th>Status</th>
                     <th>Votes</th>
                     <th>Action</th>
                   </tr>
@@ -211,12 +262,27 @@ const DashboardPage = () => {
                     <tr key={idea.id}>
                       <td>{i + 1}</td>
                       <td>{idea.title}</td>
-                      <td>{idea.user?.firstName || 'Unknown'}</td>
+                      <td>
+                        {getAuthorName(idea)}
+                        {isAuthor(idea) && <span className="ml-1 text-muted">(You)</span>}
+                      </td>
                       <td>{idea.category}</td>
+                      <td>
+                        <span className={`badge ${idea.status === 'PENDING' ? 'badge-warning' : 
+                          idea.status === 'UNDER_REVIEW' ? 'badge-primary' :
+                          idea.status === 'APPROVED' ? 'badge-success' : 
+                          idea.status === 'REJECTED' ? 'badge-danger' : 
+                          idea.status === 'IMPLEMENTED' ? 'badge-dark' : 'badge-secondary'}`}>
+                          {idea.status || 'PENDING'}
+                        </span>
+                      </td>
                       <td>⭐ {idea.votes?.length || 0}</td>
                       <td>
-                        <button className="btn btn-sm btn-primary" onClick={() => openModal(idea)}>
-                          <i className="fas fa-eye" /> View
+                        <button 
+                          className="btn btn-sm btn-primary" 
+                          onClick={() => openModal(idea)}
+                        >
+                          <i className="fas fa-eye" /> View Details
                         </button>
                       </td>
                     </tr>
@@ -228,13 +294,16 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      
-      <IdeaModal
-        idea={selectedIdea}
-        onClose={closeModal}
-        onVote={handleVote}
-        onFeedback={handleFeedback}
-      />
+      {/* Idea Modal */}
+      {showModal && selectedIdea && (
+        <IdeaModal
+          idea={selectedIdea}
+          onClose={closeModal}
+          onVote={handleVote}
+          onFeedback={handleFeedback}
+          currentUser={getUser()}
+        />
+      )}
     </>
   )
 }

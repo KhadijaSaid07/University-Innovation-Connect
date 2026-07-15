@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
 
 const API = 'http://localhost:8080/api/v2/innovationConnect'
@@ -13,6 +14,7 @@ const MyIdeasPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedIdea, setSelectedIdea] = useState(null)
+  const [showModal, setShowModal] = useState(false)
 
   // Get logged in user
   const getUser = () => {
@@ -23,31 +25,26 @@ const MyIdeasPage = () => {
     return null
   }
 
-  // Fetch my ideas from backend
+  // Fetch my ideas
   useEffect(() => {
     const fetchMyIdeas = async () => {
       try {
         const user = getUser()
-        const token = localStorage.getItem('token')
         
-        // Fetch all ideas and filter by user
-        const res = await fetch(`${API}/idea`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        if (!user?.id) {
+          setError('Please login first')
+          setLoading(false)
+          return
+        }
+
+        const res = await axios.get(`${API}/user/${user.id}/ideas`)
+        const data = res.data
+        setIdeas(data)
         
-        if (!res.ok) throw new Error('Failed to fetch')
-        
-        const data = await res.json()
-        
-        // Filter ideas by current user
-        const myIdeas = data.filter(idea => idea.user?.id === user?.id)
-        setIdeas(myIdeas)
-        
-        // Calculate stats
-        const votes = myIdeas.reduce((sum, i) => sum + (i.votes?.length || 0), 0)
-        const comments = myIdeas.reduce((sum, i) => sum + (i.comments?.length || 0), 0)
-        setStats({ total: myIdeas.length, votes, comments })
-        
+        const votes = data.reduce((sum, i) => sum + (i.votes?.length || 0), 0)
+        const comments = data.reduce((sum, i) => sum + (i.comments?.length || 0), 0)
+        setStats({ total: data.length, votes, comments })
+
       } catch {
         setError('Could not load your ideas')
       } finally {
@@ -57,69 +54,80 @@ const MyIdeasPage = () => {
     fetchMyIdeas()
   }, [])
 
-  // Navigate to post idea
+  // Navigate
   const goToPost = () => navigate('/post-idea')
-
-  // Go back to dashboard
   const goBack = () => navigate('/dashboard')
+
+  // Modal functions
+  const openModal = (idea) => {
+    setSelectedIdea(idea)
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setSelectedIdea(null)
+    setShowModal(false)
+  }
 
   // Delete idea
   const deleteIdea = async (id, title) => {
     if (!window.confirm(`Delete "${title}"?`)) return
     
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${API}/idea/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+      await axios.delete(`${API}/idea/${id}`)
       
-      if (!res.ok) throw new Error('Delete failed')
-      
-      // Update local state
       const updated = ideas.filter(i => i.id !== id)
       setIdeas(updated)
       
       const votes = updated.reduce((sum, i) => sum + (i.votes?.length || 0), 0)
       const comments = updated.reduce((sum, i) => sum + (i.comments?.length || 0), 0)
       setStats({ total: updated.length, votes, comments })
-      
+
     } catch {
       alert('Failed to delete idea')
     }
   }
 
-  // Open modal
-  const openModal = (idea) => setSelectedIdea(idea)
-  const closeModal = () => setSelectedIdea(null)
-
   // Handle vote
   const handleVote = async (id) => {
     try {
       const user = getUser()
-      const token = localStorage.getItem('token')
       
-      const res = await fetch(`${API}/vote`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ ideaId: id, userId: user?.id || 1 })
-      })
-      
-      if (!res.ok) throw new Error('Vote failed')
-      
-      // Update local state
-      setIdeas(ideas.map(i => 
-        i.id === id ? { ...i, votes: [...(i.votes || []), {}] } : i
-      ))
-      if (selectedIdea?.id === id) {
-        setSelectedIdea({ ...selectedIdea, votes: [...(selectedIdea.votes || []), {}] })
+      if (!user) {
+        alert('Please login to vote')
+        return
       }
       
-    } catch {
-      alert('Failed to vote')
+      if (user?.role !== 'STUDENT') {
+        alert('Only students can vote!')
+        return
+      }
+      
+      const res = await axios.post(`${API}/vote`, {
+        ideaId: id,
+        userId: user?.id
+      })
+      
+      if (res.data) {
+        const updatedIdeas = ideas.map(i => 
+          i.id === id ? { ...i, votes: [...(i.votes || []), res.data] } : i
+        )
+        setIdeas(updatedIdeas)
+        
+        if (selectedIdea && selectedIdea.id === id) {
+          setSelectedIdea({ ...selectedIdea, votes: [...(selectedIdea.votes || []), res.data] })
+        }
+        
+        setStats(prev => ({ ...prev, votes: prev.votes + 1 }))
+      }
+      
+    } catch (error) {
+      console.error('Vote error:', error)
+      if (error.response?.status === 400) {
+        alert('You have already voted for this idea')
+      } else {
+        alert('Failed to vote. Please try again.')
+      }
     }
   }
 
@@ -127,37 +135,59 @@ const MyIdeasPage = () => {
   const handleFeedback = async (id, comment, callback) => {
     try {
       const user = getUser()
-      const token = localStorage.getItem('token')
       
-      const res = await fetch(`${API}/feedback`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          comment: comment,
-          idea: id,
-          lecturer: user?.id || 1
-        })
+      if (!user) {
+        alert('Please login to give feedback')
+        return
+      }
+      
+      if (user?.role !== 'LECTURER' && user?.role !== 'ADMIN') {
+        alert('Only lecturers can give feedback!')
+        return
+      }
+      
+      const res = await axios.post(`${API}/feedback`, {
+        comment: comment,
+        idea: id,
+        lecturer: user?.id
       })
       
-      if (!res.ok) throw new Error('Feedback failed')
+      const data = res.data
       
-      const data = await res.json()
-      
-      setIdeas(ideas.map(i => 
+      const updatedIdeas = ideas.map(i => 
         i.id === id ? { ...i, feedbacks: [...(i.feedbacks || []), data] } : i
-      ))
-      if (selectedIdea?.id === id) {
+      )
+      setIdeas(updatedIdeas)
+      
+      if (selectedIdea && selectedIdea.id === id) {
         setSelectedIdea({ ...selectedIdea, feedbacks: [...(selectedIdea.feedbacks || []), data] })
       }
       
       if (callback) callback()
       
-    } catch {
-      alert('Failed to submit feedback')
+    } catch (error) {
+      console.error('Feedback error:', error)
+      alert('Failed to submit feedback. Please try again.')
     }
+  }
+
+  // Get author name
+  const getAuthorName = (idea) => {
+    if (idea.userName) return idea.userName
+    if (idea.user) {
+      const firstName = idea.user.firstName || ''
+      const lastName = idea.user.lastName || ''
+      const fullName = `${firstName} ${lastName}`.trim()
+      if (fullName) return fullName
+    }
+    return 'Student'
+  }
+
+  // Check if current user is the author
+  const isAuthor = (idea) => {
+    const user = getUser()
+    if (!user) return false
+    return idea.userId === user.id
   }
 
   // Loading state
@@ -248,9 +278,10 @@ const MyIdeasPage = () => {
                   <tr>
                     <th>#</th>
                     <th>Title</th>
+                    <th>Author</th>
                     <th>Category</th>
+                    <th>Status</th>
                     <th>Votes</th>
-                    <th>Date</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -259,15 +290,27 @@ const MyIdeasPage = () => {
                     <tr key={idea.id}>
                       <td>{i + 1}</td>
                       <td>{idea.title}</td>
+                      <td>
+                        {getAuthorName(idea)}
+                        {isAuthor(idea) && <span className="ml-1 text-muted">(You)</span>}
+                      </td>
                       <td>{idea.category}</td>
+                      <td>
+                        <span className={`badge ${idea.status === 'PENDING' ? 'badge-warning' : 
+                          idea.status === 'UNDER_REVIEW' ? 'badge-primary' :
+                          idea.status === 'APPROVED' ? 'badge-success' : 
+                          idea.status === 'REJECTED' ? 'badge-danger' : 
+                          idea.status === 'IMPLEMENTED' ? 'badge-dark' : 'badge-secondary'}`}>
+                          {idea.status || 'PENDING'}
+                        </span>
+                      </td>
                       <td>⭐ {idea.votes?.length || 0}</td>
-                      <td>{idea.createdDate || 'Just now'}</td>
                       <td>
                         <button 
                           className="btn btn-sm btn-primary mr-1"
                           onClick={() => openModal(idea)}
                         >
-                          <i className="fas fa-eye" /> View
+                          <i className="fas fa-eye" /> View Details
                         </button>
                         <button 
                           className="btn btn-sm btn-danger"
@@ -286,12 +329,15 @@ const MyIdeasPage = () => {
       </div>
 
       {/* Idea Modal */}
-      <IdeaModal
-        idea={selectedIdea}
-        onClose={closeModal}
-        onVote={handleVote}
-        onFeedback={handleFeedback}
-      />
+      {showModal && selectedIdea && (
+        <IdeaModal
+          idea={selectedIdea}
+          onClose={closeModal}
+          onVote={handleVote}
+          onFeedback={handleFeedback}
+          currentUser={getUser()}
+        />
+      )}
     </div>
   )
 }
