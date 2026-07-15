@@ -33,9 +33,9 @@ const DashboardPage = () => {
         const data = res.data
         setIdeas(data)
         
-        // Calculate stats
-        const votes = data.reduce((sum, i) => sum + (i.votes?.length || 0), 0)
-        const comments = data.reduce((sum, i) => sum + (i.comments?.length || 0), 0)
+        // Calculate stats - FIXED: use voteIds and commentIds
+        const votes = data.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
+        const comments = data.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
         setStats({ total: data.length, votes, comments })
         
       } catch {
@@ -83,16 +83,20 @@ const DashboardPage = () => {
       })
       
       if (res.data) {
-        const updatedIdeas = ideas.map(i => 
-          i.id === id ? { ...i, votes: [...(i.votes || []), res.data] } : i
-        )
-        setIdeas(updatedIdeas)
+        // Refresh ideas to get updated vote counts
+        const refreshRes = await axios.get(`${API}/idea`)
+        const updatedData = refreshRes.data
+        setIdeas(updatedData)
         
+        // Update stats - FIXED: use voteIds
+        const newVotes = updatedData.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
+        setStats(prev => ({ ...prev, votes: newVotes }))
+        
+        // Update selected idea if modal is open
         if (selectedIdea && selectedIdea.id === id) {
-          setSelectedIdea({ ...selectedIdea, votes: [...(selectedIdea.votes || []), res.data] })
+          const updatedIdea = updatedData.find(i => i.id === id)
+          setSelectedIdea(updatedIdea)
         }
-        
-        setStats(prev => ({ ...prev, votes: prev.votes + 1 }))
       }
       
     } catch (error) {
@@ -128,13 +132,14 @@ const DashboardPage = () => {
       
       const data = res.data
       
-      const updatedIdeas = ideas.map(i => 
-        i.id === id ? { ...i, feedbacks: [...(i.feedbacks || []), data] } : i
-      )
-      setIdeas(updatedIdeas)
+      // Refresh ideas to get updated feedback counts
+      const refreshRes = await axios.get(`${API}/idea`)
+      const updatedData = refreshRes.data
+      setIdeas(updatedData)
       
       if (selectedIdea && selectedIdea.id === id) {
-        setSelectedIdea({ ...selectedIdea, feedbacks: [...(selectedIdea.feedbacks || []), data] })
+        const updatedIdea = updatedData.find(i => i.id === id)
+        setSelectedIdea(updatedIdea)
       }
       
       if (callback) callback()
@@ -276,7 +281,8 @@ const DashboardPage = () => {
                           {idea.status || 'PENDING'}
                         </span>
                       </td>
-                      <td>⭐ {idea.votes?.length || 0}</td>
+                      {/* FIXED: use voteIds */}
+                      <td>⭐ {idea.voteIds?.length || 0}</td>
                       <td>
                         <button 
                           className="btn btn-sm btn-primary" 

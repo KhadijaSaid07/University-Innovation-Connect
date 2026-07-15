@@ -85,6 +85,7 @@ const PostIdeaPage = () => {
       const user = getUser()
       const token = localStorage.getItem('token')
       
+      // FIX: Use the correct endpoint and data format
       const res = await fetch(`${API}/idea`, {
         method: 'POST',
         headers: {
@@ -92,14 +93,17 @@ const PostIdeaPage = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          title,
-          description,
-          category,
-          userId: user?.id || 1
+          title: title,
+          description: description,
+          category: category,
+          userId: user?.id  // FIX: Use userId (not user_id)
         })
       })
 
-      if (!res.ok) throw new Error('Failed to post')
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.message || 'Failed to post')
+      }
 
       setMessage('✅ Idea posted successfully!')
       setTitle('')
@@ -108,8 +112,8 @@ const PostIdeaPage = () => {
       
       setTimeout(() => navigate('/dashboard'), 1500)
 
-    } catch {
-      setMessage('❌ Failed to post idea')
+    } catch (error) {
+      setMessage('❌ Failed to post idea: ' + error.message)
     } finally {
       setLoading(false)
     }
