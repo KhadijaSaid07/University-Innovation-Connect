@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import AdminSidebar from './AdminSidebar'
 import './AdminDashboardPage.css'
 
@@ -15,7 +16,7 @@ const AdminLecturersPage = () => {
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [editingLecturer, setEditingLecturer] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -23,9 +24,8 @@ const AdminLecturersPage = () => {
     password: '',
     department: '',
     specialization: '',
-    gender: ''
+    gender: 'Male'
   })
-  const [submitting, setSubmitting] = useState(false)
 
   // Check admin auth
   useEffect(() => {
@@ -45,23 +45,16 @@ const AdminLecturersPage = () => {
     }
   }, [navigate])
 
-  // Fetch lecturers from backend
+  // Fetch lecturers 
   useEffect(() => {
     const fetchLecturers = async () => {
       try {
-        const token = localStorage.getItem('token')
-        const res = await fetch(`${API}/user`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        
-        if (!res.ok) throw new Error('Failed to fetch')
-        
-        const data = await res.json()
+        const res = await axios.get(`${API}/user`)
         // Filter only LECTURER role
-        const lecturersList = data.filter(u => u.role === 'LECTURER')
+        const lecturersList = res.data.filter(u => u.role === 'LECTURER')
         setLecturers(lecturersList)
-        
-      } catch {
+      } catch (err) {
+        console.error('Fetch lecturers error:', err)
         setMessage('Could not load lecturers')
         setMessageType('error')
       } finally {
@@ -79,7 +72,6 @@ const AdminLecturersPage = () => {
 
   // Open modal for adding
   const openAddModal = () => {
-    setEditingLecturer(null)
     setFormData({
       firstName: '',
       lastName: '',
@@ -92,27 +84,12 @@ const AdminLecturersPage = () => {
     setShowModal(true)
   }
 
-  // Open modal for editing
-  const openEditModal = (lecturer) => {
-    setEditingLecturer(lecturer)
-    setFormData({
-      firstName: lecturer.firstName || '',
-      lastName: lecturer.lastName || '',
-      email: lecturer.email || '',
-      password: '',
-      department: lecturer.department || '',
-      specialization: lecturer.specialization || '',
-      gender: lecturer.gender || ''
-    })
-    setShowModal(true)
-  }
-
-  // Save lecturer (Add or Edit)
-  const saveLecturer = async (e) => {
+  // Add lecturer - NO TOKEN
+  const addLecturer = async (e) => {
     e.preventDefault()
     
-    if (!formData.firstName || !formData.lastName || !formData.email) {
-      setMessage('Please fill in all required fields')
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      setMessage('⚠️ Please fill in all required fields')
       setMessageType('error')
       return
     }
@@ -121,71 +98,37 @@ const AdminLecturersPage = () => {
     setMessage('')
 
     try {
-      const token = localStorage.getItem('token')
-      let res
-      let data
-
-      if (editingLecturer) {
-        // EDIT lecturer
-        const body = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          department: formData.department,
-          specialization: formData.specialization
-        }
-        
-        res = await fetch(`${API}/user/${editingLecturer.id}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
-        })
-        
-        if (!res.ok) throw new Error('Failed to update')
-        data = await res.json()
-        
-        setLecturers(lecturers.map(l => l.id === editingLecturer.id ? { ...l, ...data } : l))
-        setMessage(`✅ Lecturer updated successfully!`)
-        
-      } else {
-        // ADD new lecturer
-        if (!formData.password) {
-          setMessage('Password is required')
-          setMessageType('error')
-          setSubmitting(false)
-          return
-        }
-        
-        res = await fetch(`${API}/auth/admin/create-lecturer`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            password: formData.password
-          })
-        })
-        
-        if (!res.ok) throw new Error('Failed to add')
-        data = await res.json()
-        
-        setLecturers([...lecturers, { ...data, gender: formData.gender, department: formData.department, specialization: formData.specialization }])
-        setMessage(`✅ Lecturer "${formData.firstName} ${formData.lastName}" added successfully!`)
+      const body = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password
       }
       
-      setMessageType('success')
-      setShowModal(false)
-      setFormData({ firstName: '', lastName: '', email: '', password: '', department: '', specialization: '', gender: 'Male' })
-      setEditingLecturer(null)
+      const res = await axios.post(`${API}/auth/admin/create-lecturer`, body)
       
-    } catch {
-      setMessage(editingLecturer ? '❌ Failed to update lecturer' : '❌ Failed to add lecturer')
+      if (res.data) {
+        // Refresh lecturers list
+        const usersRes = await axios.get(`${API}/user`)
+        const lecturersList = usersRes.data.filter(u => u.role === 'LECTURER')
+        setLecturers(lecturersList)
+        
+        setMessage(`✅ Lecturer "${formData.firstName} ${formData.lastName}" added successfully! 🎉`)
+        setMessageType('success')
+        setShowModal(false)
+        setFormData({ firstName: '', lastName: '', email: '', password: '', department: '', specialization: '', gender: 'Male' })
+      }
+      
+    } catch (err) {
+      console.error('Add lecturer error:', err)
+      
+      let errorMsg = 'Failed to add lecturer'
+      if (err.response?.status === 409) {
+        errorMsg = '⚠️ Email already exists. Please use a different email.'
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message
+      }
+      setMessage(`❌ ${errorMsg}`)
       setMessageType('error')
     } finally {
       setSubmitting(false)
@@ -193,25 +136,31 @@ const AdminLecturersPage = () => {
     }
   }
 
-  // Delete lecturer
+  // Delete lecturer - NO TOKEN
   const deleteLecturer = async (id, name) => {
-    if (!window.confirm(`Delete lecturer: ${name}?`)) return
+    if (!window.confirm(`🗑️ Delete lecturer: "${name}"?`)) return
     
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${API}/user/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+      await axios.delete(`${API}/user/${id}`)
       
-      if (!res.ok) throw new Error('Delete failed')
+      // Refresh lecturers list
+      const usersRes = await axios.get(`${API}/user`)
+      const lecturersList = usersRes.data.filter(u => u.role === 'LECTURER')
+      setLecturers(lecturersList)
       
-      setLecturers(lecturers.filter(l => l.id !== id))
-      setMessage(`✅ Lecturer "${name}" deleted successfully!`)
+      setMessage(`✅ Lecturer "${name}" deleted successfully! 🗑️`)
       setMessageType('success')
       
-    } catch {
-      setMessage('❌ Failed to delete lecturer')
+    } catch (err) {
+      console.error('Delete lecturer error:', err)
+      
+      let errorMsg = 'Failed to delete lecturer'
+      if (err.response?.status === 500) {
+        errorMsg = '⚠️ Cannot delete this lecturer because they have existing feedbacks.'
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message
+      }
+      setMessage(`❌ ${errorMsg}`)
       setMessageType('error')
     } finally {
       setTimeout(() => setMessage(''), 3000)
@@ -256,9 +205,14 @@ const AdminLecturersPage = () => {
             <h1>👨‍🏫 Lecturers</h1>
             <p>Manage all lecturers on the platform</p>
           </div>
-          <button className="admin-add-btn" onClick={openAddModal}>
-            <i className="fas fa-plus" /> Add Lecturer
-          </button>
+          <div className="admin-header-right">
+            <span className="admin-count-badge">
+              Total: {lecturers.length} lecturers
+            </span>
+            <button className="admin-add-btn" onClick={openAddModal}>
+              <i className="fas fa-plus" /> Add Lecturer
+            </button>
+          </div>
         </header>
 
         {message && (
@@ -271,34 +225,37 @@ const AdminLecturersPage = () => {
           <input
             type="text"
             className="admin-search-input"
-            placeholder="Search lecturers by name, email, or department..."
+            placeholder="🔍 Search lecturers by name, email, or department..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-     
         <div className="admin-table-card">
           <div className="admin-table-responsive">
             <table className="admin-table-full">
               <thead>
                 <tr>
+                  <th>#</th>
                   <th>Name</th>
                   <th>Email</th>
                   <th>Department</th>
                   <th>Specialization</th>
                   <th>Gender</th>
-                  <th>Actions</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredLecturers.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="admin-empty-text">No lecturers found</td>
+                    <td colSpan="7" className="admin-empty-text">
+                      {lecturers.length === 0 ? 'No lecturers registered yet' : 'No matching lecturers found'}
+                    </td>
                   </tr>
                 ) : (
-                  filteredLecturers.map((lecturer) => (
+                  filteredLecturers.map((lecturer, index) => (
                     <tr key={lecturer.id}>
+                      <td>{index + 1}</td>
                       <td><strong>{getFullName(lecturer)}</strong></td>
                       <td>{lecturer.email}</td>
                       <td>{lecturer.department || '-'}</td>
@@ -310,16 +267,10 @@ const AdminLecturersPage = () => {
                       </td>
                       <td>
                         <button 
-                          className="admin-edit-btn" 
-                          onClick={() => openEditModal(lecturer)}
-                        >
-                          <i className="fas fa-edit" /> Edit
-                        </button>
-                        <button 
                           className="admin-delete-btn" 
                           onClick={() => deleteLecturer(lecturer.id, getFullName(lecturer))}
                         >
-                          Delete
+                          <i className="fas fa-trash" /> Delete
                         </button>
                       </td>
                     </tr>
@@ -330,17 +281,17 @@ const AdminLecturersPage = () => {
           </div>
         </div>
 
-        {/* Add/Edit Modal */}
+        {/* Add Lecturer Modal */}
         {showModal && (
           <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
             <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
               <div className="admin-modal-header">
-                <h3>{editingLecturer ? '✏️ Edit Lecturer' : '➕ Add New Lecturer'}</h3>
+                <h3>➕ Add New Lecturer</h3>
                 <button className="admin-modal-close" onClick={() => setShowModal(false)}>
                   <i className="fas fa-times" />
                 </button>
               </div>
-              <form onSubmit={saveLecturer} className="admin-modal-form">
+              <form onSubmit={addLecturer} className="admin-modal-form">
                 <div className="admin-form-group">
                   <label>First Name *</label>
                   <input
@@ -377,20 +328,18 @@ const AdminLecturersPage = () => {
                     required
                   />
                 </div>
-                {!editingLecturer && (
-                  <div className="admin-form-group">
-                    <label>Password *</label>
-                    <input
-                      type="password"
-                      name="password"
-                      className="admin-form-control"
-                      placeholder="Enter password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                )}
+                <div className="admin-form-group">
+                  <label>Password *</label>
+                  <input
+                    type="password"
+                    name="password"
+                    className="admin-form-control"
+                    placeholder="Enter password (min 6 characters)"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
                 <div className="admin-form-group">
                   <label>Department</label>
                   <input
@@ -427,10 +376,10 @@ const AdminLecturersPage = () => {
                 </div>
                 <div className="admin-modal-actions">
                   <button type="submit" className="admin-save-btn" disabled={submitting}>
-                    {submitting ? 'Saving...' : editingLecturer ? '💾 Update' : '✅ Add Lecturer'}
+                    {submitting ? '⏳ Adding...' : '✅ Add Lecturer'}
                   </button>
                   <button type="button" className="admin-cancel-btn" onClick={() => setShowModal(false)}>
-                    Cancel
+                    ❌ Cancel
                   </button>
                 </div>
               </form>

@@ -37,6 +37,17 @@ const AdminDashboardPage = () => {
     }
   }, [navigate])
 
+  // Get user name by ID
+  const getUserName = async (userId) => {
+    try {
+      const res = await axios.get(`${API}/user/${userId}`)
+      const user = res.data
+      return `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown'
+    } catch {
+      return 'Unknown'
+    }
+  }
+
   // Fetch data from backend using axios
   useEffect(() => {
     const fetchData = async () => {
@@ -49,15 +60,11 @@ const AdminDashboardPage = () => {
         const ideasRes = await axios.get(`${API}/idea`)
         const ideas = ideasRes.data
         
-        // Fetch votes
-        const votesRes = await axios.get(`${API}/vote`)
-        const votes = votesRes.data
-        
-        // Calculate stats
+        // Calculate stats - FIXED: use voteIds and commentIds
         const students = users.filter(u => u.role === 'STUDENT').length
         const lecturers = users.filter(u => u.role === 'LECTURER').length
-        const totalVotes = ideas.reduce((sum, i) => sum + (i.votes?.length || 0), 0)
-        const totalComments = ideas.reduce((sum, i) => sum + (i.comments?.length || 0), 0)
+        const totalVotes = ideas.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
+        const totalComments = ideas.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
         
         setStats({
           users: users.length,
@@ -68,8 +75,34 @@ const AdminDashboardPage = () => {
           comments: totalComments
         })
         
-        setRecentUsers(users.slice(-5).reverse())
-        setRecentIdeas(ideas.slice(-5).reverse())
+        // Get recent users (last 5) with full names
+        const recentUsersData = users.slice(-5).reverse()
+        setRecentUsers(recentUsersData)
+        
+        // Get recent ideas with author names
+        const recentIdeasData = ideas.slice(-5).reverse()
+        
+        // Fetch author names for each idea
+        const ideasWithAuthors = await Promise.all(
+          recentIdeasData.map(async (idea) => {
+            let authorName = 'Unknown'
+            if (idea.userId) {
+              try {
+                const userRes = await axios.get(`${API}/user/${idea.userId}`)
+                const user = userRes.data
+                authorName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown'
+              } catch {
+                authorName = 'Unknown'
+              }
+            }
+            return {
+              ...idea,
+              authorName: authorName
+            }
+          })
+        )
+        
+        setRecentIdeas(ideasWithAuthors)
         
       } catch (err) {
         console.error('Error fetching admin data:', err)
@@ -202,14 +235,20 @@ const AdminDashboardPage = () => {
                     <th>Title</th>
                     <th>Author</th>
                     <th>Votes</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recentIdeas.map((idea, i) => (
                     <tr key={i}>
                       <td>{idea.title}</td>
-                      <td>{idea.user?.firstName || 'Unknown'}</td>
-                      <td>⭐ {idea.votes?.length || 0}</td>
+                      <td><strong>{idea.authorName}</strong></td>
+                      <td>⭐ {idea.voteIds?.length || 0}</td>
+                      <td>
+                        <span className={`admin-status-badge ${idea.status?.toLowerCase() || 'pending'}`}>
+                          {idea.status || 'PENDING'}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -224,4 +263,3 @@ const AdminDashboardPage = () => {
 }
 
 export default AdminDashboardPage
-
