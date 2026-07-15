@@ -1,10 +1,11 @@
+/* Lecturer Leaderboard Layout */
 .lecturer-leaderboard-page {
   min-height: 100vh;
   background: #F8F4FF;
   display: flex;
 }
 
-
+/* Sidebar */
 .lecturer-leaderboard-sidebar {
   width: 250px;
   background: linear-gradient(180deg, #1A0A2E 0%, #4A1A6B 100%);
@@ -33,6 +34,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   margin-bottom: 20px;
 }
+
 .sidebar-brand .brand-icon { font-size: 2rem; }
 .sidebar-brand .brand-text {
   font-size: 1.3rem;
@@ -62,6 +64,7 @@
   cursor: pointer;
   font-size: 0.95rem;
 }
+
 .sidebar-link:hover {
   color: #FCD34D;
   background: rgba(252, 211, 77, 0.08);
@@ -70,6 +73,7 @@
   color: #FCD34D;
   background: rgba(252, 211, 77, 0.12);
 }
+
 .sidebar-link i {
   width: 20px;
   font-size: 1.1rem;
@@ -80,7 +84,7 @@
   color: #FCD34D;
 }
 
-
+/* Header */
 .lecturer-leaderboard-header {
   background: #FFFFFF;
   padding: 12px 30px;
@@ -126,36 +130,49 @@
   color: #1A0A2E;
 }
 
-.header-right .logout-btn {
-  padding: 8px 20px;
-  background: linear-gradient(135deg, #7C3AED, #6D28D9);
-  color: #FFFFFF;
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logout-btn {
+  background: none;
   border: none;
-  border-radius: 50px;
-  font-weight: 600;
+  color: #4A4A6A;
+  font-size: 1rem;
   cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
 }
-.header-right .logout-btn:hover {
-  background: linear-gradient(135deg, #6D28D9, #5B21B6);
-  transform: translateY(-2px);
+.logout-btn:hover {
+  background: #FEE2E2;
+  color: #EF4444;
 }
 
-
+/* Content */
 .lecturer-leaderboard-content {
   margin-left: 250px;
   margin-top: 80px;
   padding: 30px;
   flex: 1;
 }
+
 .leaderboard-container {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
+/* Leaderboard Header */
 .leaderboard-header {
-  margin-bottom: 30px;
+  margin-bottom: 25px;
 }
+
 .leaderboard-header h1 {
   font-size: 2rem;
   color: #1A0A2E;
@@ -164,14 +181,15 @@
 .leaderboard-header p {
   color: #8B6BA8;
   margin: 4px 0 0;
+  font-size: 1rem;
 }
 
+/* Leaderboard Card */
 .leaderboard-card {
   background: #FFFFFF;
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 4px 20px rgba(26, 10, 46, 0.04);
-  border: 1px solid rgba(124, 58, 237, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 }
 
 .table-responsive { overflow-x: auto; }
@@ -196,93 +214,101 @@
   border-bottom: 1px solid #EDE4F5;
   color: #4A4A6A;
 }
+.leaderboard-table tbody tr:hover { background: #F8F4FF; }
 
-.leaderboard-table tbody tr:hover {
-  background: #F8F4FF;
-}
-
+/* Rank Styles */
 .rank-badge {
   font-size: 1.5rem;
+  font-weight: 700;
 }
 
 .rank-gold {
-  background: rgba(252, 211, 77, 0.10) !important;
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.1), transparent);
 }
 .rank-gold td:first-child {
-  border-left: 4px solid #FCD34D !important;
+  border-left: 4px solid #FFD700;
 }
 
 .rank-silver {
-  background: rgba(209, 213, 219, 0.10) !important;
+  background: linear-gradient(90deg, rgba(192, 192, 192, 0.1), transparent);
 }
 .rank-silver td:first-child {
-  border-left: 4px solid #D1D5DB !important;
+  border-left: 4px solid #C0C0C0;
 }
 
 .rank-bronze {
-  background: rgba(251, 191, 36, 0.08) !important;
+  background: linear-gradient(90deg, rgba(205, 127, 50, 0.1), transparent);
 }
 .rank-bronze td:first-child {
-  border-left: 4px solid #F59E0B !important;
+  border-left: 4px solid #CD7F32;
 }
 
+/* Vote Badge */
 .badge-votes {
+  display: inline-block;
+  background: #F8F4FF;
+  color: #7C3AED;
   padding: 4px 14px;
-  background: #D1FAE5;
-  color: #065F46;
   border-radius: 50px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
+/* Review Button */
 .btn-view-idea {
-  padding: 4px 14px;
-  background: #7C3AED;
-  color: #FFFFFF;
-  border-radius: 50px;
-  text-decoration: none;
-  font-size: 0.8rem;
-  transition: all 0.3s ease;
-}
-.btn-view-idea:hover {
-  background: #6D28D9;
-  color: #FFFFFF;
-}
-.btn-view-idea i {
-  margin-right: 4px;
-}
-
-.btn-back-dash {
-  display: inline-block;
-  padding: 10px 28px;
+  padding: 6px 16px;
   background: linear-gradient(135deg, #7C3AED, #6D28D9);
   color: #FFFFFF;
-  border-radius: 50px;
-  text-decoration: none;
-  font-weight: 600;
-  margin-top: 12px;
-  transition: all 0.3s ease;
   border: none;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
-.btn-back-dash:hover {
+.btn-view-idea:hover {
   background: linear-gradient(135deg, #6D28D9, #5B21B6);
-  color: #FFFFFF;
   transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
 }
+.btn-view-idea i { margin-right: 4px; }
 
+/* Empty State */
 .empty-state {
   text-align: center;
-  padding: 40px 0;
+  padding: 40px 20px;
 }
 .empty-state h5 {
   color: #1A0A2E;
-  margin-top: 12px;
+  font-size: 1.2rem;
+  margin: 16px 0 8px;
 }
 .empty-state p {
   color: #8B6BA8;
+  margin: 0 0 20px;
 }
 
+.btn-back-dash {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-back-dash:hover {
+  background: linear-gradient(135deg, #6D28D9, #5B21B6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+}
+
+/* Loading */
 .lecturer-leaderboard-loading {
   min-height: 100vh;
   display: flex;
@@ -292,6 +318,7 @@
   background: #F8F4FF;
 }
 
+/* Responsive */
 @media (max-width: 1024px) {
   .lecturer-leaderboard-sidebar {
     transform: translateX(-100%);
@@ -306,17 +333,14 @@
 @media (max-width: 768px) {
   .lecturer-leaderboard-header { padding: 10px 16px; }
   .header-brand .brand-text { font-size: 1rem; }
-  .leaderboard-card { padding: 20px; }
   .leaderboard-header h1 { font-size: 1.5rem; }
+  .leaderboard-card { padding: 16px; }
+  .lecturer-leaderboard-content { padding: 16px; }
 }
 
 @media (max-width: 480px) {
-  .leaderboard-card { padding: 16px; }
   .leaderboard-table { font-size: 0.85rem; }
-  .leaderboard-table th,
-  .leaderboard-table td {
-    padding: 8px 10px;
-  }
-  .lecturer-leaderboard-content { padding: 16px; }
+  .leaderboard-table th, .leaderboard-table td { padding: 8px 10px; }
   .rank-badge { font-size: 1.2rem; }
+  .btn-view-idea { font-size: 0.7rem; padding: 4px 12px; }
 }

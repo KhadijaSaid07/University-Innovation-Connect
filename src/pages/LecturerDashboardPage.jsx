@@ -11,12 +11,13 @@ const LecturerDashboardPage = () => {
   
   // State
   const [lecturer, setLecturer] = useState({ name: '', email: '', department: '' })
-  const [stats, setStats] = useState({ total: 0, pending: 0, reviewed: 0 })
+  const [stats, setStats] = useState({ total: 0, pending: 0, underReview: 0, approved: 0, rejected: 0 })
   const [ideas, setIdeas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [filter, setFilter] = useState('all')
 
   // Get logged in user
   const getUser = () => {
@@ -40,12 +41,16 @@ const LecturerDashboardPage = () => {
         
         // Calculate stats
         const pending = data.filter(i => i.status === 'PENDING').length
-        const reviewed = data.filter(i => i.status === 'APPROVED' || i.status === 'REJECTED').length
+        const underReview = data.filter(i => i.status === 'UNDER_REVIEW').length
+        const approved = data.filter(i => i.status === 'APPROVED').length
+        const rejected = data.filter(i => i.status === 'REJECTED').length
         
         setStats({
           total: data.length,
           pending: pending,
-          reviewed: reviewed
+          underReview: underReview,
+          approved: approved,
+          rejected: rejected
         })
         
         // Set lecturer info
@@ -84,6 +89,22 @@ const LecturerDashboardPage = () => {
     setShowModal(false)
   }
 
+  // Filter ideas by status
+  const getFilteredIdeas = () => {
+    if (filter === 'all') return ideas
+    return ideas.filter(idea => idea.status === filter)
+  }
+
+  // Get count for each status
+  const getCount = (status) => {
+    if (status === 'all') return stats.total
+    return ideas.filter(i => i.status === status).length
+  }
+
+  const handleFilter = (status) => {
+    setFilter(status)
+  }
+
   // Handle vote
   const handleVote = async (id) => {
     try {
@@ -105,17 +126,26 @@ const LecturerDashboardPage = () => {
       })
       
       if (res.data) {
-        setIdeas(ideas.map(i => 
-          i.id === id ? { ...i, votes: [...(i.votes || []), res.data] } : i
-        ))
-        if (selectedIdea && selectedIdea.id === id) {
-          setSelectedIdea({ ...selectedIdea, votes: [...(selectedIdea.votes || []), res.data] })
-        }
+        const refreshRes = await axios.get(`${API}/idea`)
+        const data = refreshRes.data
+        setIdeas(data)
+        
+        setStats({
+          total: data.length,
+          pending: data.filter(i => i.status === 'PENDING').length,
+          underReview: data.filter(i => i.status === 'UNDER_REVIEW').length,
+          approved: data.filter(i => i.status === 'APPROVED').length,
+          rejected: data.filter(i => i.status === 'REJECTED').length
+        })
       }
       
     } catch (error) {
       console.error('Vote error:', error)
-      alert('Failed to vote')
+      if (error.response?.status === 400) {
+        alert('You have already voted for this idea')
+      } else {
+        alert('Failed to vote')
+      }
     }
   }
 
@@ -140,13 +170,18 @@ const LecturerDashboardPage = () => {
         lecturer: user?.id
       })
       
-      const data = res.data
-      
-      setIdeas(ideas.map(i => 
-        i.id === id ? { ...i, feedbacks: [...(i.feedbacks || []), data] } : i
-      ))
-      if (selectedIdea && selectedIdea.id === id) {
-        setSelectedIdea({ ...selectedIdea, feedbacks: [...(selectedIdea.feedbacks || []), data] })
+      if (res.data) {
+        const refreshRes = await axios.get(`${API}/idea`)
+        const data = refreshRes.data
+        setIdeas(data)
+        
+        setStats({
+          total: data.length,
+          pending: data.filter(i => i.status === 'PENDING').length,
+          underReview: data.filter(i => i.status === 'UNDER_REVIEW').length,
+          approved: data.filter(i => i.status === 'APPROVED').length,
+          rejected: data.filter(i => i.status === 'REJECTED').length
+        })
       }
       
       if (callback) callback()
@@ -154,6 +189,63 @@ const LecturerDashboardPage = () => {
     } catch (error) {
       console.error('Feedback error:', error)
       alert('Failed to submit feedback')
+    }
+  }
+
+  // Handle status update
+  const handleStatusUpdate = async (id, newStatus) => {
+    try {
+      const user = getUser()
+      
+      if (!user) {
+        alert('Please login')
+        return
+      }
+      
+      if (user?.role !== 'LECTURER' && user?.role !== 'ADMIN') {
+        alert('Only lecturers can update status!')
+        return
+      }
+      
+      const idea = ideas.find(i => i.id === id)
+      if (!idea) {
+        alert('Idea not found')
+        return false
+      }
+      
+      // Check if feedback exists before approving/rejecting
+      if (newStatus === 'APPROVED' || newStatus === 'REJECTED') {
+        const feedbackRes = await axios.get(`${API}/feedback/idea/${id}`)
+        const feedbacks = feedbackRes.data || []
+        if (feedbacks.length === 0) {
+          alert('Please give feedback first before approving or rejecting')
+          return false
+        }
+      }
+      
+      const res = await axios.put(`${API}/idea/${id}/status?status=${newStatus}`)
+      
+      if (res.data) {
+        const refreshRes = await axios.get(`${API}/idea`)
+        const data = refreshRes.data
+        setIdeas(data)
+        
+        setStats({
+          total: data.length,
+          pending: data.filter(i => i.status === 'PENDING').length,
+          underReview: data.filter(i => i.status === 'UNDER_REVIEW').length,
+          approved: data.filter(i => i.status === 'APPROVED').length,
+          rejected: data.filter(i => i.status === 'REJECTED').length
+        })
+        
+        setFilter('all')
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Status update error:', error)
+      alert('Failed to update status')
+      return false
     }
   }
 
@@ -169,10 +261,12 @@ const LecturerDashboardPage = () => {
     return 'Unknown'
   }
 
+  const filteredIdeas = getFilteredIdeas()
+
   // Loading state
   if (loading) {
     return (
-      <div className="text-center py-5">
+      <div className="lecturer-loading">
         <div className="spinner-border text-primary" />
         <p className="mt-2 text-muted">Loading dashboard...</p>
       </div>
@@ -195,6 +289,30 @@ const LecturerDashboardPage = () => {
   return (
     <div className="lecturer-dashboard">
       
+      {/* Sidebar */}
+      <aside className="lecturer-sidebar">
+        <div className="sidebar-menu">
+          <div className="sidebar-brand">
+            <span className="brand-icon">👨‍🏫</span>
+            <span className="brand-text">Lecturer</span>
+          </div>
+          <nav className="sidebar-nav">
+            <Link to="/lecturer-dashboard" className="sidebar-link active">
+              <i className="fas fa-tachometer-alt" /> Dashboard
+            </Link>
+            <Link to="/lecturer-leaderboard" className="sidebar-link">
+              <i className="fas fa-trophy" /> Leaderboard
+            </Link>
+            <Link to="/lecturer-profile" className="sidebar-link">
+              <i className="fas fa-user" /> Profile
+            </Link>
+            <button className="sidebar-link" onClick={handleLogout}>
+              <i className="fas fa-sign-out-alt" /> Logout
+            </button>
+          </nav>
+        </div>
+      </aside>
+
       {/* Header */}
       <header className="lecturer-header">
         <div className="header-container">
@@ -239,35 +357,44 @@ const LecturerDashboardPage = () => {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="stats-grid">
-            <div className="stat-card stat-primary">
-              <div className="stat-icon">💡</div>
-              <div className="stat-info">
-                <h3>{stats.total}</h3>
-                <p>Total Ideas</p>
-              </div>
-            </div>
-            <div className="stat-card stat-warning">
-              <div className="stat-icon">⏳</div>
-              <div className="stat-info">
-                <h3>{stats.pending}</h3>
-                <p>Pending Review</p>
-              </div>
-            </div>
-            <div className="stat-card stat-success">
-              <div className="stat-icon">✅</div>
-              <div className="stat-info">
-                <h3>{stats.reviewed}</h3>
-                <p>Reviewed</p>
-              </div>
-            </div>
+          {/* Filter Buttons - ONLY 5 (NO IMPLEMENTED) */}
+          <div className="filter-section">
+            <button 
+              className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => handleFilter('all')}
+            >
+              All ({getCount('all')})
+            </button>
+            <button 
+              className={`filter-btn ${filter === 'PENDING' ? 'active' : ''}`}
+              onClick={() => handleFilter('PENDING')}
+            >
+              Pending ({getCount('PENDING')})
+            </button>
+            <button 
+              className={`filter-btn ${filter === 'UNDER_REVIEW' ? 'active' : ''}`}
+              onClick={() => handleFilter('UNDER_REVIEW')}
+            >
+              Reviewing ({getCount('UNDER_REVIEW')})
+            </button>
+            <button 
+              className={`filter-btn ${filter === 'APPROVED' ? 'active' : ''}`}
+              onClick={() => handleFilter('APPROVED')}
+            >
+              Approved ({getCount('APPROVED')})
+            </button>
+            <button 
+              className={`filter-btn ${filter === 'REJECTED' ? 'active' : ''}`}
+              onClick={() => handleFilter('REJECTED')}
+            >
+              Rejected ({getCount('REJECTED')})
+            </button>
           </div>
 
           {/* Ideas Table */}
           <div className="recent-ideas">
             <div className="section-header">
-              <h3>📝 Student Ideas for Review</h3>
+              <h3>📝 {filter === 'all' ? 'All Student Ideas' : filter + ' Ideas'}</h3>
             </div>
             <div className="table-responsive">
               <table className="ideas-table">
@@ -278,26 +405,33 @@ const LecturerDashboardPage = () => {
                     <th>Student</th>
                     <th>Category</th>
                     <th>Status</th>
+                    <th>Votes</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {ideas.length === 0 ? (
+                  {filteredIdeas.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="text-center">No ideas submitted yet</td>
+                      <td colSpan="7" className="text-center">
+                        {filter === 'all' ? 'No ideas submitted yet' : `No ${filter.toLowerCase()} ideas found`}
+                      </td>
                     </tr>
                   ) : (
-                    ideas.map((idea, index) => (
+                    filteredIdeas.map((idea, index) => (
                       <tr key={idea.id}>
                         <td>{index + 1}</td>
                         <td>{idea.title}</td>
                         <td>{getStudentName(idea)}</td>
                         <td>{idea.category}</td>
                         <td>
-                          <span className={`status-badge ${idea.status === 'PENDING' ? 'status-pending' : 'status-reviewed'}`}>
+                          <span className={`status-badge ${idea.status === 'PENDING' ? 'status-pending' : 
+                            idea.status === 'UNDER_REVIEW' ? 'status-under-review' :
+                            idea.status === 'APPROVED' ? 'status-approved' : 
+                            idea.status === 'REJECTED' ? 'status-rejected' : 'status-pending'}`}>
                             {idea.status || 'PENDING'}
                           </span>
                         </td>
+                        <td>⭐ {idea.voteIds?.length || 0}</td>
                         <td>
                           <button 
                             className="btn-review-idea"
@@ -316,30 +450,6 @@ const LecturerDashboardPage = () => {
         </div>
       </div>
 
-      {/* Sidebar */}
-      <aside className="lecturer-sidebar">
-        <div className="sidebar-menu">
-          <div className="sidebar-brand">
-            <span className="brand-icon">👨‍🏫</span>
-            <span className="brand-text">Lecturer</span>
-          </div>
-          <nav className="sidebar-nav">
-            <Link to="/lecturer-dashboard" className="sidebar-link active">
-              <i className="fas fa-tachometer-alt" /> Dashboard
-            </Link>
-            <Link to="/lecturer-leaderboard" className="sidebar-link">
-              <i className="fas fa-trophy" /> Leaderboard
-            </Link>
-            <Link to="/lecturer-profile" className="sidebar-link">
-              <i className="fas fa-user" /> Profile
-            </Link>
-            <button className="sidebar-link" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt" /> Logout
-            </button>
-          </nav>
-        </div>
-      </aside>
-
       {/* Modal */}
       {showModal && selectedIdea && (
         <IdeaModal
@@ -347,6 +457,7 @@ const LecturerDashboardPage = () => {
           onClose={closeModal}
           onVote={handleVote}
           onFeedback={handleFeedback}
+          onStatusUpdate={handleStatusUpdate}
           currentUser={getUser()}
         />
       )}
