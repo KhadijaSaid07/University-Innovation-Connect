@@ -118,7 +118,7 @@ const LoginPage = () => {
               className="auth-eye-btn"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? '🙈' : '👁️'}
+              {showPassword ? '👁️' : '👁️'}
             </button>
           </div>
 

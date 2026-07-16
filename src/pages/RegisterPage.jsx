@@ -162,7 +162,7 @@ const RegisterPage = () => {
               className="auth-eye-btn"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? '🙈' : '👁️'}
+              {showPassword ? '👁️' : '👁️'}
             </button>
           </div>
 
@@ -181,7 +181,7 @@ const RegisterPage = () => {
               className="auth-eye-btn"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
-              {showConfirmPassword ? '🙈' : '👁️'}
+              {showConfirmPassword ? '👁️' : '👁️'}
             </button>
           </div>
 

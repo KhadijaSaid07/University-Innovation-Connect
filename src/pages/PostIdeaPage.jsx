@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
-const API = 'http://localhost:8081/api/v2/innovationConnect'
+const API = '/api/v2/innovationConnect'
 
 const PostIdeaPage = () => {
   const navigate = useNavigate()
   
-  // Form state
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
@@ -17,54 +16,20 @@ const PostIdeaPage = () => {
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('')
 
-  // Get categories from backend using IdeaCategory enum
+  // ALL CATEGORIES from IdeaCategory enum - will be shown
+  const allCategories = [
+    'AGRICULTURE', 'EDUCATION', 'HEALTHCARE', 'TECHNOLOGY',
+    'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
+    'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
+    'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
+  ]
+
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        // Fetch ideas to get categories
-        const res = await axios.get(`${API}/idea`)
-        
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-          // Extract unique categories from existing ideas
-          const uniqueCategories = [...new Set(res.data.map(idea => idea.category).filter(Boolean))]
-          
-          if (uniqueCategories.length > 0) {
-            setCategories(uniqueCategories)
-          } else {
-            // Fallback categories from IdeaCategory enum
-            setCategories([
-              'AGRICULTURE', 'EDUCATION', 'HEALTHCARE', 'TECHNOLOGY',
-              'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
-              'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
-              'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
-            ])
-          }
-        } else {
-          // If no ideas exist, use all categories from enum
-          setCategories([
-            'AGRICULTURE', 'EDUCATION', 'HEALTHCARE', 'TECHNOLOGY',
-            'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
-            'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
-            'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
-          ])
-        }
-      } catch (err) {
-        console.error('Fetch categories error:', err)
-        // Fallback categories from IdeaCategory enum
-        setCategories([
-          'AGRICULTURE', 'EDUCATION', 'HEALTHCARE', 'TECHNOLOGY',
-          'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
-          'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
-          'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
-        ])
-      } finally {
-        setFetching(false)
-      }
-    }
-    fetchCategories()
+    // Always show all categories
+    setCategories(allCategories)
+    setFetching(false)
   }, [])
 
-  // Get user from localStorage
   const getUser = () => {
     const data = localStorage.getItem('user')
     if (data) {
@@ -73,7 +38,6 @@ const PostIdeaPage = () => {
     return null
   }
 
-  // Submit idea
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -113,11 +77,7 @@ const PostIdeaPage = () => {
 
       console.log('📤 Posting idea:', requestData)
       
-      const res = await axios.post(`${API}/idea`, requestData, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
+      const res = await axios.post(`${API}/idea`, requestData)
 
       console.log('✅ Response:', res.data)
 
@@ -140,8 +100,12 @@ const PostIdeaPage = () => {
       let errorMsg = 'Failed to post idea. Please try again.'
       if (error.response?.data?.message) {
         errorMsg = error.response.data.message
-      } else if (error.response?.data) {
-        errorMsg = error.response.data
+      } else if (error.response?.status === 400) {
+        errorMsg = 'Invalid data. Please check your input.'
+      } else if (error.response?.status === 401) {
+        errorMsg = 'Please login to post an idea.'
+      } else if (error.response?.status === 403) {
+        errorMsg = 'Only students can post ideas.'
       }
       
       setMessage(`❌ ${errorMsg}`)
@@ -151,26 +115,32 @@ const PostIdeaPage = () => {
     }
   }
 
-  // Get category emoji
   const getEmoji = (cat) => {
     const map = {
-      'AGRICULTURE': '🌾', 'EDUCATION': '🎓', 'HEALTHCARE': '🏥',
-      'TECHNOLOGY': '💻', 'ENVIRONMENT': '🌿', 'BUSINESS': '💼',
-      'FINANCE': '💰', 'SECURITY': '🛡️', 'TRANSPORTATION': '🚍',
-      'WATER_AND_HYGIENE': '💧', 'TOURISM': '🏖️',
-      'BLUE_ECONOMY': '🌊', 'RENEWABLE_ENERGY': '⚡',
-      'FINTECH': '📱', 'OTHERS': '📌'
+      'AGRICULTURE': '🌾',
+      'EDUCATION': '📚',
+      'HEALTHCARE': '🏥',
+      'TECHNOLOGY': '💻',
+      'ENVIRONMENT': '🌿',
+      'BUSINESS': '💼',
+      'FINANCE': '💰',
+      'SECURITY': '🛡️',
+      'TRANSPORTATION': '🚍',
+      'WATER_AND_HYGIENE': '💧',
+      'TOURISM': '🏖️',
+      'BLUE_ECONOMY': '🌊',
+      'RENEWABLE_ENERGY': '⚡',
+      'FINTECH': '📱',
+      'OTHERS': '📌'
     }
     return map[cat] || '📌'
   }
 
-  // Format category name
   const formatCategory = (cat) => {
     if (!cat) return ''
     return cat.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
   }
 
-  // Show loading while fetching categories
   if (fetching) {
     return (
       <div className="text-center py-5">
@@ -183,7 +153,6 @@ const PostIdeaPage = () => {
   return (
     <div className="container-fluid">
       
-      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="h3 mb-0">💡 Post Your Idea</h1>
         <button onClick={() => navigate('/dashboard')} className="btn btn-secondary btn-sm">
@@ -191,7 +160,6 @@ const PostIdeaPage = () => {
         </button>
       </div>
 
-      {/* Form */}
       <div className="row justify-content-center">
         <div className="col-lg-8">
           <div className="card shadow">
@@ -211,8 +179,8 @@ const PostIdeaPage = () => {
 
               <form onSubmit={handleSubmit}>
                 
-                <div className="form-group mb-3">
-                  <label className="form-label">📌 Title</label>
+                <div className="mb-3">
+                  <label className="form-label fw-bold">📌 Title</label>
                   <input
                     type="text"
                     className="form-control"
@@ -223,8 +191,8 @@ const PostIdeaPage = () => {
                   />
                 </div>
 
-                <div className="form-group mb-3">
-                  <label className="form-label">🏷️ Category</label>
+                <div className="mb-3">
+                  <label className="form-label fw-bold">🏷️ Category</label>
                   <select
                     className="form-control"
                     value={category}
@@ -232,20 +200,17 @@ const PostIdeaPage = () => {
                     required
                   >
                     <option value="">Select category...</option>
-                    {categories.length > 0 ? (
-                      categories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {getEmoji(cat)} {formatCategory(cat)}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">No categories available</option>
-                    )}
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {getEmoji(cat)} {formatCategory(cat)}
+                      </option>
+                    ))}
                   </select>
+                  <small className="text-muted">Choose a category that best fits your idea</small>
                 </div>
 
-                <div className="form-group mb-3">
-                  <label className="form-label">📝 Description</label>
+                <div className="mb-3">
+                  <label className="form-label fw-bold">📝 Description</label>
                   <textarea
                     className="form-control"
                     rows="5"
@@ -288,7 +253,7 @@ const PostIdeaPage = () => {
               </form>
 
               <div className="text-center mt-4 pt-3 border-top">
-                <p className="text-muted font-italic">
+                <p className="text-muted fst-italic">
                   💡 "The best way to predict the future is to create it."
                 </p>
               </div>
