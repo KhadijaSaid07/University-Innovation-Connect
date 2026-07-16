@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
 
-const API = 'http://localhost:8080/api/v2/innovationConnect'
+const API = 'http://localhost:8081/api/v2/innovationConnect'
 
 const DashboardPage = () => {
   const navigate = useNavigate()
@@ -33,12 +33,13 @@ const DashboardPage = () => {
         const data = res.data
         setIdeas(data)
         
-        // Calculate stats - FIXED: use voteIds and commentIds
+        // Calculate stats using voteIds and commentIds
         const votes = data.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
         const comments = data.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
         setStats({ total: data.length, votes, comments })
         
-      } catch {
+      } catch (err) {
+        console.error('Fetch error:', err)
         setError('Could not load ideas')
       } finally {
         setLoading(false)
@@ -88,7 +89,7 @@ const DashboardPage = () => {
         const updatedData = refreshRes.data
         setIdeas(updatedData)
         
-        // Update stats - FIXED: use voteIds
+        // Update stats using voteIds
         const newVotes = updatedData.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
         setStats(prev => ({ ...prev, votes: newVotes }))
         
@@ -97,6 +98,8 @@ const DashboardPage = () => {
           const updatedIdea = updatedData.find(i => i.id === id)
           setSelectedIdea(updatedIdea)
         }
+        
+        alert('✅ Vote added successfully!')
       }
       
     } catch (error) {
@@ -130,19 +133,20 @@ const DashboardPage = () => {
         lecturer: user?.id
       })
       
-      const data = res.data
-      
-      // Refresh ideas to get updated feedback counts
-      const refreshRes = await axios.get(`${API}/idea`)
-      const updatedData = refreshRes.data
-      setIdeas(updatedData)
-      
-      if (selectedIdea && selectedIdea.id === id) {
-        const updatedIdea = updatedData.find(i => i.id === id)
-        setSelectedIdea(updatedIdea)
+      if (res.data) {
+        // Refresh ideas to get updated feedback counts
+        const refreshRes = await axios.get(`${API}/idea`)
+        const updatedData = refreshRes.data
+        setIdeas(updatedData)
+        
+        if (selectedIdea && selectedIdea.id === id) {
+          const updatedIdea = updatedData.find(i => i.id === id)
+          setSelectedIdea(updatedIdea)
+        }
+        
+        if (callback) callback()
+        alert('✅ Feedback submitted successfully!')
       }
-      
-      if (callback) callback()
       
     } catch (error) {
       console.error('Feedback error:', error)
@@ -281,7 +285,6 @@ const DashboardPage = () => {
                           {idea.status || 'PENDING'}
                         </span>
                       </td>
-                      {/* FIXED: use voteIds */}
                       <td>⭐ {idea.voteIds?.length || 0}</td>
                       <td>
                         <button 

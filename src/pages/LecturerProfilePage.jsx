@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import axios from 'axios'
 import './LecturerProfilePage.css'
 
-const API = 'http://localhost:8080/api/v2/innovationConnect'
+const API = 'http://localhost:8081/api/v2/innovationConnect'
+const AUTH_API = 'http://localhost:8081/api/auth'
 
 const LecturerProfilePage = () => {
   const navigate = useNavigate()
   
-  // State
   const [lecturer, setLecturer] = useState({
     firstName: '',
     lastName: '',
@@ -21,8 +22,8 @@ const LecturerProfilePage = () => {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Get logged in user
   const getUser = () => {
     const data = localStorage.getItem('user')
     if (data) {
@@ -31,21 +32,14 @@ const LecturerProfilePage = () => {
     return null
   }
 
-  // Fetch profile from backend
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const user = getUser()
-        const token = localStorage.getItem('token')
         
         if (user?.id) {
-          const res = await fetch(`${API}/user/${user.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
-          
-          if (!res.ok) throw new Error('Failed to fetch')
-          
-          const data = await res.json()
+          const res = await axios.get(`${API}/user/${user.id}`)
+          const data = res.data
           
           setLecturer({
             firstName: data.firstName || '',
@@ -57,7 +51,6 @@ const LecturerProfilePage = () => {
             bio: data.bio || ''
           })
         } else {
-          // Fallback to localStorage
           const localUser = getUser()
           if (localUser) {
             setLecturer({
@@ -71,7 +64,8 @@ const LecturerProfilePage = () => {
             })
           }
         }
-      } catch {
+      } catch (err) {
+        console.error('Fetch error:', err)
         setError('Could not load profile')
       } finally {
         setLoading(false)
@@ -80,13 +74,11 @@ const LecturerProfilePage = () => {
     fetchProfile()
   }, [])
 
-  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target
     setLecturer({ ...lecturer, [name]: value })
   }
 
-  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -95,80 +87,102 @@ const LecturerProfilePage = () => {
 
     try {
       const user = getUser()
-      const token = localStorage.getItem('token')
       
-      const res = await fetch(`${API}/user/${user.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          firstName: lecturer.firstName,
-          lastName: lecturer.lastName,
-          department: lecturer.department,
-          specialization: lecturer.specialization,
-          bio: lecturer.bio
-        })
-      })
-      
-      if (!res.ok) throw new Error('Update failed')
-      
-      const data = await res.json()
-      
-      // Update localStorage
-      const updatedUser = {
-        ...user,
-        firstName: data.firstName || lecturer.firstName,
-        lastName: data.lastName || lecturer.lastName,
-        department: data.department || lecturer.department,
-        specialization: data.specialization || lecturer.specialization,
-        bio: data.bio || lecturer.bio
+      if (!user?.id) {
+        setError('User not found. Please login again.')
+        setSaving(false)
+        return
       }
-      localStorage.setItem('user', JSON.stringify(updatedUser))
-      
-      setMessage('✅ Profile updated successfully!')
-      setTimeout(() => setMessage(''), 3000)
-      
-    } catch {
-      setError('Could not update profile')
+
+      const updateData = {
+        firstName: lecturer.firstName.trim(),
+        lastName: lecturer.lastName.trim(),
+        email: lecturer.email.trim()
+      }
+
+      if (lecturer.phone) updateData.phone = lecturer.phone.trim()
+      if (lecturer.department) updateData.department = lecturer.department.trim()
+      if (lecturer.specialization) updateData.specialization = lecturer.specialization.trim()
+      if (lecturer.bio) updateData.bio = lecturer.bio.trim()
+
+      const res = await axios.put(`${AUTH_API}/profile/${user.id}`, updateData)
+
+      if (res.data) {
+        const updatedUser = {
+          ...user,
+          firstName: res.data.firstName || lecturer.firstName,
+          lastName: res.data.lastName || lecturer.lastName,
+          email: res.data.email || lecturer.email,
+          role: res.data.role || user.role
+        }
+        localStorage.setItem('user', JSON.stringify(updatedUser))
+        
+        setMessage('✅ Profile updated successfully!')
+        setTimeout(() => setMessage(''), 3000)
+      }
+    } catch (err) {
+      console.error('Update error:', err)
+      setError(err.response?.data?.message || 'Could not update profile')
     } finally {
       setSaving(false)
     }
   }
 
-  // Go back
   const goBack = () => navigate('/lecturer-dashboard')
 
-  // Logout
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     navigate('/login')
   }
 
-  // Loading state
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
+  const closeSidebar = () => setSidebarOpen(false)
+
   if (loading) {
     return (
       <div className="lecturer-profile-loading">
         <div className="spinner-border text-primary" />
-        <p className="mt-2 text-muted">Loading profile...</p>
+        <p>Loading profile...</p>
       </div>
     )
   }
 
-  // Get full name
   const fullName = `${lecturer.firstName || ''} ${lecturer.lastName || ''}`.trim() || 'Lecturer'
   const initial = lecturer.firstName ? lecturer.firstName.charAt(0).toUpperCase() : 'L'
 
   return (
     <div className="lecturer-profile-page">
       
-      {/* Header */}
+      {sidebarOpen && <div className="sidebar-overlay show" onClick={closeSidebar} />}
+
+      <aside className={`lecturer-profile-sidebar ${sidebarOpen ? 'show' : ''}`}>
+        <div className="sidebar-menu">
+          <div className="sidebar-brand">
+            <span className="brand-icon">👨‍🏫</span>
+            <span className="brand-text">Lecturer</span>
+          </div>
+          <nav className="sidebar-nav">
+            <Link to="/lecturer-dashboard" className="sidebar-link">
+              <i className="fas fa-tachometer-alt" /> Dashboard
+            </Link>
+            <Link to="/lecturer-leaderboard" className="sidebar-link">
+              <i className="fas fa-trophy" /> Leaderboard
+            </Link>
+            <Link to="/lecturer-profile" className="sidebar-link active">
+              <i className="fas fa-user" /> Profile
+            </Link>
+            <button className="sidebar-link" onClick={handleLogout}>
+              <i className="fas fa-sign-out-alt" /> Logout
+            </button>
+          </nav>
+        </div>
+      </aside>
+
       <header className="lecturer-profile-header">
         <div className="header-container">
           <div className="header-left">
-            <button className="sidebar-toggle-btn">
+            <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
               <i className="fas fa-bars" />
             </button>
             <div className="header-brand">
@@ -184,7 +198,6 @@ const LecturerProfilePage = () => {
         </div>
       </header>
 
-      {/* Content */}
       <div className="lecturer-profile-content">
         <div className="profile-container">
           
@@ -194,26 +207,19 @@ const LecturerProfilePage = () => {
 
           <div className="profile-card">
             
-            {/* Avatar */}
             <div className="profile-avatar-section">
               <div className="profile-avatar">{initial}</div>
               <h2 className="profile-name">{fullName}</h2>
               <span className="profile-role">👨‍🏫 Lecturer</span>
             </div>
 
-            {/* Messages */}
             {message && (
-              <div className={`alert ${message.includes('✅') ? 'alert-success' : 'alert-warning'}`}>
-                {message}
-              </div>
+              <div className="alert alert-success">{message}</div>
             )}
             {error && (
-              <div className="alert alert-danger">
-                {error}
-              </div>
+              <div className="alert alert-danger">{error}</div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="profile-form">
               
               <div className="form-group">
@@ -224,6 +230,7 @@ const LecturerProfilePage = () => {
                   className="form-control"
                   value={lecturer.firstName}
                   onChange={handleChange}
+                  required
                 />
               </div>
 
@@ -235,6 +242,7 @@ const LecturerProfilePage = () => {
                   className="form-control"
                   value={lecturer.lastName}
                   onChange={handleChange}
+                  required
                 />
               </div>
 
@@ -242,15 +250,13 @@ const LecturerProfilePage = () => {
                 <label>📧 Email</label>
                 <input
                   type="email"
+                  name="email"
                   className="form-control"
                   value={lecturer.email}
-                  disabled
-                  style={{ background: '#f8f9fa' }}
+                  onChange={handleChange}
+                  required
                 />
-                <small className="text-muted">Email cannot be changed</small>
               </div>
-
-              {/* ❌ ID NUMBER REMOVED */}
 
               <div className="form-group">
                 <label>📞 Phone Number</label>
@@ -308,7 +314,18 @@ const LecturerProfilePage = () => {
                   type="reset"
                   className="btn-reset"
                   onClick={() => {
-                    setLecturer({ ...lecturer })
+                    const user = getUser()
+                    if (user) {
+                      setLecturer({
+                        firstName: user.firstName || '',
+                        lastName: user.lastName || '',
+                        email: user.email || '',
+                        phone: user.phone || '',
+                        department: user.department || '',
+                        specialization: user.specialization || '',
+                        bio: user.bio || ''
+                      })
+                    }
                     setMessage('')
                     setError('')
                   }}
@@ -318,41 +335,17 @@ const LecturerProfilePage = () => {
               </div>
             </form>
 
-            {/* Account Info */}
             <div className="account-info">
               <h6 className="account-title">📋 Account Information</h6>
               <div className="account-details">
                 <div><strong>Role:</strong> Lecturer</div>
                 <div><strong>Status:</strong> Active</div>
+                <div><strong>ID:</strong> {getUser()?.id || 'N/A'}</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Sidebar */}
-      <aside className="lecturer-profile-sidebar">
-        <div className="sidebar-menu">
-          <div className="sidebar-brand">
-            <span className="brand-icon">👨‍🏫</span>
-            <span className="brand-text">Lecturer</span>
-          </div>
-          <nav className="sidebar-nav">
-            <Link to="/lecturer-dashboard" className="sidebar-link">
-              <i className="fas fa-tachometer-alt" /> Dashboard
-            </Link>
-            <Link to="/lecturer-leaderboard" className="sidebar-link">
-              <i className="fas fa-trophy" /> Leaderboard
-            </Link>
-            <Link to="/lecturer-profile" className="sidebar-link active">
-              <i className="fas fa-user" /> Profile
-            </Link>
-            <button className="sidebar-link" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt" /> Logout
-            </button>
-          </nav>
-        </div>
-      </aside>
 
     </div>
   )

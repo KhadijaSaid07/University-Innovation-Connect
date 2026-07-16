@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
 
-const API = 'http://localhost:8080/api/v2/innovationConnect'
+const API = 'http://localhost:8081/api/v2/innovationConnect'
 
 const LeaderboardPage = () => {
   const navigate = useNavigate()
@@ -28,57 +28,21 @@ const LeaderboardPage = () => {
         const ideasRes = await axios.get(`${API}/idea`)
         const ideasData = ideasRes.data
         
-        const ideasWithDetails = await Promise.all(
-          ideasData.map(async (idea) => {
-            try {
-              const votesRes = await axios.get(`${API}/vote/idea/${idea.id}`)
-              const votes = votesRes.data || []
-              
-              const commentsRes = await axios.get(`${API}/comment/idea/${idea.id}`)
-              let comments = commentsRes.data || []
-              
-              // ✅ Fetch user names for each comment
-              const commentsWithUsers = await Promise.all(
-                comments.map(async (comment) => {
-                  if (comment.userId) {
-                    try {
-                      const userRes = await axios.get(`${API}/user/${comment.userId}`)
-                      const user = userRes.data
-                      return {
-                        ...comment,
-                        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Student'
-                      }
-                    } catch {
-                      return { ...comment, userName: 'Student' }
-                    }
-                  }
-                  return { ...comment, userName: 'Student' }
-                })
-              )
-              
-              return {
-                ...idea,
-                votes: votes,
-                comments: commentsWithUsers,
-                voteCount: votes.length,
-                commentCount: commentsWithUsers.length
-              }
-            } catch {
-              return {
-                ...idea,
-                votes: [],
-                comments: [],
-                voteCount: 0,
-                commentCount: 0
-              }
-            }
-          })
-        )
+        // Use voteIds and commentIds from the DTO
+        const ideasWithCounts = ideasData.map((idea) => {
+          return {
+            ...idea,
+            voteCount: idea.voteIds?.length || 0,
+            commentCount: idea.commentIds?.length || 0
+          }
+        })
         
-        const sorted = [...ideasWithDetails].sort((a, b) => b.voteCount - a.voteCount)
+        // Sort by vote count (descending)
+        const sorted = [...ideasWithCounts].sort((a, b) => b.voteCount - a.voteCount)
         setIdeas(sorted)
         
-      } catch {
+      } catch (err) {
+        console.error('Fetch error:', err)
         setError('Could not load leaderboard')
       } finally {
         setLoading(false)
@@ -119,25 +83,27 @@ const LeaderboardPage = () => {
       })
       
       if (res.data) {
-        const updatedIdeas = ideas.map(i => {
-          if (i.id === id) {
-            return {
-              ...i,
-              votes: [...(i.votes || []), res.data],
-              voteCount: (i.voteCount || 0) + 1
-            }
+        // Refresh ideas to get updated data
+        const ideasRes = await axios.get(`${API}/idea`)
+        const ideasData = ideasRes.data
+        
+        const ideasWithCounts = ideasData.map((idea) => {
+          return {
+            ...idea,
+            voteCount: idea.voteIds?.length || 0,
+            commentCount: idea.commentIds?.length || 0
           }
-          return i
         })
-        setIdeas(updatedIdeas)
+        
+        const sorted = [...ideasWithCounts].sort((a, b) => b.voteCount - a.voteCount)
+        setIdeas(sorted)
         
         if (selectedIdea && selectedIdea.id === id) {
-          setSelectedIdea({
-            ...selectedIdea,
-            votes: [...(selectedIdea.votes || []), res.data],
-            voteCount: (selectedIdea.voteCount || 0) + 1
-          })
+          const updatedIdea = sorted.find(i => i.id === id)
+          setSelectedIdea(updatedIdea)
         }
+        
+        alert('✅ Vote added successfully!')
       }
       
     } catch (error) {
@@ -170,18 +136,30 @@ const LeaderboardPage = () => {
         lecturer: user?.id
       })
       
-      const data = res.data
-      
-      const updatedIdeas = ideas.map(i => 
-        i.id === id ? { ...i, feedbacks: [...(i.feedbacks || []), data] } : i
-      )
-      setIdeas(updatedIdeas)
-      
-      if (selectedIdea && selectedIdea.id === id) {
-        setSelectedIdea({ ...selectedIdea, feedbacks: [...(selectedIdea.feedbacks || []), data] })
+      if (res.data) {
+        // Refresh ideas to get updated data
+        const ideasRes = await axios.get(`${API}/idea`)
+        const ideasData = ideasRes.data
+        
+        const ideasWithCounts = ideasData.map((idea) => {
+          return {
+            ...idea,
+            voteCount: idea.voteIds?.length || 0,
+            commentCount: idea.commentIds?.length || 0
+          }
+        })
+        
+        const sorted = [...ideasWithCounts].sort((a, b) => b.voteCount - a.voteCount)
+        setIdeas(sorted)
+        
+        if (selectedIdea && selectedIdea.id === id) {
+          const updatedIdea = sorted.find(i => i.id === id)
+          setSelectedIdea(updatedIdea)
+        }
+        
+        if (callback) callback()
+        alert('✅ Feedback submitted successfully!')
       }
-      
-      if (callback) callback()
       
     } catch (error) {
       console.error('Feedback error:', error)

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import './ProfilePage.css'
 
-const API = 'http://localhost:8080/api/v2/innovationConnect'
+const API = 'http://localhost:8081/api/v2/innovationConnect'
+const AUTH_API = 'http://localhost:8081/api/auth'
 
 const ProfilePage = () => {
   const navigate = useNavigate()
@@ -36,16 +38,13 @@ const ProfilePage = () => {
     const fetchProfile = async () => {
       try {
         const userData = getUser()
-        const token = localStorage.getItem('token')
         
         if (userData?.id) {
-          const res = await fetch(`${API}/user/${userData.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
+          console.log('📤 Fetching profile for user:', userData.id)
+          const res = await axios.get(`${API}/user/${userData.id}`)
+          console.log('✅ Profile data:', res.data)
           
-          if (!res.ok) throw new Error('Failed to fetch')
-          
-          const data = await res.json()
+          const data = res.data
           
           setUser({
             firstName: data.firstName || '',
@@ -70,7 +69,8 @@ const ProfilePage = () => {
             })
           }
         }
-      } catch {
+      } catch (err) {
+        console.error('Fetch error:', err)
         setError('Could not load profile')
       } finally {
         setLoading(false)
@@ -85,7 +85,7 @@ const ProfilePage = () => {
     setUser({ ...user, [name]: value })
   }
 
-  // Handle form submit
+  // Handle form submit - Using the auth/profile endpoint
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -94,40 +94,63 @@ const ProfilePage = () => {
 
     try {
       const userData = getUser()
-      const token = localStorage.getItem('token')
       
-      const res = await fetch(`${API}/user/${userData.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          firstName: user.firstName,
-          lastName: user.lastName,
-          department: user.department,
-          bio: user.bio
-        })
-      })
-      
-      if (!res.ok) throw new Error('Update failed')
-      
-      const data = await res.json()
-      
-      const updatedUser = {
-        ...userData,
-        firstName: data.firstName || user.firstName,
-        lastName: data.lastName || user.lastName,
-        department: data.department || user.department,
-        bio: data.bio || user.bio
+      if (!userData?.id) {
+        setError('User not found. Please login again.')
+        setSaving(false)
+        return
       }
-      localStorage.setItem('user', JSON.stringify(updatedUser))
+
+      // Prepare update data
+      const updateData = {
+        firstName: user.firstName.trim(),
+        lastName: user.lastName.trim(),
+        email: user.email.trim()
+      }
+
+      // Only include password if provided
+      // Only include optional fields if they have values
+      if (user.phone) updateData.phone = user.phone.trim()
+      if (user.department) updateData.department = user.department.trim()
+      if (user.bio) updateData.bio = user.bio.trim()
+
+      console.log('📤 Updating profile:', updateData)
+
+      // Use the auth/profile endpoint
+      const res = await axios.put(`${AUTH_API}/profile/${userData.id}`, updateData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      console.log('✅ Update response:', res.data)
+
+      if (res.data) {
+        // Update local storage
+        const updatedUser = {
+          ...userData,
+          firstName: res.data.firstName || user.firstName,
+          lastName: res.data.lastName || user.lastName,
+          email: res.data.email || user.email,
+          role: res.data.role || user.role
+        }
+        localStorage.setItem('user', JSON.stringify(updatedUser))
+        
+        setMessage('✅ Profile updated successfully!')
+        setTimeout(() => setMessage(''), 3000)
+      }
+
+    } catch (err) {
+      console.error('❌ Update error:', err)
+      console.error('Response:', err.response?.data)
       
-      setMessage('✅ Profile updated successfully!')
-      setTimeout(() => setMessage(''), 3000)
-      
-    } catch {
-      setError('Could not update profile')
+      let errorMsg = 'Could not update profile'
+      if (err.response?.data?.message) {
+        errorMsg = err.response.data.message
+      } else if (err.response?.data) {
+        errorMsg = err.response.data
+      }
+      setError(errorMsg)
     } finally {
       setSaving(false)
     }
@@ -194,6 +217,7 @@ const ProfilePage = () => {
                   className="form-control"
                   value={user.firstName}
                   onChange={handleChange}
+                  required
                 />
               </div>
 
@@ -205,6 +229,7 @@ const ProfilePage = () => {
                   className="form-control"
                   value={user.lastName}
                   onChange={handleChange}
+                  required
                 />
               </div>
 
@@ -212,15 +237,14 @@ const ProfilePage = () => {
                 <label>📧 Email</label>
                 <input
                   type="email"
+                  name="email"
                   className="form-control"
                   value={user.email}
-                  disabled
-                  style={{ background: '#f8f9fa' }}
+                  onChange={handleChange}
+                  required
                 />
-                <small className="text-muted">Email cannot be changed</small>
+                <small className="text-muted">Email can be changed</small>
               </div>
-
-            
 
               <div className="form-group">
                 <label>📞 Phone Number</label>
@@ -266,7 +290,19 @@ const ProfilePage = () => {
                   type="reset"
                   className="btn-reset"
                   onClick={() => {
-                    setUser({ ...user })
+                    // Reset to current values
+                    const userData = getUser()
+                    if (userData) {
+                      setUser({
+                        firstName: userData.firstName || '',
+                        lastName: userData.lastName || '',
+                        email: userData.email || '',
+                        role: userData.role || '',
+                        phone: userData.phone || '',
+                        department: userData.department || '',
+                        bio: userData.bio || ''
+                      })
+                    }
                     setMessage('')
                     setError('')
                   }}
@@ -276,12 +312,13 @@ const ProfilePage = () => {
               </div>
             </form>
 
-          
+            {/* Account Info */}
             <div className="account-info">
               <h6 className="account-title">📋 Account Information</h6>
               <div className="account-details">
                 <div><strong>Role:</strong> {user.role || 'Student'}</div>
                 <div><strong>Status:</strong> Active</div>
+                <div><strong>ID:</strong> {getUser()?.id || 'N/A'}</div>
               </div>
             </div>
           </div>

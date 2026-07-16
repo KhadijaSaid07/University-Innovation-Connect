@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { auth } from '../api/api'
+import axios from 'axios'
 import './Auth.css'
+
+const API = 'http://localhost:8081/api/auth'
 
 const RegisterPage = () => {
   const navigate = useNavigate()
@@ -36,21 +38,70 @@ const RegisterPage = () => {
       return
     }
 
+    if (form.password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+
     setLoading(true)
     setError('')
     setSuccess('')
 
     try {
-      await auth.register({
+      console.log('📤 Registering to:', `${API}/register`)
+      console.log('📤 With:', {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email
+      })
+      
+      const res = await axios.post(`${API}/register`, {
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
         password: form.password
       })
-      setSuccess('Registration successful! Redirecting to login...')
-      setTimeout(() => navigate('/login'), 2000)
-    } catch {
-      setError('Registration failed. Email may already exist.')
+      
+      console.log('✅ Registration response:', res.data)
+      
+      setSuccess('✅ Registration successful! Redirecting to login...')
+      
+      setForm({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+      })
+      
+      setTimeout(() => {
+        navigate('/login')
+      }, 2000)
+      
+    } catch (error) {
+      console.error('❌ Registration error:', error)
+      console.error('Status:', error.response?.status)
+      console.error('Response data:', error.response?.data)
+      
+      let errorMsg = 'Registration failed. Please try again.'
+      
+      if (error.response?.status === 400) {
+        errorMsg = error.response?.data?.message || 'Invalid data. Please check your input.'
+      } else if (error.response?.status === 409) {
+        errorMsg = 'Email already exists. Please use a different email.'
+      } else if (error.response?.status === 403) {
+        errorMsg = 'Registration not allowed.'
+      } else if (error.response?.status === 500) {
+        errorMsg = 'Server error. Please try again later.'
+      } else if (error.response?.data?.message) {
+        errorMsg = error.response.data.message
+      } else if (error.response?.data) {
+        errorMsg = JSON.stringify(error.response.data)
+      } else if (error.message) {
+        errorMsg = error.message
+      }
+      
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -100,7 +151,7 @@ const RegisterPage = () => {
             <input
               name="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
+              placeholder="Password (min 6 characters)"
               value={form.password}
               onChange={handleChange}
               className="auth-input"
@@ -111,7 +162,7 @@ const RegisterPage = () => {
               className="auth-eye-btn"
               onClick={() => setShowPassword(!showPassword)}
             >
-              👁️
+              {showPassword ? '🙈' : '👁️'}
             </button>
           </div>
 
@@ -130,7 +181,7 @@ const RegisterPage = () => {
               className="auth-eye-btn"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
-              👁️
+              {showConfirmPassword ? '🙈' : '👁️'}
             </button>
           </div>
 

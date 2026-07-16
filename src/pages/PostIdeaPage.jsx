@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
-const API = 'http://localhost:8080/api/v2/innovationConnect'
+const API = 'http://localhost:8081/api/v2/innovationConnect'
 
 const PostIdeaPage = () => {
   const navigate = useNavigate()
@@ -14,41 +15,44 @@ const PostIdeaPage = () => {
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState('')
 
-  // Fetch categories from backend
+  // Get categories from backend using IdeaCategory enum
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const token = localStorage.getItem('token')
-        const res = await fetch(`${API}/idea/categories`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        // Fetch ideas to get categories
+        const res = await axios.get(`${API}/idea`)
         
-        if (!res.ok) throw new Error('Failed to fetch')
-        
-        const data = await res.json()
-        
-        // Ensure data is an array
-        if (Array.isArray(data)) {
-          setCategories(data)
-        } else {
-          // If API returns object with categories array
-          if (data.categories && Array.isArray(data.categories)) {
-            setCategories(data.categories)
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          // Extract unique categories from existing ideas
+          const uniqueCategories = [...new Set(res.data.map(idea => idea.category).filter(Boolean))]
+          
+          if (uniqueCategories.length > 0) {
+            setCategories(uniqueCategories)
           } else {
-            // Fallback categories
+            // Fallback categories from IdeaCategory enum
             setCategories([
-              'AGRICULTURE', 'EDUCATION', 'HEALTH', 'TECHNOLOGY',
+              'AGRICULTURE', 'EDUCATION', 'HEALTHCARE', 'TECHNOLOGY',
               'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
               'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
               'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
             ])
           }
+        } else {
+          // If no ideas exist, use all categories from enum
+          setCategories([
+            'AGRICULTURE', 'EDUCATION', 'HEALTHCARE', 'TECHNOLOGY',
+            'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
+            'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
+            'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
+          ])
         }
-      } catch {
-        // Fallback categories if API fails
+      } catch (err) {
+        console.error('Fetch categories error:', err)
+        // Fallback categories from IdeaCategory enum
         setCategories([
-          'AGRICULTURE', 'EDUCATION', 'HEALTH', 'TECHNOLOGY',
+          'AGRICULTURE', 'EDUCATION', 'HEALTHCARE', 'TECHNOLOGY',
           'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
           'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
           'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
@@ -74,46 +78,74 @@ const PostIdeaPage = () => {
     e.preventDefault()
     
     if (!title || !category || !description) {
-      setMessage('Please fill in all fields')
+      setMessage('⚠️ Please fill in all fields')
+      setMessageType('error')
       return
     }
 
     setLoading(true)
     setMessage('')
+    setMessageType('')
 
     try {
       const user = getUser()
-      const token = localStorage.getItem('token')
       
-      // FIX: Use the correct endpoint and data format
-      const res = await fetch(`${API}/idea`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          title: title,
-          description: description,
-          category: category,
-          userId: user?.id  // FIX: Use userId (not user_id)
-        })
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.message || 'Failed to post')
+      if (!user) {
+        setMessage('⚠️ Please login to post an idea')
+        setMessageType('error')
+        setLoading(false)
+        return
+      }
+      
+      if (user.role !== 'STUDENT') {
+        setMessage('⚠️ Only students can post ideas!')
+        setMessageType('error')
+        setLoading(false)
+        return
       }
 
-      setMessage('✅ Idea posted successfully!')
-      setTitle('')
-      setCategory('')
-      setDescription('')
+      const requestData = {
+        title: title.trim(),
+        description: description.trim(),
+        category: category,
+        userId: user.id
+      }
+
+      console.log('📤 Posting idea:', requestData)
       
-      setTimeout(() => navigate('/dashboard'), 1500)
+      const res = await axios.post(`${API}/idea`, requestData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      console.log('✅ Response:', res.data)
+
+      if (res.data) {
+        setMessage('✅ Idea posted successfully! 🎉')
+        setMessageType('success')
+        setTitle('')
+        setCategory('')
+        setDescription('')
+        
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 2000)
+      }
 
     } catch (error) {
-      setMessage('❌ Failed to post idea: ' + error.message)
+      console.error('❌ Post error:', error)
+      console.error('Response:', error.response?.data)
+      
+      let errorMsg = 'Failed to post idea. Please try again.'
+      if (error.response?.data?.message) {
+        errorMsg = error.response.data.message
+      } else if (error.response?.data) {
+        errorMsg = error.response.data
+      }
+      
+      setMessage(`❌ ${errorMsg}`)
+      setMessageType('error')
     } finally {
       setLoading(false)
     }
@@ -122,9 +154,9 @@ const PostIdeaPage = () => {
   // Get category emoji
   const getEmoji = (cat) => {
     const map = {
-      'AGRICULTURE': '🌾', 'EDUCATION': '🎓', 'HEALTH': '🏥',
-      'TECHNOLOGY': '💡', 'ENVIRONMENT': '🌿', 'BUSINESS': '💼',
-      'FINANCE': '💰', 'SECURITY': '🔒', 'TRANSPORTATION': '🚍',
+      'AGRICULTURE': '🌾', 'EDUCATION': '🎓', 'HEALTHCARE': '🏥',
+      'TECHNOLOGY': '💻', 'ENVIRONMENT': '🌿', 'BUSINESS': '💼',
+      'FINANCE': '💰', 'SECURITY': '🛡️', 'TRANSPORTATION': '🚍',
       'WATER_AND_HYGIENE': '💧', 'TOURISM': '🏖️',
       'BLUE_ECONOMY': '🌊', 'RENEWABLE_ENERGY': '⚡',
       'FINTECH': '📱', 'OTHERS': '📌'
@@ -172,15 +204,15 @@ const PostIdeaPage = () => {
               </div>
 
               {message && (
-                <div className={`alert ${message.includes('✅') ? 'alert-success' : 'alert-danger'} text-center`}>
+                <div className={`alert ${messageType === 'success' ? 'alert-success' : 'alert-danger'} text-center`}>
                   {message}
                 </div>
               )}
 
               <form onSubmit={handleSubmit}>
                 
-                <div className="form-group">
-                  <label>📌 Title</label>
+                <div className="form-group mb-3">
+                  <label className="form-label">📌 Title</label>
                   <input
                     type="text"
                     className="form-control"
@@ -191,8 +223,8 @@ const PostIdeaPage = () => {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>🏷️ Category</label>
+                <div className="form-group mb-3">
+                  <label className="form-label">🏷️ Category</label>
                   <select
                     className="form-control"
                     value={category}
@@ -212,8 +244,8 @@ const PostIdeaPage = () => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>📝 Description</label>
+                <div className="form-group mb-3">
+                  <label className="form-label">📝 Description</label>
                   <textarea
                     className="form-control"
                     rows="5"
@@ -230,16 +262,24 @@ const PostIdeaPage = () => {
                     className="btn btn-primary btn-lg px-5"
                     disabled={loading}
                   >
-                    {loading ? 'Posting...' : '🚀 Post Idea'}
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" />
+                        Posting...
+                      </>
+                    ) : (
+                      '🚀 Post Idea'
+                    )}
                   </button>
                   <button
                     type="button"
-                    className="btn btn-secondary btn-lg px-4 ml-2"
+                    className="btn btn-secondary btn-lg px-4 ms-2"
                     onClick={() => {
                       setTitle('')
                       setCategory('')
                       setDescription('')
                       setMessage('')
+                      setMessageType('')
                     }}
                   >
                     Clear

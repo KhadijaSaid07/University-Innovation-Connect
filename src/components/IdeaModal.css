@@ -37,6 +37,24 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
+.idea-modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.idea-modal::-webkit-scrollbar-track {
+  background: #F8F4FF;
+  border-radius: 8px;
+}
+
+.idea-modal::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 8px;
+}
+
+.idea-modal::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
 .idea-modal-close {
   position: sticky;
   top: 12px;
@@ -137,9 +155,10 @@
 .idea-modal-vote-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #059669, #047857);
   transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
 }
 
-/* Alert */
+/* Alerts */
 .idea-modal-alert {
   padding: 10px 16px;
   border-radius: 10px;
@@ -151,16 +170,25 @@
 .idea-modal-success {
   background: #D1FAE5;
   color: #065F46;
+  border-left: 4px solid #10B981;
+}
+
+.idea-modal-info {
+  background: #DBEAFE;
+  color: #1E40AF;
+  border-left: 4px solid #3B82F6;
 }
 
 .idea-modal-warning {
   background: #FEF3C7;
   color: #92400E;
+  border-left: 4px solid #F59E0B;
 }
 
 .idea-modal-danger {
   background: #FEE2E2;
   color: #991B1B;
+  border-left: 4px solid #EF4444;
 }
 
 /* Feedback */
@@ -170,22 +198,50 @@
   border-top: 1px solid #EDE4F5;
 }
 
+.idea-modal-feedback h4 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: #1A0A2E;
+}
+
 .feedback-item {
-  padding: 8px 0;
-  border-bottom: 1px solid #EDE4F5;
+  background: #F8F4FF;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 8px;
 }
 
 .feedback-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
-.feedback-item small {
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.feedback-header strong {
+  color: #1A0A2E;
+  font-size: 0.9rem;
+}
+
+.feedback-header small {
   color: #8B6BA8;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+}
+
+.feedback-item p {
+  margin: 4px 0 0;
+  color: #4A4A6A;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .idea-modal-feedback-btn {
-  padding: 8px 20px;
+  padding: 8px 24px;
+  margin-top: 8px;
   background: linear-gradient(135deg, #7C3AED, #6D28D9);
   color: #FFFFFF;
   border: none;
@@ -195,9 +251,15 @@
   transition: all 0.3s ease;
 }
 
-.idea-modal-feedback-btn:hover {
+.idea-modal-feedback-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #6D28D9, #5B21B6);
   transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+}
+
+.idea-modal-feedback-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .idea-modal-textarea {
@@ -209,11 +271,13 @@
   transition: all 0.3s ease;
   background: #F8F4FF;
   resize: vertical;
+  font-family: inherit;
 }
 
 .idea-modal-textarea:focus {
   border-color: #7C3AED;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 /* Comments */
@@ -223,24 +287,10 @@
   border-top: 1px solid #EDE4F5;
 }
 
-.idea-modal-comment {
-  padding: 10px 0;
-  border-bottom: 1px solid #EDE4F5;
-}
-
-.idea-modal-comment:last-child {
-  border-bottom: none;
-}
-
-.comment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.comment-header small {
-  color: #8B6BA8;
-  font-size: 0.8rem;
+.idea-modal-comments h4 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: #1A0A2E;
 }
 
 .idea-modal-no-comments {
@@ -249,10 +299,46 @@
   padding: 10px 0;
 }
 
+.idea-modal-comment {
+  background: #F8F4FF;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.idea-modal-comment:last-child {
+  margin-bottom: 0;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.comment-header strong {
+  color: #1A0A2E;
+  font-size: 0.9rem;
+}
+
+.comment-header small {
+  color: #8B6BA8;
+  font-size: 0.75rem;
+}
+
+.idea-modal-comment p {
+  margin: 4px 0 0;
+  color: #4A4A6A;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 .comment-input-wrapper {
   display: flex;
   gap: 10px;
   align-items: center;
+  margin-top: 12px;
 }
 
 .idea-modal-comment-input {
@@ -268,10 +354,11 @@
 .idea-modal-comment-input:focus {
   border-color: #7C3AED;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 .idea-modal-comment-btn {
-  padding: 10px 20px;
+  padding: 10px 24px;
   background: linear-gradient(135deg, #7C3AED, #6D28D9);
   color: #FFFFFF;
   border: none;
@@ -282,9 +369,10 @@
   white-space: nowrap;
 }
 
-.idea-modal-comment-btn:hover {
+.idea-modal-comment-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #6D28D9, #5B21B6);
   transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
 }
 
 .idea-modal-comment-btn:disabled {
@@ -292,29 +380,6 @@
   cursor: not-allowed;
 }
 
-/* Responsive */
-@media (max-width: 600px) {
-  .idea-modal {
-    max-width: 100%;
-    border-radius: 16px;
-  }
-
-  .idea-modal-content {
-    padding: 0 16px 20px;
-  }
-
-  .idea-modal-header h2 {
-    font-size: 1.3rem;
-  }
-
-  .comment-input-wrapper {
-    flex-direction: column;
-  }
-
-  .idea-modal-comment-btn {
-    width: 100%;
-  }
-}
 /* Status Colors */
 .status-pending {
   color: #F59E0B;
@@ -344,6 +409,7 @@
   margin: 12px 0;
   padding: 12px 0;
   border-top: 1px solid #EDE4F5;
+  flex-wrap: wrap;
 }
 
 .btn-approve {
@@ -390,4 +456,80 @@
 .idea-modal-hint {
   text-align: center;
   padding: 8px 0;
+}
+
+/* Text Utilities */
+.text-muted {
+  color: #8B6BA8 !important;
+}
+
+.small {
+  font-size: 0.8rem !important;
+}
+
+.mt-2 {
+  margin-top: 8px !important;
+}
+
+.mt-3 {
+  margin-top: 16px !important;
+}
+
+.ml-2 {
+  margin-left: 8px !important;
+}
+
+.text-success {
+  color: #10B981 !important;
+}
+
+.text-danger {
+  color: #EF4444 !important;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .idea-modal {
+    max-width: 100%;
+    border-radius: 16px;
+    margin: 10px;
+  }
+
+  .idea-modal-content {
+    padding: 0 16px 20px;
+  }
+
+  .idea-modal-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .idea-modal-meta {
+    font-size: 0.8rem;
+    gap: 10px;
+  }
+
+  .comment-input-wrapper {
+    flex-direction: column;
+  }
+
+  .idea-modal-comment-btn {
+    width: 100%;
+  }
+
+  .idea-modal-actions-row {
+    flex-direction: column;
+  }
+
+  .btn-approve,
+  .btn-reject {
+    width: 100%;
+    text-align: center;
+  }
+
+  .idea-modal-close {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+    margin: 8px 8px 0 0;
+  }
 }

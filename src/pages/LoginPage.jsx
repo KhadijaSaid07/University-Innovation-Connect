@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { auth } from '../api/api'
+import axios from 'axios'
 import './Auth.css'
+
+const API = 'http://localhost:8081/api/auth'
 
 const LoginPage = () => {
   const navigate = useNavigate()
@@ -13,6 +15,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
     if (!email || !password) {
       setError('Please fill in all fields')
       return
@@ -22,17 +25,60 @@ const LoginPage = () => {
     setError('')
 
     try {
-      const user = await auth.login({ email, password })
+      console.log('📤 Logging in to:', `${API}/login`)
+      console.log('📤 With:', { email, password })
       
-      localStorage.setItem('user', JSON.stringify(user))
+      const res = await axios.post(`${API}/login`, {
+        email: email,
+        password: password
+      })
+      
+      console.log('✅ Login response:', res.data)
+      
+      const user = res.data
+      
+      localStorage.setItem('user', JSON.stringify({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role
+      }))
       
       const role = user.role?.toUpperCase()
-      if (role === 'ADMIN') navigate('/admin-dashboard')
-      else if (role === 'LECTURER') navigate('/lecturer-dashboard')
-      else navigate('/dashboard')
       
-    } catch {
-      setError('Invalid email or password')
+      if (role === 'ADMIN') {
+        navigate('/admin-dashboard')
+      } else if (role === 'LECTURER') {
+        navigate('/lecturer-dashboard')
+      } else {
+        navigate('/dashboard')
+      }
+      
+    } catch (error) {
+      console.error('❌ Login error:', error)
+      console.error('Status:', error.response?.status)
+      console.error('Response data:', error.response?.data)
+      
+      let errorMsg = 'Invalid email or password'
+      
+      if (error.response?.status === 401) {
+        errorMsg = 'Invalid email or password'
+      } else if (error.response?.status === 403) {
+        errorMsg = 'Access denied. Please check your credentials.'
+      } else if (error.response?.status === 404) {
+        errorMsg = 'Server not found. Please check if backend is running on port 8081'
+      } else if (error.response?.status === 500) {
+        errorMsg = 'Server error. Please try again later.'
+      } else if (error.response?.data?.message) {
+        errorMsg = error.response.data.message
+      } else if (error.response?.data) {
+        errorMsg = JSON.stringify(error.response.data)
+      } else if (error.message) {
+        errorMsg = error.message
+      }
+      
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -72,7 +118,7 @@ const LoginPage = () => {
               className="auth-eye-btn"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? '👁️' : '👁️'}
+              {showPassword ? '🙈' : '👁️'}
             </button>
           </div>
 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
 
-const API = 'http://localhost:8080/api/v2/innovationConnect'
+const API = 'http://localhost:8081/api/v2/innovationConnect'
 
 const MyIdeasPage = () => {
   const navigate = useNavigate()
@@ -37,15 +37,20 @@ const MyIdeasPage = () => {
           return
         }
 
+        console.log('📤 Fetching ideas for user:', user.id)
         const res = await axios.get(`${API}/user/${user.id}/ideas`)
         const data = res.data
+        console.log('✅ My ideas:', data)
+        
         setIdeas(data)
         
-        const votes = data.reduce((sum, i) => sum + (i.votes?.length || 0), 0)
-        const comments = data.reduce((sum, i) => sum + (i.comments?.length || 0), 0)
+        // Calculate stats using voteIds and commentIds
+        const votes = data.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
+        const comments = data.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
         setStats({ total: data.length, votes, comments })
 
-      } catch {
+      } catch (err) {
+        console.error('Fetch error:', err)
         setError('Could not load your ideas')
       } finally {
         setLoading(false)
@@ -71,7 +76,7 @@ const MyIdeasPage = () => {
 
   // Delete idea
   const deleteIdea = async (id, title) => {
-    if (!window.confirm(`Delete "${title}"?`)) return
+    if (!window.confirm(`🗑️ Delete "${title}"?`)) return
     
     try {
       await axios.delete(`${API}/idea/${id}`)
@@ -79,12 +84,16 @@ const MyIdeasPage = () => {
       const updated = ideas.filter(i => i.id !== id)
       setIdeas(updated)
       
-      const votes = updated.reduce((sum, i) => sum + (i.votes?.length || 0), 0)
-      const comments = updated.reduce((sum, i) => sum + (i.comments?.length || 0), 0)
+      // Update stats using voteIds and commentIds
+      const votes = updated.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
+      const comments = updated.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
       setStats({ total: updated.length, votes, comments })
+      
+      alert('✅ Idea deleted successfully!')
 
-    } catch {
-      alert('Failed to delete idea')
+    } catch (err) {
+      console.error('Delete error:', err)
+      alert('❌ Failed to delete idea')
     }
   }
 
@@ -109,16 +118,21 @@ const MyIdeasPage = () => {
       })
       
       if (res.data) {
-        const updatedIdeas = ideas.map(i => 
-          i.id === id ? { ...i, votes: [...(i.votes || []), res.data] } : i
-        )
-        setIdeas(updatedIdeas)
+        // Refresh ideas to get updated vote counts
+        const refreshRes = await axios.get(`${API}/user/${user.id}/ideas`)
+        const updatedData = refreshRes.data
+        setIdeas(updatedData)
+        
+        // Update stats using voteIds
+        const newVotes = updatedData.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
+        setStats(prev => ({ ...prev, votes: newVotes }))
         
         if (selectedIdea && selectedIdea.id === id) {
-          setSelectedIdea({ ...selectedIdea, votes: [...(selectedIdea.votes || []), res.data] })
+          const updatedIdea = updatedData.find(i => i.id === id)
+          setSelectedIdea(updatedIdea)
         }
         
-        setStats(prev => ({ ...prev, votes: prev.votes + 1 }))
+        alert('✅ Vote added successfully!')
       }
       
     } catch (error) {
@@ -152,18 +166,20 @@ const MyIdeasPage = () => {
         lecturer: user?.id
       })
       
-      const data = res.data
-      
-      const updatedIdeas = ideas.map(i => 
-        i.id === id ? { ...i, feedbacks: [...(i.feedbacks || []), data] } : i
-      )
-      setIdeas(updatedIdeas)
-      
-      if (selectedIdea && selectedIdea.id === id) {
-        setSelectedIdea({ ...selectedIdea, feedbacks: [...(selectedIdea.feedbacks || []), data] })
+      if (res.data) {
+        // Refresh ideas
+        const refreshRes = await axios.get(`${API}/user/${user.id}/ideas`)
+        const updatedData = refreshRes.data
+        setIdeas(updatedData)
+        
+        if (selectedIdea && selectedIdea.id === id) {
+          const updatedIdea = updatedData.find(i => i.id === id)
+          setSelectedIdea(updatedIdea)
+        }
+        
+        if (callback) callback()
+        alert('✅ Feedback submitted successfully!')
       }
-      
-      if (callback) callback()
       
     } catch (error) {
       console.error('Feedback error:', error)
@@ -173,7 +189,9 @@ const MyIdeasPage = () => {
 
   // Get author name
   const getAuthorName = (idea) => {
-    if (idea.userName) return idea.userName
+    if (idea.userName) {
+      return idea.userName
+    }
     if (idea.user) {
       const firstName = idea.user.firstName || ''
       const lastName = idea.user.lastName || ''
@@ -220,7 +238,7 @@ const MyIdeasPage = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="h3 mb-0">📁 My Ideas</h1>
         <div>
-          <button onClick={goBack} className="btn btn-secondary btn-sm mr-2">
+          <button onClick={goBack} className="btn btn-secondary btn-sm me-2">
             ← Back
           </button>
           <button onClick={goToPost} className="btn btn-primary btn-sm">
@@ -304,19 +322,19 @@ const MyIdeasPage = () => {
                           {idea.status || 'PENDING'}
                         </span>
                       </td>
-                      <td>⭐ {idea.votes?.length || 0}</td>
+                      <td>⭐ {idea.voteIds?.length || 0}</td>
                       <td>
                         <button 
-                          className="btn btn-sm btn-primary mr-1"
+                          className="btn btn-sm btn-primary me-1"
                           onClick={() => openModal(idea)}
                         >
-                          <i className="fas fa-eye" /> View Details
+                          <i className="fas fa-eye" /> View
                         </button>
                         <button 
                           className="btn btn-sm btn-danger"
                           onClick={() => deleteIdea(idea.id, idea.title)}
                         >
-                          Delete
+                          <i className="fas fa-trash" /> Delete
                         </button>
                       </td>
                     </tr>

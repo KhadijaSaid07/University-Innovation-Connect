@@ -4,22 +4,20 @@ import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
 import './LecturerDashboardPage.css'
 
-const API = 'http://localhost:8080/api/v2/innovationConnect'
+const API = 'http://localhost:8081/api/v2/innovationConnect'
 
 const LecturerDashboardPage = () => {
   const navigate = useNavigate()
   
-  // State
-  const [lecturer, setLecturer] = useState({ name: '', email: '', department: '' })
-  const [stats, setStats] = useState({ total: 0, pending: 0, underReview: 0, approved: 0, rejected: 0 })
+  const [lecturer, setLecturer] = useState({ name: '', email: '' })
   const [ideas, setIdeas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [filter, setFilter] = useState('all')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Get logged in user
   const getUser = () => {
     const data = localStorage.getItem('user')
     if (data) {
@@ -28,40 +26,19 @@ const LecturerDashboardPage = () => {
     return null
   }
 
-  // Fetch data from backend
   useEffect(() => {
     const fetchData = async () => {
       try {
         const user = getUser()
-        
-        // Fetch all ideas
         const res = await axios.get(`${API}/idea`)
-        const data = res.data
-        setIdeas(data)
+        setIdeas(res.data)
         
-        // Calculate stats
-        const pending = data.filter(i => i.status === 'PENDING').length
-        const underReview = data.filter(i => i.status === 'UNDER_REVIEW').length
-        const approved = data.filter(i => i.status === 'APPROVED').length
-        const rejected = data.filter(i => i.status === 'REJECTED').length
-        
-        setStats({
-          total: data.length,
-          pending: pending,
-          underReview: underReview,
-          approved: approved,
-          rejected: rejected
-        })
-        
-        // Set lecturer info
         if (user) {
           setLecturer({
             name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Lecturer',
-            email: user.email || '',
-            department: user.department || ''
+            email: user.email || ''
           })
         }
-        
       } catch {
         setError('Could not load dashboard')
       } finally {
@@ -71,14 +48,15 @@ const LecturerDashboardPage = () => {
     fetchData()
   }, [])
 
-  // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     navigate('/login')
   }
 
-  // Modal functions
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
+  const closeSidebar = () => setSidebarOpen(false)
+
   const openModal = (idea) => {
     setSelectedIdea(idea)
     setShowModal(true)
@@ -89,58 +67,35 @@ const LecturerDashboardPage = () => {
     setShowModal(false)
   }
 
-  // Filter ideas by status
   const getFilteredIdeas = () => {
     if (filter === 'all') return ideas
     return ideas.filter(idea => idea.status === filter)
   }
 
-  // Get count for each status
   const getCount = (status) => {
-    if (status === 'all') return stats.total
+    if (status === 'all') return ideas.length
     return ideas.filter(i => i.status === status).length
   }
 
-  const handleFilter = (status) => {
-    setFilter(status)
-  }
+  const handleFilter = (status) => setFilter(status)
 
-  // Handle vote
   const handleVote = async (id) => {
     try {
       const user = getUser()
-      
-      if (!user) {
-        alert('Please login to vote')
-        return
-      }
-      
-      if (user?.role !== 'STUDENT') {
+      if (!user || user?.role !== 'STUDENT') {
         alert('Only students can vote!')
         return
       }
       
-      const res = await axios.post(`${API}/vote`, {
+      await axios.post(`${API}/vote`, {
         ideaId: id,
         userId: user?.id
       })
       
-      if (res.data) {
-        const refreshRes = await axios.get(`${API}/idea`)
-        const data = refreshRes.data
-        setIdeas(data)
-        
-        setStats({
-          total: data.length,
-          pending: data.filter(i => i.status === 'PENDING').length,
-          underReview: data.filter(i => i.status === 'UNDER_REVIEW').length,
-          approved: data.filter(i => i.status === 'APPROVED').length,
-          rejected: data.filter(i => i.status === 'REJECTED').length
-        })
-      }
+      const refreshRes = await axios.get(`${API}/idea`)
+      setIdeas(refreshRes.data)
       
     } catch (error) {
-      console.error('Vote error:', error)
       if (error.response?.status === 400) {
         alert('You have already voted for this idea')
       } else {
@@ -149,131 +104,85 @@ const LecturerDashboardPage = () => {
     }
   }
 
-  // Handle feedback
   const handleFeedback = async (id, comment, callback) => {
     try {
       const user = getUser()
-      
-      if (!user) {
-        alert('Please login to give feedback')
-        return
-      }
-      
-      if (user?.role !== 'LECTURER' && user?.role !== 'ADMIN') {
+      if (!user || (user?.role !== 'LECTURER' && user?.role !== 'ADMIN')) {
         alert('Only lecturers can give feedback!')
         return
       }
       
-      const res = await axios.post(`${API}/feedback`, {
+      const currentIdea = ideas.find(i => i.id === id)
+      if (currentIdea && currentIdea.status === 'PENDING') {
+        await axios.put(`${API}/idea/${id}/status?status=UNDER_REVIEW`)
+      }
+      
+      await axios.post(`${API}/feedback`, {
         comment: comment,
         idea: id,
         lecturer: user?.id
       })
       
-      if (res.data) {
-        const refreshRes = await axios.get(`${API}/idea`)
-        const data = refreshRes.data
-        setIdeas(data)
-        
-        setStats({
-          total: data.length,
-          pending: data.filter(i => i.status === 'PENDING').length,
-          underReview: data.filter(i => i.status === 'UNDER_REVIEW').length,
-          approved: data.filter(i => i.status === 'APPROVED').length,
-          rejected: data.filter(i => i.status === 'REJECTED').length
-        })
-      }
+      const refreshRes = await axios.get(`${API}/idea`)
+      setIdeas(refreshRes.data)
       
       if (callback) callback()
+      alert('✅ Feedback submitted successfully!')
       
     } catch (error) {
-      console.error('Feedback error:', error)
-      alert('Failed to submit feedback')
+      alert(`❌ ${error.response?.data?.message || 'Failed to submit feedback'}`)
     }
   }
 
-  // Handle status update
   const handleStatusUpdate = async (id, newStatus) => {
     try {
       const user = getUser()
-      
-      if (!user) {
-        alert('Please login')
-        return
-      }
-      
-      if (user?.role !== 'LECTURER' && user?.role !== 'ADMIN') {
+      if (!user || (user?.role !== 'LECTURER' && user?.role !== 'ADMIN')) {
         alert('Only lecturers can update status!')
-        return
-      }
-      
-      const idea = ideas.find(i => i.id === id)
-      if (!idea) {
-        alert('Idea not found')
         return false
       }
       
-      // Check if feedback exists before approving/rejecting
       if (newStatus === 'APPROVED' || newStatus === 'REJECTED') {
         const feedbackRes = await axios.get(`${API}/feedback/idea/${id}`)
-        const feedbacks = feedbackRes.data || []
-        if (feedbacks.length === 0) {
-          alert('Please give feedback first before approving or rejecting')
+        if (feedbackRes.data?.length === 0) {
+          alert('Please give feedback first')
           return false
         }
       }
       
-      const res = await axios.put(`${API}/idea/${id}/status?status=${newStatus}`)
+      await axios.put(`${API}/idea/${id}/status?status=${newStatus}`)
       
-      if (res.data) {
-        const refreshRes = await axios.get(`${API}/idea`)
-        const data = refreshRes.data
-        setIdeas(data)
-        
-        setStats({
-          total: data.length,
-          pending: data.filter(i => i.status === 'PENDING').length,
-          underReview: data.filter(i => i.status === 'UNDER_REVIEW').length,
-          approved: data.filter(i => i.status === 'APPROVED').length,
-          rejected: data.filter(i => i.status === 'REJECTED').length
-        })
-        
-        setFilter('all')
-        return true
-      }
-      return false
+      const refreshRes = await axios.get(`${API}/idea`)
+      setIdeas(refreshRes.data)
+      setFilter('all')
+      alert(`✅ Idea ${newStatus} successfully!`)
+      return true
     } catch (error) {
-      console.error('Status update error:', error)
-      alert('Failed to update status')
+      alert(`❌ ${error.response?.data?.message || 'Failed to update status'}`)
       return false
     }
   }
 
-  // Get student name
   const getStudentName = (idea) => {
     if (idea.userName) return idea.userName
     if (idea.user) {
-      const firstName = idea.user.firstName || ''
-      const lastName = idea.user.lastName || ''
-      const fullName = `${firstName} ${lastName}`.trim()
-      if (fullName) return fullName
+      const name = `${idea.user.firstName || ''} ${idea.user.lastName || ''}`.trim()
+      return name || 'Unknown'
     }
     return 'Unknown'
   }
 
   const filteredIdeas = getFilteredIdeas()
 
-  // Loading state
   if (loading) {
     return (
       <div className="lecturer-loading">
         <div className="spinner-border text-primary" />
-        <p className="mt-2 text-muted">Loading dashboard...</p>
+        <p>Loading...</p>
       </div>
     )
   }
 
-  // Error state
   if (error) {
     return (
       <div className="text-center py-5">
@@ -289,8 +198,9 @@ const LecturerDashboardPage = () => {
   return (
     <div className="lecturer-dashboard">
       
-      {/* Sidebar */}
-      <aside className="lecturer-sidebar">
+      {sidebarOpen && <div className="sidebar-overlay show" onClick={closeSidebar} />}
+
+      <aside className={`lecturer-sidebar ${sidebarOpen ? 'show' : ''}`}>
         <div className="sidebar-menu">
           <div className="sidebar-brand">
             <span className="brand-icon">👨‍🏫</span>
@@ -313,11 +223,10 @@ const LecturerDashboardPage = () => {
         </div>
       </aside>
 
-      {/* Header */}
       <header className="lecturer-header">
         <div className="header-container">
           <div className="header-left">
-            <button className="sidebar-toggle-btn">
+            <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
               <i className="fas fa-bars" />
             </button>
             <div className="header-brand">
@@ -342,11 +251,9 @@ const LecturerDashboardPage = () => {
         </div>
       </header>
 
-      {/* Content */}
       <div className="lecturer-content">
         <div className="content-container">
           
-          {/* Welcome Banner */}
           <div className="welcome-banner">
             <div className="welcome-text">
               <h1>👋 Welcome, {lecturer.name || 'Lecturer'}!</h1>
@@ -357,7 +264,6 @@ const LecturerDashboardPage = () => {
             </div>
           </div>
 
-          {/* Filter Buttons - ONLY 5 (NO IMPLEMENTED) */}
           <div className="filter-section">
             <button 
               className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
@@ -391,7 +297,6 @@ const LecturerDashboardPage = () => {
             </button>
           </div>
 
-          {/* Ideas Table */}
           <div className="recent-ideas">
             <div className="section-header">
               <h3>📝 {filter === 'all' ? 'All Student Ideas' : filter + ' Ideas'}</h3>
@@ -450,7 +355,6 @@ const LecturerDashboardPage = () => {
         </div>
       </div>
 
-      {/* Modal */}
       {showModal && selectedIdea && (
         <IdeaModal
           idea={selectedIdea}

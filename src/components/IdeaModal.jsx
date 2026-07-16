@@ -11,15 +11,31 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
   const [message, setMessage] = useState('')
   const [comments, setComments] = useState([])
   const [commentLoading, setCommentLoading] = useState(false)
-  const [feedbackList, setFeedbackList] = useState(idea?.feedbacks || [])
+  const [feedbackList, setFeedbackList] = useState([])
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [voteCount, setVoteCount] = useState(0)
+  const [commentCount, setCommentCount] = useState(0)
+  const [feedbackCount, setFeedbackCount] = useState(0)
+  const [localIdeaStatus, setLocalIdeaStatus] = useState(idea?.status || 'PENDING')
 
   useEffect(() => {
     if (idea && idea.id) {
+      setLocalIdeaStatus(idea.status || 'PENDING')
       fetchComments()
       fetchFeedbacks()
+      fetchVoteCount()
     }
   }, [idea])
+
+  const fetchVoteCount = async () => {
+    try {
+      const res = await axios.get(`${API}/vote/idea/${idea.id}`)
+      const votes = res.data || []
+      setVoteCount(votes.length)
+    } catch {
+      setVoteCount(0)
+    }
+  }
 
   const fetchComments = async () => {
     setCommentLoading(true)
@@ -47,8 +63,10 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
       )
       
       setComments(commentsWithUsers)
+      setCommentCount(commentsWithUsers.length)
     } catch {
       setComments([])
+      setCommentCount(0)
     } finally {
       setCommentLoading(false)
     }
@@ -57,54 +75,88 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
   const fetchFeedbacks = async () => {
     try {
       const res = await axios.get(`${API}/feedback/idea/${idea.id}`)
-      setFeedbackList(res.data || [])
+      const data = res.data || []
+      
+      const feedbackWithNames = await Promise.all(
+        data.map(async (fb) => {
+          let lecturerName = 'Lecturer'
+          if (fb.lecturer) {
+            try {
+              const userRes = await axios.get(`${API}/user/${fb.lecturer}`)
+              const user = userRes.data
+              lecturerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Lecturer'
+            } catch {
+              lecturerName = 'Lecturer'
+            }
+          }
+          return {
+            ...fb,
+            lecturerName: lecturerName
+          }
+        })
+      )
+      
+      setFeedbackList(feedbackWithNames)
+      setFeedbackCount(feedbackWithNames.length)
     } catch {
       setFeedbackList([])
+      setFeedbackCount(0)
     }
   }
 
   if (!idea) return null
 
-  const handleVote = () => onVote(idea.id)
+  const handleVote = () => {
+    if (onVote) {
+      onVote(idea.id)
+      setVoteCount(prev => prev + 1)
+    }
+  }
 
-  // Handle feedback submission
+  // FIXED: Use parent's onStatusUpdate and onFeedback
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault()
+    
     if (!feedback.trim()) {
       setMessage('⚠️ Please write your feedback')
       return
     }
     
-    // Check if user is lecturer or admin
     if (currentUser?.role !== 'LECTURER' && currentUser?.role !== 'ADMIN') {
       setMessage('⚠️ Only lecturers can give feedback')
       return
     }
 
     setSubmitting(true)
-    setMessage('')
+    setMessage('⏳ Submitting feedback...')
 
     try {
-      const res = await axios.post(`${API}/feedback`, {
-        comment: feedback,
-        idea: idea.id,
-        lecturer: currentUser?.id
-      })
-
-      const data = res.data
-      setFeedbackList([...feedbackList, data])
-      setFeedback('')
-      setMessage('✅ Feedback submitted successfully!')
-      
-      // Update idea status to UNDER_REVIEW after feedback
-      if (idea.status === 'PENDING') {
-        await updateIdeaStatus('UNDER_REVIEW')
+      // STEP 1: If PENDING, change status using parent's onStatusUpdate
+      if (localIdeaStatus === 'PENDING' && onStatusUpdate) {
+        const statusChanged = await onStatusUpdate(idea.id, 'UNDER_REVIEW')
+        if (statusChanged) {
+          setLocalIdeaStatus('UNDER_REVIEW')
+          idea.status = 'UNDER_REVIEW'
+          console.log('✅ Status changed to UNDER_REVIEW')
+        } else {
+          setMessage('❌ Failed to change status')
+          setSubmitting(false)
+          return
+        }
       }
       
-      setTimeout(() => setMessage(''), 3000)
+      // STEP 2: Submit feedback using parent's onFeedback
+      if (onFeedback) {
+        await onFeedback(idea.id, feedback, () => {
+          fetchFeedbacks()
+          setFeedback('')
+          setMessage('✅ Feedback submitted successfully!')
+          setTimeout(() => setMessage(''), 3000)
+        })
+      }
       
     } catch (error) {
-      console.error('Feedback error:', error)
+      console.error('❌ Error:', error)
       setMessage('❌ Failed to submit feedback. Please try again.')
     } finally {
       setSubmitting(false)
@@ -116,26 +168,27 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
     try {
       setUpdatingStatus(true)
       
-      // If approving, check if feedback exists
-      if (newStatus === 'APPROVED' && feedbackList.length === 0) {
-        setMessage('⚠️ Please provide feedback before approving')
+      if ((newStatus === 'APPROVED' || newStatus === 'REJECTED') && feedbackList.length === 0) {
+        setMessage('⚠️ Please provide feedback before approving or rejecting')
         setUpdatingStatus(false)
         return false
       }
       
-      const res = await axios.put(`${API}/idea/${idea.id}/status?status=${newStatus}`)
-      
-      if (res.data) {
-        idea.status = newStatus
-        setMessage(`✅ Idea ${newStatus} successfully!`)
-        setTimeout(() => setMessage(''), 3000)
-        return true
+      if (onStatusUpdate) {
+        const result = await onStatusUpdate(idea.id, newStatus)
+        if (result) {
+          setLocalIdeaStatus(newStatus)
+          idea.status = newStatus
+          setMessage(`✅ Idea ${newStatus} successfully!`)
+          setTimeout(() => setMessage(''), 3000)
+        }
+        return result
       }
       return false
       
     } catch (error) {
       console.error('Status update error:', error)
-      setMessage(`❌ Failed to update status: ${error.response?.data || 'Unknown error'}`)
+      setMessage(`❌ Failed to update status`)
       setTimeout(() => setMessage(''), 3000)
       return false
     } finally {
@@ -180,14 +233,13 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
         ideaId: idea.id,
         userId: currentUser?.id
       })
-      const newComment = res.data
-      const newCommentWithUser = {
-        ...newComment,
-        user: currentUser,
+      const newComment = {
+        ...res.data,
         userName: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Student'
       }
       
-      setComments([...comments, newCommentWithUser])
+      setComments([...comments, newComment])
+      setCommentCount(prev => prev + 1)
       setComment('')
       setMessage('✅ Comment added successfully!')
       setTimeout(() => setMessage(''), 3000)
@@ -201,14 +253,22 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
 
   const canComment = () => currentUser && currentUser.role === 'STUDENT'
   const canGiveFeedback = () => currentUser && (currentUser.role === 'LECTURER' || currentUser.role === 'ADMIN')
-  const canVote = () => currentUser && currentUser.role === 'STUDENT'
+  const canVote = () => {
+    if (!currentUser) return false
+    if (currentUser.role !== 'STUDENT') return false
+    if (idea.userId === currentUser.id) return false
+    if (localIdeaStatus === 'REJECTED' || localIdeaStatus === 'IMPLEMENTED') return false
+    return true
+  }
   const canApproveReject = () => currentUser && (currentUser.role === 'LECTURER' || currentUser.role === 'ADMIN')
   
-  const totalComments = comments.length || idea.comments?.length || 0
-  const totalFeedbacks = feedbackList.length || idea.feedbacks?.length || 0
+  const totalComments = commentCount || idea.commentIds?.length || 0
+  const totalFeedbacks = feedbackCount || idea.feedbackIds?.length || 0
+  const totalVotes = voteCount || idea.voteIds?.length || 0
 
-  // Check if idea already has feedback
   const hasFeedback = feedbackList.length > 0
+
+  const displayStatus = localIdeaStatus || idea.status || 'PENDING'
 
   return (
     <div className="idea-modal-overlay" onClick={onClose}>
@@ -218,53 +278,58 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
         </button>
         <div className="idea-modal-content">
           
-          {/* Header */}
           <div className="idea-modal-header">
-            <span className="idea-modal-category">{idea.category}</span>
+            <span className="idea-modal-category">{idea.category || 'General'}</span>
             <h2>{idea.title}</h2>
             <div className="idea-modal-meta">
               <span>👤 <strong>{idea.userName || idea.user?.firstName || 'Student'}</strong></span>
-              <span>📅 {idea.createdDate || 'Just now'}</span>
-              <span>⭐ {idea.votes?.length || 0} votes</span>
+              <span>⭐ {totalVotes} votes</span>
               <span>💬 {totalComments} comments</span>
               <span>📝 {totalFeedbacks} feedbacks</span>
               <span>
-                Status: <strong className={`status-${idea.status?.toLowerCase() || 'pending'}`}>
-                  {idea.status || 'PENDING'}
+                Status: <strong className={`status-${displayStatus?.toLowerCase() || 'pending'}`}>
+                  {displayStatus || 'PENDING'}
                 </strong>
               </span>
             </div>
           </div>
 
-          {/* Description */}
           <div className="idea-modal-body">
             <h4>📝 Description</h4>
             <p>{idea.description}</p>
           </div>
 
-          {/* Vote Button */}
           <div className="idea-modal-actions">
-            <button className="idea-modal-vote-btn" onClick={handleVote} disabled={!canVote()}>
-              {canVote() ? '👍 Upvote' : '🔒 Login to Vote'} ({idea.votes?.length || 0})
+            <button 
+              className="idea-modal-vote-btn" 
+              onClick={handleVote} 
+              disabled={!canVote()}
+            >
+              {canVote() ? '⭐ Vote' : currentUser ? '🔒 Cannot Vote' : '🔒 Login to Vote'} 
+              ({totalVotes})
             </button>
+            {currentUser && idea.userId === currentUser.id && (
+              <span className="text-muted small ml-2">(You cannot vote for your own idea)</span>
+            )}
           </div>
 
-          {/* Message */}
           {message && (
-            <div className={`idea-modal-alert ${message.includes('✅') ? 'idea-modal-success' : 'idea-modal-danger'}`}>
+            <div className={`idea-modal-alert ${message.includes('✅') ? 'idea-modal-success' : message.includes('⏳') ? 'idea-modal-info' : 'idea-modal-danger'}`}>
               {message}
             </div>
           )}
 
-          {/* Feedback Section (Lecturers only) */}
           <div className="idea-modal-feedback">
-            <h4>👨‍🏫 Feedback ({totalFeedbacks})</h4>
+            <h4>👨‍🏫 Lecturer Feedback ({totalFeedbacks})</h4>
             
             {feedbackList.length > 0 ? (
               feedbackList.map((fb, index) => (
                 <div key={index} className="feedback-item">
+                  <div className="feedback-header">
+                    <strong>👨‍🏫 {fb.lecturerName || 'Lecturer'}</strong>
+                    <small>{fb.createdDate || 'Just now'}</small>
+                  </div>
                   <p>{fb.comment || fb.message}</p>
-                  <small>By Lecturer</small>
                 </div>
               ))
             ) : (
@@ -287,35 +352,43 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
             )}
           </div>
 
-          {/* Approve/Reject Buttons (Lecturers only) */}
-          {canApproveReject() && hasFeedback && idea.status !== 'APPROVED' && idea.status !== 'REJECTED' && idea.status !== 'IMPLEMENTED' && (
+          {canApproveReject() && (
             <div className="idea-modal-actions-row">
-              <button 
-                className="btn-approve" 
-                onClick={handleApprove}
-                disabled={updatingStatus}
-              >
-                {updatingStatus ? 'Processing...' : '✅ Approve'}
-              </button>
-              <button 
-                className="btn-reject" 
-                onClick={handleReject}
-                disabled={updatingStatus}
-              >
-                {updatingStatus ? 'Processing...' : '❌ Reject'}
-              </button>
+              {hasFeedback && displayStatus !== 'APPROVED' && displayStatus !== 'REJECTED' && displayStatus !== 'IMPLEMENTED' && (
+                <>
+                  <button 
+                    className="btn-approve" 
+                    onClick={handleApprove}
+                    disabled={updatingStatus}
+                  >
+                    {updatingStatus ? 'Processing...' : '✅ Approve'}
+                  </button>
+                  <button 
+                    className="btn-reject" 
+                    onClick={handleReject}
+                    disabled={updatingStatus}
+                  >
+                    {updatingStatus ? 'Processing...' : '❌ Reject'}
+                  </button>
+                </>
+              )}
+              {!hasFeedback && displayStatus !== 'APPROVED' && displayStatus !== 'REJECTED' && displayStatus !== 'IMPLEMENTED' && (
+                <p className="text-muted small">⚠️ Please give feedback first to approve or reject</p>
+              )}
+              {displayStatus === 'APPROVED' && (
+                <p className="text-success">✅ This idea has been APPROVED</p>
+              )}
+              {displayStatus === 'REJECTED' && (
+                <p className="text-danger">❌ This idea has been REJECTED</p>
+              )}
+              {displayStatus === 'IMPLEMENTED' && (
+                <p className="text-muted">🚀 This idea has been IMPLEMENTED</p>
+              )}
             </div>
           )}
 
-          {canApproveReject() && !hasFeedback && (
-            <div className="idea-modal-hint">
-              <p className="text-muted small">⚠️ Please provide feedback first to approve or reject</p>
-            </div>
-          )}
-
-          {/* Comments Section */}
           <div className="idea-modal-comments">
-            <h4>💬 Comments ({totalComments})</h4>
+            <h4>💬 Student Comments ({totalComments})</h4>
             
             {commentLoading ? (
               <p className="text-muted small">Loading comments...</p>
@@ -325,7 +398,7 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
               comments.map((c, i) => (
                 <div key={i} className="idea-modal-comment">
                   <div className="comment-header">
-                    <strong>{c.userName || c.user?.firstName || 'Student'}</strong>
+                    <strong>🎓 {c.userName || c.user?.firstName || 'Student'}</strong>
                     <small>{c.createdDate || 'Just now'}</small>
                   </div>
                   <p>{c.message}</p>

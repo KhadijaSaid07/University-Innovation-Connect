@@ -1,69 +1,79 @@
 import React, { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import './AdminSidebar.css'
 
 const AdminSidebar = () => {
   const location = useLocation()
-  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
-
-  const isActive = (path) => {
-    return location.pathname === path ? 'admin-sidebar-link active' : 'admin-sidebar-link'
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen)
   }
 
+  const closeSidebar = () => {
+    setIsOpen(false)
+  }
+
+  const isActive = (path) => {
+    return location.pathname === path ? 'active' : ''
+  }
+
   return (
     <>
-      <button className="admin-sidebar-toggle" onClick={toggleSidebar}>
-        <i className="fas fa-bars" />
-      </button>
+      {/* Mobile Overlay */}
+      {isOpen && <div className="sidebar-overlay" onClick={closeSidebar}></div>}
 
-      {isOpen && <div className="admin-sidebar-overlay" onClick={toggleSidebar} />}
-
-      <div className={`admin-sidebar ${isOpen ? 'show' : ''}`}>
-        <div className="admin-sidebar-brand">
-          <span className="admin-sidebar-icon">🛡️</span>
-          <span className="admin-sidebar-text">Admin</span>
-          <button className="admin-sidebar-close" onClick={toggleSidebar}>
-            <i className="fas fa-times" />
-          </button>
+      {/* Sidebar */}
+      <aside className={`admin-sidebar ${isOpen ? 'show' : ''}`}>
+        
+        {/* Brand */}
+        <div className="sidebar-brand">
+          <span className="brand-icon">👑</span>
+          <span className="brand-text">Admin</span>
         </div>
 
-        <nav className="admin-sidebar-nav">
-          <Link to="/admin-dashboard" className={isActive('/admin-dashboard')} onClick={() => setIsOpen(false)}>
-            <i className="fas fa-tachometer-alt" />
+        {/* Navigation */}
+        <nav className="sidebar-nav">
+          <Link to="/admin-dashboard" className={`sidebar-link ${isActive('/admin-dashboard')}`}>
+            <i className="fas fa-tachometer-alt"></i>
             <span>Dashboard</span>
           </Link>
 
-          <Link to="/admin-users" className={isActive('/admin-users')} onClick={() => setIsOpen(false)}>
-            <i className="fas fa-users" />
+          <Link to="/admin-users" className={`sidebar-link ${isActive('/admin-users')}`}>
+            <i className="fas fa-users"></i>
             <span>Users</span>
           </Link>
 
-          <Link to="/admin-ideas" className={isActive('/admin-ideas')} onClick={() => setIsOpen(false)}>
-            <i className="fas fa-lightbulb" />
+          <Link to="/admin-ideas" className={`sidebar-link ${isActive('/admin-ideas')}`}>
+            <i className="fas fa-lightbulb"></i>
             <span>Ideas</span>
           </Link>
 
-          <Link to="/admin-lecturers" className={isActive('/admin-lecturers')} onClick={() => setIsOpen(false)}>
-            <i className="fas fa-chalkboard-teacher" />
+          <Link to="/admin-lecturers" className={`sidebar-link ${isActive('/admin-lecturers')}`}>
+            <i className="fas fa-chalkboard-teacher"></i>
             <span>Lecturers</span>
           </Link>
 
-          <button className="admin-sidebar-link" onClick={handleLogout}>
-            <i className="fas fa-sign-out-alt" />
+          <button className="sidebar-link logout" onClick={() => {
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            window.location.href = '/login'
+          }}>
+            <i className="fas fa-sign-out-alt"></i>
             <span>Logout</span>
           </button>
         </nav>
-      </div>
+
+        {/* Sidebar Footer */}
+        <div className="sidebar-footer">
+          <div className="sidebar-version">v1.0.0</div>
+        </div>
+      </aside>
+
+      {/* Mobile Toggle Button */}
+      <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
+        <i className="fas fa-bars"></i>
+      </button>
     </>
   )
 }
