@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import './IdeaModal.css'
 
-const API = 'http://localhost:8080/api/v2/innovationConnect'
+const API = '/api/v2/innovationConnect'
 
 const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentUser }) => {
   const [feedback, setFeedback] = useState('')
@@ -17,7 +17,30 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
   const [commentCount, setCommentCount] = useState(0)
   const [feedbackCount, setFeedbackCount] = useState(0)
   const [localIdeaStatus, setLocalIdeaStatus] = useState(idea?.status || 'PENDING')
+  const [users, setUsers] = useState({})
 
+  // Fetch all users for name mapping
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await axios.get(`${API}/user`)
+        const userMap = {}
+        res.data.forEach(u => {
+          userMap[u.id] = {
+            name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown',
+            role: u.role
+          }
+        })
+        setUsers(userMap)
+        console.log('✅ Users loaded for names:', userMap)
+      } catch (err) {
+        console.error('❌ Failed to fetch users:', err)
+      }
+    }
+    fetchUsers()
+  }, [])
+
+  // Fetch all data when modal opens
   useEffect(() => {
     if (idea && idea.id) {
       setLocalIdeaStatus(idea.status || 'PENDING')
@@ -27,44 +50,64 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
     }
   }, [idea])
 
+  // Fetch real vote count from API
   const fetchVoteCount = async () => {
     try {
       const res = await axios.get(`${API}/vote/idea/${idea.id}`)
       const votes = res.data || []
       setVoteCount(votes.length)
-    } catch {
+      console.log('✅ Real vote count:', votes.length)
+    } catch (err) {
+      console.error('Fetch vote count error:', err)
       setVoteCount(0)
     }
   }
 
+  // Fetch real comments with student names
   const fetchComments = async () => {
     setCommentLoading(true)
     try {
       const res = await axios.get(`${API}/comment/idea/${idea.id}`)
       const data = res.data || []
+      console.log('📝 Raw comments from API:', data)
       
       const commentsWithUsers = await Promise.all(
         data.map(async (comment) => {
+          let userName = 'Student'
+          
+          // If comment has userId, fetch the user name
           if (comment.userId) {
-            try {
-              const userRes = await axios.get(`${API}/user/${comment.userId}`)
-              const user = userRes.data
-              return {
-                ...comment,
-                user: user,
-                userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Student'
+            // Check if we already have the user in our map
+            if (users[comment.userId]) {
+              userName = users[comment.userId].name
+            } else {
+              // Fetch the user from API
+              try {
+                const userRes = await axios.get(`${API}/user/${comment.userId}`)
+                const user = userRes.data
+                userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Student'
+                // Update the users map
+                users[comment.userId] = { name: userName, role: user.role }
+              } catch (err) {
+                console.error('Failed to fetch user:', comment.userId, err)
+                userName = 'Student'
               }
-            } catch {
-              return { ...comment, userName: 'Student' }
             }
           }
-          return { ...comment, userName: 'Student' }
+          
+          return {
+            ...comment,
+            userName: userName
+          }
         })
       )
       
       setComments(commentsWithUsers)
       setCommentCount(commentsWithUsers.length)
-    } catch {
+      console.log('✅ Comments with student names:', commentsWithUsers)
+      console.log('✅ Total comments count:', commentsWithUsers.length)
+    } catch (err) {
+      console.error('❌ Fetch comments error:', err)
       setComments([])
       setCommentCount(0)
     } finally {
@@ -72,23 +115,37 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
     }
   }
 
+  // Fetch real feedbacks with lecturer names
   const fetchFeedbacks = async () => {
     try {
       const res = await axios.get(`${API}/feedback/idea/${idea.id}`)
       const data = res.data || []
+      console.log('📝 Raw feedbacks from API:', data)
       
       const feedbackWithNames = await Promise.all(
         data.map(async (fb) => {
           let lecturerName = 'Lecturer'
+          
+          // If feedback has lecturerId, fetch the name
           if (fb.lecturer) {
-            try {
-              const userRes = await axios.get(`${API}/user/${fb.lecturer}`)
-              const user = userRes.data
-              lecturerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Lecturer'
-            } catch {
-              lecturerName = 'Lecturer'
+            // Check if we already have the user in our map
+            if (users[fb.lecturer]) {
+              lecturerName = users[fb.lecturer].name
+            } else {
+              // Fetch the user from API
+              try {
+                const userRes = await axios.get(`${API}/user/${fb.lecturer}`)
+                const user = userRes.data
+                lecturerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Lecturer'
+                // Update the users map
+                users[fb.lecturer] = { name: lecturerName, role: user.role }
+              } catch (err) {
+                console.error('Failed to fetch lecturer:', fb.lecturer, err)
+                lecturerName = 'Lecturer'
+              }
             }
           }
+          
           return {
             ...fb,
             lecturerName: lecturerName
@@ -98,7 +155,10 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
       
       setFeedbackList(feedbackWithNames)
       setFeedbackCount(feedbackWithNames.length)
-    } catch {
+      console.log('✅ Feedbacks with lecturer names:', feedbackWithNames)
+      console.log('✅ Total feedbacks count:', feedbackWithNames.length)
+    } catch (err) {
+      console.error('❌ Fetch feedbacks error:', err)
       setFeedbackList([])
       setFeedbackCount(0)
     }
@@ -106,6 +166,7 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
 
   if (!idea) return null
 
+  // Handle vote - updates real count
   const handleVote = () => {
     if (onVote) {
       onVote(idea.id)
@@ -113,7 +174,7 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
     }
   }
 
-  // FIXED: Use parent's onStatusUpdate and onFeedback
+  // Handle feedback submission
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault()
     
@@ -128,25 +189,30 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
     }
 
     setSubmitting(true)
-    setMessage('⏳ Submitting feedback...')
+    setMessage('')
 
     try {
-      // STEP 1: If PENDING, change status using parent's onStatusUpdate
-      if (localIdeaStatus === 'PENDING' && onStatusUpdate) {
-        const statusChanged = await onStatusUpdate(idea.id, 'UNDER_REVIEW')
-        if (statusChanged) {
-          setLocalIdeaStatus('UNDER_REVIEW')
-          idea.status = 'UNDER_REVIEW'
-          console.log('✅ Status changed to UNDER_REVIEW')
-        } else {
-          setMessage('❌ Failed to change status')
-          setSubmitting(false)
-          return
+      // Step 1: If PENDING, change to UNDER_REVIEW first
+      if (localIdeaStatus === 'PENDING') {
+        setMessage('⏳ Changing status to UNDER_REVIEW...')
+        
+        if (onStatusUpdate) {
+          const result = await onStatusUpdate(idea.id, 'UNDER_REVIEW')
+          if (result) {
+            setLocalIdeaStatus('UNDER_REVIEW')
+            idea.status = 'UNDER_REVIEW'
+            console.log('✅ Status changed to UNDER_REVIEW')
+          } else {
+            setMessage('❌ Failed to change status')
+            setSubmitting(false)
+            return
+          }
         }
       }
       
-      // STEP 2: Submit feedback using parent's onFeedback
+      // Step 2: Submit feedback
       if (onFeedback) {
+        console.log('📤 Submitting feedback...')
         await onFeedback(idea.id, feedback, () => {
           fetchFeedbacks()
           setFeedback('')
@@ -156,18 +222,19 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
       }
       
     } catch (error) {
-      console.error('❌ Error:', error)
+      console.error('❌ Feedback error:', error)
       setMessage('❌ Failed to submit feedback. Please try again.')
     } finally {
       setSubmitting(false)
     }
   }
 
-  // Handle status update (Approve/Reject)
+  // Update status (Approve/Reject)
   const updateIdeaStatus = async (newStatus) => {
     try {
       setUpdatingStatus(true)
       
+      // Check if feedback exists before approving/rejecting
       if ((newStatus === 'APPROVED' || newStatus === 'REJECTED') && feedbackList.length === 0) {
         setMessage('⚠️ Please provide feedback before approving or rejecting')
         setUpdatingStatus(false)
@@ -181,14 +248,14 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
           idea.status = newStatus
           setMessage(`✅ Idea ${newStatus} successfully!`)
           setTimeout(() => setMessage(''), 3000)
+          return true
         }
-        return result
       }
       return false
       
     } catch (error) {
-      console.error('Status update error:', error)
-      setMessage(`❌ Failed to update status`)
+      console.error('❌ Status update error:', error)
+      setMessage('❌ Failed to update status')
       setTimeout(() => setMessage(''), 3000)
       return false
     } finally {
@@ -214,43 +281,60 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
     await updateIdeaStatus('REJECTED')
   }
 
+  // Handle comment submission
   const handleCommentSubmit = async (e) => {
     e.preventDefault()
+    
     if (!comment.trim()) {
       setMessage('⚠️ Please write a comment')
       return
     }
+    
     if (!currentUser) {
       setMessage('⚠️ Please login to comment')
       return
     }
+    
+    if (currentUser.role !== 'STUDENT') {
+      setMessage('⚠️ Only students can comment')
+      return
+    }
+    
     setSubmitting(true)
     setMessage('')
 
     try {
+      console.log('📤 Submitting comment:', comment)
+      
       const res = await axios.post(`${API}/comment`, {
         message: comment,
         ideaId: idea.id,
         userId: currentUser?.id
       })
+      
+      console.log('✅ Comment response:', res.data)
+      
       const newComment = {
         ...res.data,
         userName: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Student'
       }
       
+      // Add new comment to list
       setComments([...comments, newComment])
       setCommentCount(prev => prev + 1)
       setComment('')
       setMessage('✅ Comment added successfully!')
       setTimeout(() => setMessage(''), 3000)
+      
     } catch (error) {
-      console.error('Comment error:', error)
+      console.error('❌ Comment error:', error)
       setMessage('❌ Failed to add comment. Please try again.')
     } finally {
       setSubmitting(false)
     }
   }
 
+  // Role-based permissions
   const canComment = () => currentUser && currentUser.role === 'STUDENT'
   const canGiveFeedback = () => currentUser && (currentUser.role === 'LECTURER' || currentUser.role === 'ADMIN')
   const canVote = () => {
@@ -262,12 +346,12 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
   }
   const canApproveReject = () => currentUser && (currentUser.role === 'LECTURER' || currentUser.role === 'ADMIN')
   
+  // REAL counts from API
   const totalComments = commentCount || idea.commentIds?.length || 0
   const totalFeedbacks = feedbackCount || idea.feedbackIds?.length || 0
   const totalVotes = voteCount || idea.voteIds?.length || 0
 
   const hasFeedback = feedbackList.length > 0
-
   const displayStatus = localIdeaStatus || idea.status || 'PENDING'
 
   return (
@@ -278,6 +362,7 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
         </button>
         <div className="idea-modal-content">
           
+          {/* Header with REAL counts */}
           <div className="idea-modal-header">
             <span className="idea-modal-category">{idea.category || 'General'}</span>
             <h2>{idea.title}</h2>
@@ -294,11 +379,13 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
             </div>
           </div>
 
+          {/* Description */}
           <div className="idea-modal-body">
             <h4>📝 Description</h4>
             <p>{idea.description}</p>
           </div>
 
+          {/* Vote Button */}
           <div className="idea-modal-actions">
             <button 
               className="idea-modal-vote-btn" 
@@ -313,12 +400,14 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
             )}
           </div>
 
+          {/* Message */}
           {message && (
             <div className={`idea-modal-alert ${message.includes('✅') ? 'idea-modal-success' : message.includes('⏳') ? 'idea-modal-info' : 'idea-modal-danger'}`}>
               {message}
             </div>
           )}
 
+          {/* Feedback Section - Shows REAL lecturer names */}
           <div className="idea-modal-feedback">
             <h4>👨‍🏫 Lecturer Feedback ({totalFeedbacks})</h4>
             
@@ -333,7 +422,7 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
                 </div>
               ))
             ) : (
-              <p className="text-muted small">No feedback yet</p>
+              <p className="text-muted small">No feedback yet from lecturers</p>
             )}
             
             {canGiveFeedback() && (
@@ -352,6 +441,7 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
             )}
           </div>
 
+          {/* Approve/Reject Buttons (Lecturers only) */}
           {canApproveReject() && (
             <div className="idea-modal-actions-row">
               {hasFeedback && displayStatus !== 'APPROVED' && displayStatus !== 'REJECTED' && displayStatus !== 'IMPLEMENTED' && (
@@ -387,6 +477,7 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
             </div>
           )}
 
+          {/* Comments Section - Shows REAL student names */}
           <div className="idea-modal-comments">
             <h4>💬 Student Comments ({totalComments})</h4>
             
@@ -398,7 +489,7 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
               comments.map((c, i) => (
                 <div key={i} className="idea-modal-comment">
                   <div className="comment-header">
-                    <strong>🎓 {c.userName || c.user?.firstName || 'Student'}</strong>
+                    <strong>🎓 {c.userName || 'Student'}</strong>
                     <small>{c.createdDate || 'Just now'}</small>
                   </div>
                   <p>{c.message}</p>
