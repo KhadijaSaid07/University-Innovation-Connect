@@ -156,7 +156,7 @@ const PostIdeaPage = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="h3 mb-0">💡 Post Your Idea</h1>
         <button onClick={() => navigate('/dashboard')} className="btn btn-secondary btn-sm">
-          ← Back
+           Back
         </button>
       </div>
 
