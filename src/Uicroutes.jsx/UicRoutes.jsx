@@ -129,10 +129,7 @@ const UicRoutes = createBrowserRouter(
       />
 
     </Route>
-  ),
-  {
-    basename: '/University-Innovation-Connect'
-  }
+  )
 )
 
 export default UicRoutes
