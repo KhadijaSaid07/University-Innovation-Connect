@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 import './AdminDashboardPage.css'
 
-const API = 'http://localhost:8081/api/v2/innovationConnect'
+const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
 
 const AdminIdeasPage = () => {
   const navigate = useNavigate()

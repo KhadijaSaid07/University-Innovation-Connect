@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
 
-const API = 'http://localhost:8081/api/v2/innovationConnect'
+const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
 
 const LeaderboardPage = () => {
   const navigate = useNavigate()

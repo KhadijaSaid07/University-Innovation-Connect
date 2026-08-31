@@ -3,8 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 import './LecturerProfilePage.css'
 
-const API = 'http://localhost:8081/api/v2/innovationConnect'
-const AUTH_API = 'http://localhost:8081/api/auth'
+const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
+const AUTH_API = `${import.meta.env.VITE_API_URL}/auth`
 
 const LecturerProfilePage = () => {
   const navigate = useNavigate()

@@ -1,8 +1,17 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 const API = '/api/v2/innovationConnect'
+
+// ALL CATEGORIES from IdeaCategory enum
+// Defined outside the component so it doesn't get recreated on every render.
+const allCategories = [
+  'AGRICULTURE', 'EDUCATION', 'HEALTHCARE', 'TECHNOLOGY',
+  'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
+  'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
+  'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
+]
 
 const PostIdeaPage = () => {
   const navigate = useNavigate()
@@ -10,25 +19,11 @@ const PostIdeaPage = () => {
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
-  const [categories, setCategories] = useState([])
+  const [categories, setCategories] = useState(allCategories)
   const [loading, setLoading] = useState(false)
-  const [fetching, setFetching] = useState(true)
+  const [fetching, setFetching] = useState(false)
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('')
-
-  // ALL CATEGORIES from IdeaCategory enum - will be shown
-  const allCategories = [
-    'AGRICULTURE', 'EDUCATION', 'HEALTHCARE', 'TECHNOLOGY',
-    'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
-    'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
-    'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
-  ]
-
-  useEffect(() => {
-    // Always show all categories
-    setCategories(allCategories)
-    setFetching(false)
-  }, [])
 
   const getUser = () => {
     const data = localStorage.getItem('user')

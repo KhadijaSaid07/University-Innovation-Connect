@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import './Auth.css'
 
-const API = 'http://localhost:8081/api/auth'
+const API = `${import.meta.env.VITE_API_URL}/auth`
 
 const RegisterPage = () => {
   const navigate = useNavigate()

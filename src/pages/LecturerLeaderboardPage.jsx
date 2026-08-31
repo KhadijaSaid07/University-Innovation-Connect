@@ -4,7 +4,7 @@ import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
 import './LecturerLeaderboardPage.css'
 
-const API = 'http://localhost:8081/api/v2/innovationConnect'
+const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
 
 const LecturerLeaderboardPage = () => {
   const navigate = useNavigate()
