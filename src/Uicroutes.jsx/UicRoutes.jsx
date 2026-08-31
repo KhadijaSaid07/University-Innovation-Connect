@@ -28,7 +28,7 @@ import AdminLecturersPage from '../pages/admin/AdminLecturersPage'
 const UicRoutes = createBrowserRouter(
   createRoutesFromElements(
     <Route>
-      
+
       <Route
         path="/"
         element={<LandingPage />}
@@ -65,7 +65,7 @@ const UicRoutes = createBrowserRouter(
       />
 
       <Route path="/" element={<HomeLayout />}>
-        
+
         <Route
           path="/dashboard"
           element={<DashboardPage />}
@@ -129,7 +129,11 @@ const UicRoutes = createBrowserRouter(
       />
 
     </Route>
-  )
+  ),
+  {
+    basename: '/University-Innovation-Connect'
+  }
 )
 
 export default UicRoutes
+
