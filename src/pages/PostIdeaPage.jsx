@@ -6,24 +6,22 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
 const API = `${BASE_URL}/v2/innovationConnect`
 
 const categoryOptions = [
-  { value: 'TECHNOLOGY', label: 'Technology & Software', icon: 'fas fa-microchip' },
-  { value: 'EDUCATION', label: 'Education & E-Learning', icon: 'fas fa-graduation-cap' },
-  { value: 'HEALTH', label: 'Health & Healthcare', icon: 'fas fa-heartbeat' },
-  { value: 'AGRICULTURE', label: 'Agriculture & Food Security', icon: 'fas fa-seedling' },
-  { value: 'ENVIRONMENT', label: 'Environment & Climate', icon: 'fas fa-leaf' },
-  { value: 'RENEWABLE_ENERGY', label: 'Renewable Energy', icon: 'fas fa-solar-panel' },
-  { value: 'FINTECH', label: 'FinTech & Digital Payments', icon: 'fas fa-wallet' },
-  { value: 'BUSINESS', label: 'Business & Entrepreneurship', icon: 'fas fa-briefcase' },
-  { value: 'FINANCE', label: 'Finance & Economics', icon: 'fas fa-chart-line' },
-  { value: 'TRANSPORTATION', label: 'Transportation & Logistics', icon: 'fas fa-shuttle-van' },
-  { value: 'WATER_AND_HYGIENE', label: 'Water & Sanitation', icon: 'fas fa-tint' },
-  { value: 'BLUE_ECONOMY', label: 'Blue Economy & Marine', icon: 'fas fa-water' },
-  { value: 'TOURISM', label: 'Tourism & Hospitality', icon: 'fas fa-compass' },
-  { value: 'SECURITY', label: 'Cyber & Physical Security', icon: 'fas fa-shield-alt' },
-  { value: 'OTHERS', label: 'Other Innovation', icon: 'fas fa-lightbulb' }
+  { value: 'TECHNOLOGY', label: 'Technology' },
+  { value: 'EDUCATION', label: 'Education' },
+  { value: 'HEALTH', label: 'Health & Healthcare' },
+  { value: 'AGRICULTURE', label: 'Agriculture' },
+  { value: 'ENVIRONMENT', label: 'Environment' },
+  { value: 'RENEWABLE_ENERGY', label: 'Renewable Energy' },
+  { value: 'FINTECH', label: 'FinTech' },
+  { value: 'BUSINESS', label: 'Business' },
+  { value: 'FINANCE', label: 'Finance' },
+  { value: 'TRANSPORTATION', label: 'Transportation' },
+  { value: 'WATER_AND_HYGIENE', label: 'Water & Hygiene' },
+  { value: 'BLUE_ECONOMY', label: 'Blue Economy' },
+  { value: 'TOURISM', label: 'Tourism' },
+  { value: 'SECURITY', label: 'Security' },
+  { value: 'OTHERS', label: 'Others' }
 ]
-
-const quickCategories = ['TECHNOLOGY', 'EDUCATION', 'HEALTH', 'AGRICULTURE', 'ENVIRONMENT', 'FINTECH']
 
 const PostIdeaPage = () => {
   const navigate = useNavigate()
@@ -47,13 +45,7 @@ const PostIdeaPage = () => {
     e.preventDefault()
 
     if (!title.trim() || !category || !description.trim()) {
-      setMessage('Please complete all required fields before submitting.')
-      setMessageType('error')
-      return
-    }
-
-    if (description.trim().length > 250) {
-      setMessage('Please keep your summary description under 250 characters.')
+      setMessage('Please fill in all fields.')
       setMessageType('error')
       return
     }
@@ -66,14 +58,14 @@ const PostIdeaPage = () => {
       const user = getUser()
 
       if (!user) {
-        setMessage('Please sign in to submit an idea.')
+        setMessage('Please login to post an idea.')
         setMessageType('error')
         setLoading(false)
         return
       }
 
       if (user.role !== 'STUDENT') {
-        setMessage('Only student accounts can submit new ideas.')
+        setMessage('Only students can post ideas.')
         setMessageType('error')
         setLoading(false)
         return
@@ -89,26 +81,26 @@ const PostIdeaPage = () => {
       const res = await axios.post(`${API}/idea`, requestData)
 
       if (res.data) {
-        setMessage('Your idea has been submitted successfully. Redirecting to your ideas...')
+        setMessage('Idea posted successfully.')
         setMessageType('success')
         setTitle('')
         setCategory('')
         setDescription('')
 
         setTimeout(() => {
-          navigate('/my-ideas')
-        }, 1400)
+          navigate('/dashboard')
+        }, 1200)
       }
     } catch (error) {
-      let errorMsg = 'Failed to submit idea. Please try again.'
+      let errorMsg = 'Failed to post idea. Please try again.'
       if (error.response?.data?.message) {
         errorMsg = error.response.data.message
       } else if (error.response?.status === 400) {
-        errorMsg = 'Invalid submission details. Please check your inputs.'
+        errorMsg = 'Invalid data. Please check your input.'
       } else if (error.response?.status === 401) {
-        errorMsg = 'Please sign in to submit an idea.'
+        errorMsg = 'Please login to post an idea.'
       } else if (error.response?.status === 403) {
-        errorMsg = 'Only students can submit ideas.'
+        errorMsg = 'Only students can post ideas.'
       }
 
       setMessage(errorMsg)
@@ -123,10 +115,9 @@ const PostIdeaPage = () => {
       <div className="uic-form-card">
         <div className="uic-form-card-header">
           <div>
-            <span className="uic-section-eyebrow">New Proposal</span>
-            <h2 className="uic-form-card-title">Submit an Innovation Idea</h2>
+            <h2 className="uic-form-card-title">Post an Idea</h2>
             <p className="uic-form-card-subtitle">
-              Present a clear problem statement and proposed solution for faculty review and student voting.
+              Share your project idea with students and lecturers.
             </p>
           </div>
           <button
@@ -135,7 +126,7 @@ const PostIdeaPage = () => {
             className="uic-btn-secondary"
           >
             <i className="fas fa-arrow-left" />
-            <span>Back to Feed</span>
+            <span>Back</span>
           </button>
         </div>
 
@@ -149,46 +140,24 @@ const PostIdeaPage = () => {
         <form onSubmit={handleSubmit} className="uic-proposal-form">
           <div className="uic-field-group">
             <label className="uic-field-label" htmlFor="idea-title">
-              Proposal Title <span className="uic-required">*</span>
+              Title
             </label>
             <input
               id="idea-title"
               type="text"
               className="uic-input"
-              placeholder="e.g., Smart Campus Solar Microgrid Monitoring"
+              placeholder="Enter idea title"
               value={title}
               maxLength={120}
               onChange={(e) => setTitle(e.target.value)}
               required
             />
-            <span className="uic-field-hint">
-              Keep your title concise and descriptive ({title.length}/120 characters).
-            </span>
           </div>
 
           <div className="uic-field-group">
             <label className="uic-field-label" htmlFor="idea-category">
-              Innovation Domain / Category <span className="uic-required">*</span>
+              Category
             </label>
-
-            <div className="uic-category-pills">
-              {quickCategories.map((catValue) => {
-                const catObj = categoryOptions.find((c) => c.value === catValue)
-                const isSelected = category === catValue
-                return (
-                  <button
-                    key={catValue}
-                    type="button"
-                    className={`uic-category-pill ${isSelected ? 'active' : ''}`}
-                    onClick={() => setCategory(catValue)}
-                  >
-                    <i className={catObj?.icon || 'fas fa-tag'} />
-                    <span>{catObj?.label || catValue}</span>
-                  </button>
-                )
-              })}
-            </div>
-
             <select
               id="idea-category"
               className="uic-select"
@@ -196,7 +165,7 @@ const PostIdeaPage = () => {
               onChange={(e) => setCategory(e.target.value)}
               required
             >
-              <option value="">Select a category from all domains...</option>
+              <option value="">Select category...</option>
               {categoryOptions.map((cat) => (
                 <option key={cat.value} value={cat.value}>
                   {cat.label}
@@ -206,39 +175,19 @@ const PostIdeaPage = () => {
           </div>
 
           <div className="uic-field-group">
-            <div className="uic-label-row">
-              <label className="uic-field-label" htmlFor="idea-description">
-                Proposal Summary & Impact <span className="uic-required">*</span>
-              </label>
-              <span className={`uic-char-counter ${description.length > 230 ? 'warn' : ''}`}>
-                {description.length}/250
-              </span>
-            </div>
+            <label className="uic-field-label" htmlFor="idea-description">
+              Description
+            </label>
             <textarea
               id="idea-description"
               className="uic-textarea"
               rows="5"
               maxLength={250}
-              placeholder="Describe the core problem, how your proposed solution works, and who benefits..."
+              placeholder="Describe the problem your idea solves and how it works..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
             />
-            <span className="uic-field-hint">
-              Summarize the problem, methodology, and expected university or community impact.
-            </span>
-          </div>
-
-          <div className="uic-guidelines-box">
-            <div className="uic-guidelines-title">
-              <i className="fas fa-info-circle" />
-              <span>Submission Guidelines</span>
-            </div>
-            <ul className="uic-guidelines-list">
-              <li>New proposals start in <strong>Pending</strong> status and are visible to students and faculty.</li>
-              <li>Lecturers can provide structured academic feedback and approve proposals for implementation.</li>
-              <li>You can edit or refine your proposal anytime while it is Pending or Under Review.</li>
-            </ul>
           </div>
 
           <div className="uic-form-actions">
@@ -254,7 +203,7 @@ const PostIdeaPage = () => {
               }}
               disabled={loading}
             >
-              Reset Form
+              Clear
             </button>
 
             <button
@@ -262,17 +211,7 @@ const PostIdeaPage = () => {
               className="uic-btn-primary"
               disabled={loading}
             >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" />
-                  <span>Submitting...</span>
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-paper-plane" />
-                  <span>Submit Proposal</span>
-                </>
-              )}
+              {loading ? 'Posting...' : 'Post Idea'}
             </button>
           </div>
         </form>

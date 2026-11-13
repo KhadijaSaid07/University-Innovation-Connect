@@ -76,9 +76,9 @@ const RegisterPage = () => {
       return 'Email is too long'
     }
 
-    // Password length
-    if (password.length < 4 || password.length > 72) {
-      return 'Password must be between 4 and 72 characters'
+    // Password strength / length
+    if (password.length < 6 || password.length > 72) {
+      return 'Your Password is too weak'
     }
 
     // Confirm password
@@ -125,7 +125,7 @@ const RegisterPage = () => {
 
       console.log('✅ Registration response:', res.data)
 
-      setSuccess('✅ Registration successful! Redirecting to login...')
+      setSuccess('You registered account successfully! Redirecting to login...')
 
       setForm({
         firstName: '',

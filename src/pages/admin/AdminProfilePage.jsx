@@ -102,7 +102,7 @@ const AdminProfilePage = () => {
     if (!admin.id) return
 
     if (admin.password && admin.password.length < 6) {
-      setMessage('New password must be at least 6 characters long.')
+      setMessage('Your Password is too weak')
       setMessageType('error')
       return
     }
@@ -135,7 +135,7 @@ const AdminProfilePage = () => {
           role: res.data.role || admin.role
         }))
         setAdmin(prev => ({ ...prev, password: '' }))
-        setMessage('Administrator profile updated successfully.')
+        setMessage('You updated profile successfully')
         setMessageType('success')
         setTimeout(() => setMessage(''), 3500)
       }

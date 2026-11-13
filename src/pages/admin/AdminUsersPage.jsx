@@ -122,7 +122,7 @@ const AdminUsersPage = () => {
     }
 
     if (formData.password.length < 6) {
-      showNotice('Password must be at least 6 characters long.', 'error')
+      showNotice('Your Password is too weak', 'error')
       return
     }
 
@@ -166,7 +166,7 @@ const AdminUsersPage = () => {
 
       if (res?.data) {
         await fetchUsers()
-        showNotice(`${formData.role} account for "${payload.firstName} ${payload.lastName}" created successfully.`, 'success')
+        showNotice(`You added ${formData.role.toLowerCase()} "${payload.firstName} ${payload.lastName}" successfully`, 'success')
         closeAddModal()
       }
     } catch (err) {
@@ -213,7 +213,7 @@ const AdminUsersPage = () => {
     if (!editingUser) return
 
     if (editForm.password && editForm.password.length < 6) {
-      showNotice('New password must be at least 6 characters long.', 'error')
+      showNotice('Your Password is too weak', 'error')
       return
     }
 
@@ -236,7 +236,7 @@ const AdminUsersPage = () => {
       const res = await axios.put(`${AUTH_API}/profile/${editingUser.id}`, updatePayload)
       if (res.data) {
         await fetchUsers()
-        showNotice(`User "${updatePayload.firstName} ${updatePayload.lastName}" updated successfully.`, 'success')
+        showNotice(`You updated user "${updatePayload.firstName} ${updatePayload.lastName}" successfully`, 'success')
         closeEditModal()
       }
     } catch (err) {
@@ -270,7 +270,7 @@ const AdminUsersPage = () => {
       await axios.delete(`${API}/idea/${ideaId}`)
       const res = await axios.get(`${API}/user/${selectedUser.id}/ideas`)
       setUserIdeas(res.data || [])
-      showNotice(`Idea "${ideaTitle}" deleted successfully.`, 'success')
+      showNotice(`You deleted idea "${ideaTitle}" successfully`, 'success')
     } catch (err) {
       console.error('Delete idea error:', err)
       showNotice(err.response?.data?.message || 'Failed to delete idea.', 'error')
@@ -283,7 +283,7 @@ const AdminUsersPage = () => {
     try {
       await axios.delete(`${API}/user/${id}`)
       await fetchUsers()
-      showNotice(`User "${name}" deleted successfully.`, 'success')
+      showNotice(`You deleted user "${name}" successfully`, 'success')
     } catch (err) {
       console.error('Delete user error:', err)
       let errorMsg = 'Failed to delete user.'

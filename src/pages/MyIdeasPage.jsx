@@ -17,14 +17,23 @@ const MyIdeasPage = () => {
   const navigate = useNavigate()
 
   const [ideas, setIdeas] = useState([])
-  const [stats, setStats] = useState({ total: 0, votes: 0, comments: 0 })
+  const [stats, setStats] = useState({ total: 0, votes: 0, comments: 0, feedbacks: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState({ text: '', type: 'success' })
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [editingIdea, setEditingIdea] = useState(null)
   const [editForm, setEditForm] = useState({ title: '', category: '', description: '' })
   const [savingEdit, setSavingEdit] = useState(false)
+  const [seenBannerKey, setSeenBannerKey] = useState(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || 'null')
+      return u?.id ? localStorage.getItem(`uic_seen_banner_${u.id}`) || '' : ''
+    } catch {
+      return ''
+    }
+  })
 
   const getUser = () => {
     const data = localStorage.getItem('user')
@@ -32,6 +41,20 @@ const MyIdeasPage = () => {
       try { return JSON.parse(data) } catch { return null }
     }
     return null
+  }
+
+  const showMessage = (text, type = 'success') => {
+    setNotice({ text, type })
+    setTimeout(() => {
+      setNotice({ text: '', type: 'success' })
+    }, 4000)
+  }
+
+  const computeStats = (data) => {
+    const votes = data.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
+    const comments = data.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
+    const feedbacks = data.reduce((sum, i) => sum + (i.feedbackIds?.length || 0), 0)
+    setStats({ total: data.length, votes, comments, feedbacks })
   }
 
   useEffect(() => {
@@ -49,10 +72,7 @@ const MyIdeasPage = () => {
         const data = res.data || []
 
         setIdeas(data)
-
-        const votes = data.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
-        const comments = data.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
-        setStats({ total: data.length, votes, comments })
+        computeStats(data)
       } catch (err) {
         console.error('Fetch error:', err)
         setError('Could not load your submitted ideas.')
@@ -104,9 +124,10 @@ const MyIdeasPage = () => {
         const updated = ideas.map(i => i.id === editingIdea.id ? res.data : i)
         setIdeas(updated)
         setEditingIdea(null)
+        showMessage('You updated idea successfully', 'success')
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update idea')
+      showMessage(err.response?.data?.message || 'Failed to update idea', 'error')
     } finally {
       setSavingEdit(false)
     }
@@ -120,13 +141,11 @@ const MyIdeasPage = () => {
 
       const updated = ideas.filter(i => i.id !== id)
       setIdeas(updated)
-
-      const votes = updated.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
-      const comments = updated.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
-      setStats({ total: updated.length, votes, comments })
+      computeStats(updated)
+      showMessage('You deleted idea successfully', 'success')
     } catch (err) {
       console.error('Delete error:', err)
-      alert('Failed to delete idea')
+      showMessage('Failed to delete idea', 'error')
     }
   }
 
@@ -135,13 +154,15 @@ const MyIdeasPage = () => {
       const user = getUser()
 
       if (!user) {
-        alert('Please sign in to vote')
-        return
+        const msg = 'Please sign in to vote'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
 
       if (user?.role !== 'STUDENT') {
-        alert('Only students can vote')
-        return
+        const msg = 'Only students can vote'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
 
       const res = await axios.post(`${API}/vote`, {
@@ -151,20 +172,23 @@ const MyIdeasPage = () => {
 
       if (res.data) {
         const refreshRes = await axios.get(`${API}/user/${user.id}/ideas`)
-        const updatedData = refreshRes.data
+        const updatedData = refreshRes.data || []
         setIdeas(updatedData)
-
-        const newVotes = updatedData.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
-        setStats(prev => ({ ...prev, votes: newVotes }))
+        computeStats(updatedData)
 
         if (selectedIdea && selectedIdea.id === id) {
           const updatedIdea = updatedData.find(i => i.id === id)
           setSelectedIdea(updatedIdea)
         }
+        showMessage('You voted for idea successfully', 'success')
+        return { ok: true }
       }
+      return { ok: false, message: 'Failed to vote' }
     } catch (error) {
       console.error('Vote error:', error)
-      alert(error.response?.data?.message || 'Failed to vote. Please try again.')
+      const msg = error.response?.data?.message || 'You already voted for this idea'
+      showMessage(msg, 'error')
+      return { ok: false, message: msg }
     }
   }
 
@@ -173,7 +197,7 @@ const MyIdeasPage = () => {
       const user = getUser()
 
       if (!user || (user?.role !== 'LECTURER' && user?.role !== 'ADMIN')) {
-        alert('Only lecturers can submit academic feedback')
+        showMessage('Only lecturers can submit academic feedback', 'error')
         return
       }
 
@@ -185,8 +209,9 @@ const MyIdeasPage = () => {
 
       if (res.data) {
         const refreshRes = await axios.get(`${API}/user/${user.id}/ideas`)
-        const updatedData = refreshRes.data
+        const updatedData = refreshRes.data || []
         setIdeas(updatedData)
+        computeStats(updatedData)
 
         if (selectedIdea && selectedIdea.id === id) {
           const updatedIdea = updatedData.find(i => i.id === id)
@@ -194,15 +219,16 @@ const MyIdeasPage = () => {
         }
 
         if (callback) callback()
+        showMessage('You submitted feedback successfully', 'success')
       }
     } catch (error) {
       console.error('Feedback error:', error)
-      alert('Failed to submit feedback. Please try again.')
+      showMessage('Failed to submit feedback. Please try again.', 'error')
     }
   }
 
-  const canEditIdea = (idea) => {
-    return idea.status === 'PENDING' || idea.status === 'UNDER_REVIEW'
+  const canEditIdea = () => {
+    return true
   }
 
   const formatCategory = (cat) => {
@@ -232,6 +258,43 @@ const MyIdeasPage = () => {
 
   return (
     <div className="uic-content-shell">
+      {/* Action Feedback Message Banner */}
+      {notice.text && (
+        <div className={`uic-alert ${notice.type === 'success' ? 'uic-alert-success' : 'uic-alert-error'}`}>
+          <i className={`fas ${notice.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
+          <span>{notice.text}</span>
+        </div>
+      )}
+
+      {/* Student Notification Banner if new votes or lecturer feedback exist */}
+      {(stats.votes > 0 || stats.feedbacks > 0) &&
+        seenBannerKey !== `${stats.votes}-${stats.feedbacks}` && (
+        <div className="uic-student-notif-banner">
+          <div className="uic-student-notif-left">
+            <span className="uic-student-notif-icon">
+              <i className="fas fa-bell" />
+            </span>
+            <div>
+              <strong>Activity on Your Ideas:</strong> You have received{' '}
+              <strong>{stats.votes} {stats.votes === 1 ? 'vote' : 'votes'}</strong> and{' '}
+              <strong>{stats.feedbacks} lecturer {stats.feedbacks === 1 ? 'feedback' : 'feedbacks'}</strong> across your submitted projects. Click <em>View</em> on any idea below to inspect feedback.
+            </div>
+          </div>
+          <button
+            type="button"
+            className="uic-notif-mark-btn"
+            onClick={() => {
+              const key = `${stats.votes}-${stats.feedbacks}`
+              setSeenBannerKey(key)
+              const u = getUser()
+              if (u?.id) localStorage.setItem(`uic_seen_banner_${u.id}`, key)
+            }}
+          >
+            Mark as read
+          </button>
+        </div>
+      )}
+
       {/* Summary Metrics */}
       <div className="uic-stats-row">
         <div className="uic-stat-card">
@@ -256,11 +319,11 @@ const MyIdeasPage = () => {
 
         <div className="uic-stat-card">
           <div className="uic-stat-icon sky">
-            <i className="fas fa-comments" />
+            <i className="fas fa-chalkboard-teacher" />
           </div>
           <div>
-            <div className="uic-stat-label">Community Comments</div>
-            <div className="uic-stat-value">{stats.comments}</div>
+            <div className="uic-stat-label">Lecturer Feedbacks</div>
+            <div className="uic-stat-value">{stats.feedbacks}</div>
           </div>
         </div>
       </div>
@@ -271,7 +334,7 @@ const MyIdeasPage = () => {
           <div>
             <h3 className="uic-surface-title">Your Innovation Submissions</h3>
             <p className="uic-surface-subtitle">
-              Track evaluation status, edit pending proposals, or inspect faculty feedback
+              Track evaluation status, edit pending proposals, or inspect lecturer and student feedback
             </p>
           </div>
           <button onClick={goToPost} className="uic-btn-primary">
@@ -303,7 +366,7 @@ const MyIdeasPage = () => {
                     <th>Category</th>
                     <th>Status</th>
                     <th>Votes</th>
-                    <th>Comments</th>
+                    <th>Lecturer Feedback</th>
                     <th className="text-end">Actions</th>
                   </tr>
                 </thead>
@@ -328,13 +391,17 @@ const MyIdeasPage = () => {
                         </span>
                       </td>
                       <td className="fw-semibold">{idea.voteIds?.length || 0}</td>
-                      <td>{idea.commentIds?.length || 0}</td>
+                      <td>
+                        <span className="uic-tag-pill">
+                          {idea.feedbackIds?.length || 0} {idea.feedbackIds?.length === 1 ? 'review' : 'reviews'}
+                        </span>
+                      </td>
                       <td>
                         <div className="uic-table-actions">
                           <button
                             className="uic-action-btn view"
                             onClick={() => openModal(idea)}
-                            title="View Details"
+                            title="Inspect Project & Feedback"
                           >
                             <i className="fas fa-eye" />
                             <span>View</span>
@@ -355,6 +422,7 @@ const MyIdeasPage = () => {
                             title="Delete Proposal"
                           >
                             <i className="fas fa-trash-alt" />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </td>
@@ -389,7 +457,7 @@ const MyIdeasPage = () => {
             style={{ width: '100%', maxWidth: '580px', padding: '28px' }}
           >
             <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-              <h5 className="m-0 fw-bold text-dark">Edit Proposal</h5>
+              <h5 className="m-0 fw-bold text-dark">Edit Idea</h5>
               <button className="btn btn-sm btn-light" onClick={closeEditModal}>✕</button>
             </div>
 

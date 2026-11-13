@@ -16,6 +16,12 @@ const LecturerLeaderboardPage = () => {
   const [error, setError] = useState('')
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [notice, setNotice] = useState({ type: '', text: '' })
+
+  const showMessage = (text, type = 'success') => {
+    setNotice({ type, text })
+    setTimeout(() => setNotice({ type: '', text: '' }), 4000)
+  }
 
   const getUser = () => {
     const data = localStorage.getItem('user')
@@ -58,8 +64,9 @@ const LecturerLeaderboardPage = () => {
     try {
       const user = getUser()
       if (!user || user?.role !== 'STUDENT') {
-        alert('Only students can vote!')
-        return
+        const msg = 'Only students can vote'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
 
       await axios.post(`${API}/vote`, {
@@ -75,11 +82,17 @@ const LecturerLeaderboardPage = () => {
         const updatedIdea = refreshRes.data.find(i => i.id === id)
         setSelectedIdea(updatedIdea)
       }
+      showMessage('You voted for idea successfully', 'success')
+      return { ok: true }
     } catch (error) {
       if (error.response?.status === 400 || error.response?.status === 409) {
-        alert('You have already voted for this idea')
+        const msg = error.response?.data?.message || 'You already voted for this idea'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       } else {
-        alert('Failed to vote')
+        const msg = 'Failed to vote'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
     }
   }
@@ -88,7 +101,7 @@ const LecturerLeaderboardPage = () => {
     try {
       const user = getUser()
       if (!user || (user?.role !== 'LECTURER' && user?.role !== 'ADMIN')) {
-        alert('Only lecturers can give feedback!')
+        showMessage('Only lecturers can give feedback', 'error')
         return
       }
 
@@ -108,8 +121,9 @@ const LecturerLeaderboardPage = () => {
       }
 
       if (callback) callback()
+      showMessage('You submitted feedback successfully', 'success')
     } catch {
-      alert('Failed to submit feedback')
+      showMessage('Failed to submit feedback', 'error')
     }
   }
 
@@ -117,7 +131,7 @@ const LecturerLeaderboardPage = () => {
     try {
       const user = getUser()
       if (!user || (user?.role !== 'LECTURER' && user?.role !== 'ADMIN')) {
-        alert('Only lecturers can update status!')
+        showMessage('Only lecturers can update status', 'error')
         return false
       }
 
@@ -132,10 +146,10 @@ const LecturerLeaderboardPage = () => {
         setSelectedIdea(updatedIdea)
       }
 
-      alert(`Idea ${newStatus} successfully!`)
+      showMessage(`You updated idea status to ${newStatus.replace('_', ' ')} successfully`, 'success')
       return true
     } catch {
-      alert('Failed to update status')
+      showMessage('Failed to update status', 'error')
       return false
     }
   }
@@ -203,6 +217,13 @@ const LecturerLeaderboardPage = () => {
 
       <div className="lecturer-leaderboard-content">
         <div className="leaderboard-container">
+          {notice.text && (
+            <div className={`uic-alert ${notice.type === 'success' ? 'uic-alert-success' : 'uic-alert-error'}`}>
+              <i className={`fas ${notice.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
+              <span>{notice.text}</span>
+            </div>
+          )}
+
           <div className="leaderboard-header">
             <h1>Top Student Ideas</h1>
             <p>Ranked by student community votes</p>

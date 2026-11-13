@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import AdminSidebar from './AdminSidebar'
+import IdeaModal from '../../components/IdeaModal'
 import './AdminDashboardPage.css'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
@@ -13,38 +14,34 @@ const AdminIdeasPage = () => {
   const [ideas, setIdeas] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('ALL')
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('')
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showViewModal, setShowViewModal] = useState(false)
-  const [viewLoading, setViewLoading] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [users, setUsers] = useState({})
 
-  useEffect(() => {
-    const userStr = localStorage.getItem('user')
-    if (!userStr) {
-      navigate('/login')
-      return
+  const getUser = () => {
+    const data = localStorage.getItem('user')
+    if (data) {
+      try { return JSON.parse(data) } catch { return null }
     }
-    try {
-      const user = JSON.parse(userStr)
-      if (user.role?.toUpperCase() !== 'ADMIN') {
-        navigate('/login')
-        return
-      }
-    } catch {
+    return null
+  }
+
+  useEffect(() => {
+    const user = getUser()
+    if (!user || user.role?.toUpperCase() !== 'ADMIN') {
       navigate('/login')
     }
   }, [navigate])
 
-  // Fetch users for name mapping
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await axios.get(`${API}/user`)
         const userMap = {}
-        res.data.forEach(u => {
+        ;(res.data || []).forEach(u => {
           userMap[u.id] = {
             name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown',
             role: u.role
@@ -58,69 +55,29 @@ const AdminIdeasPage = () => {
     fetchUsers()
   }, [])
 
-  // Fetch ideas
-  useEffect(() => {
-    const fetchIdeas = async () => {
-      try {
-        const res = await axios.get(`${API}/idea`)
-        setIdeas(res.data)
-      } catch (err) {
-        console.error('Fetch ideas error:', err)
-        setMessage('Could not load ideas')
-        setMessageType('error')
-      } finally {
-        setLoading(false)
-      }
+  const fetchIdeas = async () => {
+    try {
+      const res = await axios.get(`${API}/idea`)
+      setIdeas(res.data || [])
+    } catch (err) {
+      console.error('Fetch ideas error:', err)
+      setMessage('Could not load ideas.')
+      setMessageType('error')
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchIdeas()
   }, [])
 
-  // View idea details
-  const viewIdea = async (idea) => {
-    setSelectedIdea(idea)
+  const viewIdea = (idea) => {
+    setSelectedIdea({
+      ...idea,
+      userName: getAuthorName(idea)
+    })
     setShowViewModal(true)
-    setViewLoading(true)
-
-    try {
-      // Fetch comments for this idea
-      const commentsRes = await axios.get(`${API}/comment/idea/${idea.id}`)
-      const comments = commentsRes.data || []
-
-      // Fetch feedbacks for this idea
-      const feedbackRes = await axios.get(`${API}/feedback/idea/${idea.id}`)
-      const feedbacks = feedbackRes.data || []
-
-      // Add user names to comments
-      const commentsWithNames = comments.map(comment => {
-        const userInfo = users[comment.userId]
-        return {
-          ...comment,
-          userName: userInfo ? userInfo.name : 'Unknown Student'
-        }
-      })
-
-      // Add lecturer names to feedbacks
-      const feedbackWithNames = feedbacks.map(fb => {
-        const userInfo = users[fb.lecturer]
-        return {
-          ...fb,
-          lecturerName: userInfo ? userInfo.name : 'Unknown Lecturer'
-        }
-      })
-
-      setSelectedIdea({
-        ...idea,
-        comments: commentsWithNames,
-        feedbacks: feedbackWithNames,
-        commentCount: commentsWithNames.length,
-        feedbackCount: feedbackWithNames.length
-      })
-
-    } catch (err) {
-      console.error('View idea error:', err)
-    } finally {
-      setViewLoading(false)
-    }
   }
 
   const closeViewModal = () => {
@@ -128,42 +85,48 @@ const AdminIdeasPage = () => {
     setSelectedIdea(null)
   }
 
-  // Delete idea
-  const deleteIdea = async (id, title) => {
-    if (!window.confirm(`🗑️ Delete idea: "${title}"?`)) return
-
+  const handleFeedback = async (id, comment, callback) => {
     try {
-      await axios.delete(`${API}/idea/${id}`)
-
-      const res = await axios.get(`${API}/idea`)
-      setIdeas(res.data)
-
-      setMessage(`✅ Idea "${title}" deleted successfully!`)
-      setMessageType('success')
-      setTimeout(() => setMessage(''), 3000)
-
+      const user = getUser()
+      await axios.post(`${API}/feedback`, {
+        comment: comment,
+        idea: id,
+        lecturer: user?.id
+      })
+      await fetchIdeas()
+      if (callback) callback()
     } catch (err) {
-      console.error('Delete idea error:', err)
-      setMessage(`❌ ${err.response?.data?.message || 'Failed to delete idea'}`)
-      setMessageType('error')
-      setTimeout(() => setMessage(''), 3000)
+      console.error('Feedback error:', err)
     }
   }
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
-  const closeSidebar = () => setSidebarOpen(false)
-
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    navigate('/login')
+  const handleStatusUpdate = async (id, newStatus) => {
+    try {
+      await axios.put(`${API}/idea/${id}/status?status=${newStatus}`)
+      await fetchIdeas()
+      return true
+    } catch (err) {
+      console.error('Status update error:', err)
+      return false
+    }
   }
 
-  const filteredIdeas = ideas.filter(idea =>
-    idea.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    idea.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    idea.status?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const deleteIdea = async (id, title) => {
+    if (!window.confirm(`Delete project "${title}"? This action cannot be undone.`)) return
+
+    try {
+      await axios.delete(`${API}/idea/${id}`)
+      await fetchIdeas()
+      setMessage(`You deleted idea "${title}" successfully`)
+      setMessageType('success')
+      setTimeout(() => setMessage(''), 3500)
+    } catch (err) {
+      console.error('Delete idea error:', err)
+      setMessage(err.response?.data?.message || 'Failed to delete project.')
+      setMessageType('error')
+      setTimeout(() => setMessage(''), 4000)
+    }
+  }
 
   const getAuthorName = (idea) => {
     if (idea.userName) return idea.userName
@@ -173,19 +136,36 @@ const AdminIdeasPage = () => {
     if (idea.user && idea.user.firstName) {
       return `${idea.user.firstName || ''} ${idea.user.lastName || ''}`.trim() || 'Unknown'
     }
-    return 'Unknown'
+    return 'Student'
   }
 
   const getStatusBadge = (status) => {
     const colors = {
-      'PENDING': 'status-badge pending',
-      'UNDER_REVIEW': 'status-badge under_review',
-      'APPROVED': 'status-badge approved',
-      'REJECTED': 'status-badge rejected',
-      'IMPLEMENTED': 'status-badge implemented'
+      PENDING: 'status-badge pending',
+      UNDER_REVIEW: 'status-badge under_review',
+      APPROVED: 'status-badge approved',
+      REJECTED: 'status-badge rejected',
+      IMPLEMENTED: 'status-badge implemented'
     }
     return colors[status] || 'status-badge pending'
   }
+
+  const countByStatus = (st) => {
+    if (st === 'ALL') return ideas.length
+    return ideas.filter(i => i.status === st).length
+  }
+
+  const filteredIdeas = ideas.filter(idea => {
+    const matchesStatus = statusFilter === 'ALL' || idea.status === statusFilter
+    const q = searchTerm.trim().toLowerCase()
+    const matchesSearch =
+      !q ||
+      idea.title?.toLowerCase().includes(q) ||
+      idea.category?.toLowerCase().includes(q) ||
+      idea.status?.toLowerCase().includes(q) ||
+      getAuthorName(idea).toLowerCase().includes(q)
+    return matchesStatus && matchesSearch
+  })
 
   if (loading) {
     return (
@@ -208,20 +188,19 @@ const AdminIdeasPage = () => {
     <div className="admin-dashboard">
       <AdminSidebar
         pageTitle="Ideas Management"
-        pageSubtitle="Inspect submissions, review feedback, and moderate proposals"
+        pageSubtitle="Inspect submissions, review lecturer and student feedback, and moderate proposals"
       />
 
       <div className="admin-content">
         <div className="content-container">
-
-          <div className="page-header">
+          <div className="page-header uic-responsive-header">
             <div className="page-header-left">
-              <h1>💡 Ideas</h1>
-              <p>Manage all ideas posted on the platform</p>
+              <h1>Submitted Projects & Ideas</h1>
+              <p>Inspect project details, separated lecturer & student feedback, or remove entries</p>
             </div>
             <div className="page-header-right">
               <span className="admin-count-badge">
-                Total: {ideas.length} ideas
+                Showing {filteredIdeas.length} of {ideas.length}
               </span>
             </div>
           </div>
@@ -232,14 +211,46 @@ const AdminIdeasPage = () => {
             </div>
           )}
 
-          <div className="admin-search-bar">
-            <input
-              type="text"
-              className="admin-search-input"
-              placeholder="🔍 Search ideas by title, category, or status..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="uic-admin-toolbar">
+            <div className="uic-role-tabs">
+              {[
+                { key: 'ALL', label: `All (${countByStatus('ALL')})` },
+                { key: 'PENDING', label: `Pending (${countByStatus('PENDING')})` },
+                { key: 'UNDER_REVIEW', label: `Under Review (${countByStatus('UNDER_REVIEW')})` },
+                { key: 'APPROVED', label: `Approved (${countByStatus('APPROVED')})` },
+                { key: 'REJECTED', label: `Rejected (${countByStatus('REJECTED')})` }
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`uic-role-tab ${statusFilter === tab.key ? 'active' : ''}`}
+                  onClick={() => setStatusFilter(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="uic-search-box">
+              <i className="fas fa-search uic-search-icon" />
+              <input
+                type="text"
+                className="uic-search-field"
+                placeholder="Search by title, author, or category..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  className="uic-search-clear"
+                  onClick={() => setSearchTerm('')}
+                  aria-label="Clear search"
+                >
+                  <i className="fas fa-times" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="admin-table-card">
@@ -253,14 +264,14 @@ const AdminIdeasPage = () => {
                     <th>Category</th>
                     <th>Status</th>
                     <th>Votes</th>
-                    <th>Actions</th>
+                    <th className="text-end">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredIdeas.length === 0 ? (
                     <tr>
                       <td colSpan="7" className="admin-empty-text">
-                        {ideas.length === 0 ? 'No ideas posted yet' : 'No matching ideas found'}
+                        {ideas.length === 0 ? 'No projects submitted yet.' : 'No matching projects found.'}
                       </td>
                     </tr>
                   ) : (
@@ -272,23 +283,29 @@ const AdminIdeasPage = () => {
                         <td>{idea.category}</td>
                         <td>
                           <span className={getStatusBadge(idea.status)}>
-                            {idea.status || 'PENDING'}
+                            {(idea.status || 'PENDING').replace('_', ' ')}
                           </span>
                         </td>
-                        <td>⭐ {idea.voteIds?.length || 0}</td>
+                        <td>{idea.voteIds?.length || 0}</td>
                         <td>
-                          <button
-                            className="admin-view-btn"
-                            onClick={() => viewIdea(idea)}
-                          >
-                            <i className="fas fa-eye"></i> View
-                          </button>
-                          <button
-                            className="admin-delete-btn"
-                            onClick={() => deleteIdea(idea.id, idea.title)}
-                          >
-                            <i className="fas fa-trash"></i> Delete
-                          </button>
+                          <div className="uic-table-actions">
+                            <button
+                              type="button"
+                              className="uic-action-btn view"
+                              onClick={() => viewIdea(idea)}
+                            >
+                              <i className="fas fa-eye"></i>
+                              <span>Inspect</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="uic-action-btn delete"
+                              onClick={() => deleteIdea(idea.id, idea.title)}
+                            >
+                              <i className="fas fa-trash-alt"></i>
+                              <span>Delete</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -300,111 +317,16 @@ const AdminIdeasPage = () => {
         </div>
       </div>
 
-      {/* View Idea Modal */}
+      {/* Unified Project Inspection Modal with Separated Lecturer & Student Feedback */}
       {showViewModal && selectedIdea && (
-        <div className="admin-modal-overlay" onClick={closeViewModal}>
-          <div className="admin-modal admin-modal-large" onClick={(e) => e.stopPropagation()}>
-            <div className="admin-modal-header">
-              <h3>💡 Idea Details</h3>
-              <button className="admin-modal-close" onClick={closeViewModal}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="admin-modal-body">
-
-              {viewLoading ? (
-                <div className="admin-loading">
-                  <div className="admin-spinner-small"></div>
-                  <p>Loading details...</p>
-                </div>
-              ) : (
-                <>
-                  {/* Idea Info */}
-                  <div className="view-idea-info">
-                    <h2 className="view-idea-title">{selectedIdea.title}</h2>
-
-                    <div className="view-idea-meta">
-                      <span className="view-meta-item">
-                        <strong>Author:</strong> {getAuthorName(selectedIdea)}
-                      </span>
-                      <span className="view-meta-item">
-                        <strong>Category:</strong> {selectedIdea.category}
-                      </span>
-                      <span className="view-meta-item">
-                        <strong>Status:</strong>
-                        <span className={`view-status-badge ${selectedIdea.status?.toLowerCase() || 'pending'}`}>
-                          {selectedIdea.status || 'PENDING'}
-                        </span>
-                      </span>
-                      <span className="view-meta-item">
-                        <strong>Votes:</strong> ⭐ {selectedIdea.voteIds?.length || 0}
-                      </span>
-                      <span className="view-meta-item">
-                        <strong>Comments:</strong> 💬 {selectedIdea.commentCount || selectedIdea.commentIds?.length || 0}
-                      </span>
-                      <span className="view-meta-item">
-                        <strong>Feedbacks:</strong> 📝 {selectedIdea.feedbackCount || selectedIdea.feedbackIds?.length || 0}
-                      </span>
-                    </div>
-
-                    <div className="view-idea-description">
-                      <h4>📝 Description</h4>
-                      <p>{selectedIdea.description || 'No description provided'}</p>
-                    </div>
-                  </div>
-
-                  {/* Comments Section */}
-                  <div className="view-comments-section">
-                    <h4>💬 Comments ({selectedIdea.commentCount || selectedIdea.commentIds?.length || 0})</h4>
-                    {selectedIdea.comments?.length === 0 ? (
-                      <p className="empty-text">No comments yet</p>
-                    ) : (
-                      <div className="view-comments-list">
-                        {selectedIdea.comments?.map((comment, index) => (
-                          <div key={index} className="view-comment-item">
-                            <div className="view-comment-header">
-                              <strong>🎓 {comment.userName || 'Student'}</strong>
-                              <small>{comment.createdDate || 'Just now'}</small>
-                            </div>
-                            <p>{comment.message}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Feedbacks Section */}
-                  <div className="view-feedbacks-section">
-                    <h4>📝 Feedbacks ({selectedIdea.feedbackCount || selectedIdea.feedbackIds?.length || 0})</h4>
-                    {selectedIdea.feedbacks?.length === 0 ? (
-                      <p className="empty-text">No feedbacks yet</p>
-                    ) : (
-                      <div className="view-feedbacks-list">
-                        {selectedIdea.feedbacks?.map((feedback, index) => (
-                          <div key={index} className="view-feedback-item">
-                            <div className="view-feedback-header">
-                              <strong>👨‍🏫 {feedback.lecturerName || 'Lecturer'}</strong>
-                              <small>{feedback.createdDate || 'Just now'}</small>
-                            </div>
-                            <p>{feedback.comment || feedback.message}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              <div className="admin-modal-actions">
-                <button className="admin-cancel-btn" onClick={closeViewModal}>
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <IdeaModal
+          idea={selectedIdea}
+          onClose={closeViewModal}
+          onFeedback={handleFeedback}
+          onStatusUpdate={handleStatusUpdate}
+          currentUser={getUser()}
+        />
       )}
-
     </div>
   )
 }

@@ -18,6 +18,12 @@ const LecturerDashboardPage = () => {
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [filter, setFilter] = useState('all')
+  const [notice, setNotice] = useState({ type: '', text: '' })
+
+  const showMessage = (text, type = 'success') => {
+    setNotice({ type, text })
+    setTimeout(() => setNotice({ type: '', text: '' }), 4000)
+  }
 
   const getUser = () => {
     const data = localStorage.getItem('user')
@@ -85,8 +91,9 @@ const LecturerDashboardPage = () => {
     try {
       const user = getUser()
       if (!user || user?.role !== 'STUDENT') {
-        alert('Only students can vote!')
-        return
+        const msg = 'Only students can vote'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
 
       await axios.post(`${API}/vote`, {
@@ -96,11 +103,17 @@ const LecturerDashboardPage = () => {
 
       const refreshRes = await axios.get(`${API}/idea`)
       setIdeas(refreshRes.data || [])
+      showMessage('You voted for idea successfully', 'success')
+      return { ok: true }
     } catch (error) {
       if (error.response?.status === 400 || error.response?.status === 409) {
-        alert('You have already voted for this idea')
+        const msg = error.response?.data?.message || 'You already voted for this idea'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       } else {
-        alert('Failed to vote')
+        const msg = 'Failed to vote'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
     }
   }
@@ -109,7 +122,7 @@ const LecturerDashboardPage = () => {
     try {
       const user = getUser()
       if (!user || (user?.role !== 'LECTURER' && user?.role !== 'ADMIN')) {
-        alert('Only lecturers can give feedback!')
+        showMessage('Only lecturers can give feedback', 'error')
         return
       }
 
@@ -128,9 +141,9 @@ const LecturerDashboardPage = () => {
       setIdeas(refreshRes.data || [])
 
       if (callback) callback()
-      alert('Feedback submitted successfully!')
+      showMessage('You submitted feedback successfully', 'success')
     } catch (error) {
-      alert(`${error.response?.data?.message || 'Failed to submit feedback'}`)
+      showMessage(error.response?.data?.message || 'Failed to submit feedback', 'error')
     }
   }
 
@@ -138,14 +151,14 @@ const LecturerDashboardPage = () => {
     try {
       const user = getUser()
       if (!user || (user?.role !== 'LECTURER' && user?.role !== 'ADMIN')) {
-        alert('Only lecturers can update status!')
+        showMessage('Only lecturers can update status', 'error')
         return false
       }
 
       if (newStatus === 'APPROVED' || newStatus === 'REJECTED') {
         const feedbackRes = await axios.get(`${API}/feedback/idea/${id}`)
         if (feedbackRes.data?.length === 0) {
-          alert('Please give feedback first')
+          showMessage('Please submit lecturer feedback before approving or rejecting', 'error')
           return false
         }
       }
@@ -155,10 +168,10 @@ const LecturerDashboardPage = () => {
       const refreshRes = await axios.get(`${API}/idea`)
       setIdeas(refreshRes.data || [])
       setFilter('all')
-      alert(`Idea ${newStatus} successfully!`)
+      showMessage(`You updated idea status to ${newStatus.replace('_', ' ')} successfully`, 'success')
       return true
     } catch (error) {
-      alert(`${error.response?.data?.message || 'Failed to update status'}`)
+      showMessage(error.response?.data?.message || 'Failed to update status', 'error')
       return false
     }
   }
@@ -225,6 +238,13 @@ const LecturerDashboardPage = () => {
 
       <div className="lecturer-content">
         <div className="content-container">
+          {notice.text && (
+            <div className={`uic-alert ${notice.type === 'success' ? 'uic-alert-success' : 'uic-alert-error'}`}>
+              <i className={`fas ${notice.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
+              <span>{notice.text}</span>
+            </div>
+          )}
+
           <div className="welcome-banner">
             <div className="welcome-text">
               <h1>Welcome, {lecturer.name || 'Lecturer'}</h1>

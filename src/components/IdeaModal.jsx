@@ -8,334 +8,275 @@ const API = `${BASE_URL}/v2/innovationConnect`
 const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentUser }) => {
   const [feedback, setFeedback] = useState('')
   const [comment, setComment] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  const [submittingFeedback, setSubmittingFeedback] = useState(false)
+  const [submittingComment, setSubmittingComment] = useState(false)
   const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState('info')
   const [comments, setComments] = useState([])
   const [commentLoading, setCommentLoading] = useState(false)
   const [feedbackList, setFeedbackList] = useState([])
+  const [feedbackLoading, setFeedbackLoading] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [voteCount, setVoteCount] = useState(0)
+  const [hasVoted, setHasVoted] = useState(false)
+  const [voting, setVoting] = useState(false)
   const [commentCount, setCommentCount] = useState(0)
   const [feedbackCount, setFeedbackCount] = useState(0)
   const [localIdeaStatus, setLocalIdeaStatus] = useState(idea?.status || 'PENDING')
-  const [users, setUsers] = useState({})
+  const [activeTab, setActiveTab] = useState('both') // 'both' | 'lecturer' | 'student'
 
-  // Fetch all users for name mapping
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await axios.get(`${API}/user`)
-        const userMap = {}
-        res.data.forEach(u => {
-          userMap[u.id] = {
-            name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown',
-            role: u.role
-          }
-        })
-        setUsers(userMap)
-        console.log('✅ Users loaded for names:', userMap)
-      } catch (err) {
-        console.error('❌ Failed to fetch users:', err)
-      }
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Recently'
+    try {
+      const d = new Date(dateStr)
+      if (isNaN(d.getTime())) return String(dateStr)
+      return d.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch {
+      return String(dateStr)
     }
-    fetchUsers()
-  }, [])
+  }
 
-  // Fetch all data when modal opens
+  const formatCategory = (cat) => {
+    if (!cat) return 'General'
+    return cat.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+  }
+
   useEffect(() => {
     if (idea && idea.id) {
       setLocalIdeaStatus(idea.status || 'PENDING')
-      fetchComments()
-      fetchFeedbacks()
       fetchVoteCount()
+      fetchCommentsAndFeedbacks()
     }
   }, [idea])
 
-  // Fetch real vote count from API
   const fetchVoteCount = async () => {
     try {
       const res = await axios.get(`${API}/vote/idea/${idea.id}`)
       const votes = res.data || []
       setVoteCount(votes.length)
-      console.log('✅ Real vote count:', votes.length)
-    } catch (err) {
-      console.error('Fetch vote count error:', err)
-      setVoteCount(0)
+      if (currentUser?.id) {
+        const voted = votes.some(
+          v => v.userId === currentUser.id || v.user?.id === currentUser.id
+        )
+        setHasVoted(voted)
+      }
+    } catch {
+      setVoteCount(idea?.voteIds?.length || 0)
     }
   }
 
-  // Fetch real comments with student names
-  const fetchComments = async () => {
+  const fetchCommentsAndFeedbacks = async () => {
     setCommentLoading(true)
+    setFeedbackLoading(true)
+
+    let userMap = {}
+    try {
+      const usersRes = await axios.get(`${API}/user`)
+      ;(usersRes.data || []).forEach(u => {
+        userMap[u.id] = {
+          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User',
+          role: u.role
+        }
+      })
+    } catch {
+      // Fallback to DTO names if user list fails
+    }
+
+    // Fetch student comments
     try {
       const res = await axios.get(`${API}/comment/idea/${idea.id}`)
       const data = res.data || []
-      console.log('📝 Raw comments from API:', data)
-      
-      const commentsWithUsers = await Promise.all(
-        data.map(async (comment) => {
-          let userName = 'Student'
-          
-          // If comment has userId, fetch the user name
-          if (comment.userId) {
-            // Check if we already have the user in our map
-            if (users[comment.userId]) {
-              userName = users[comment.userId].name
-            } else {
-              // Fetch the user from API
-              try {
-                const userRes = await axios.get(`${API}/user/${comment.userId}`)
-                const user = userRes.data
-                userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Student'
-                // Update the users map
-                users[comment.userId] = { name: userName, role: user.role }
-              } catch (err) {
-                console.error('Failed to fetch user:', comment.userId, err)
-                userName = 'Student'
-              }
-            }
-          }
-          
-          return {
-            ...comment,
-            userName: userName
-          }
-        })
-      )
-      
-      setComments(commentsWithUsers)
-      setCommentCount(commentsWithUsers.length)
-      console.log('✅ Comments with student names:', commentsWithUsers)
-      console.log('✅ Total comments count:', commentsWithUsers.length)
-    } catch (err) {
-      console.error('❌ Fetch comments error:', err)
+      const mappedComments = data.map(c => ({
+        ...c,
+        userName:
+          c.userName ||
+          (c.userId && userMap[c.userId]?.name) ||
+          'Student'
+      }))
+      setComments(mappedComments)
+      setCommentCount(mappedComments.length)
+    } catch {
       setComments([])
       setCommentCount(0)
     } finally {
       setCommentLoading(false)
     }
-  }
 
-  // Fetch real feedbacks with lecturer names
-  const fetchFeedbacks = async () => {
+    // Fetch lecturer feedbacks
     try {
       const res = await axios.get(`${API}/feedback/idea/${idea.id}`)
       const data = res.data || []
-      console.log('📝 Raw feedbacks from API:', data)
-      
-      const feedbackWithNames = await Promise.all(
-        data.map(async (fb) => {
-          let lecturerName = 'Lecturer'
-          
-          // If feedback has lecturerId, fetch the name
-          if (fb.lecturer) {
-            // Check if we already have the user in our map
-            if (users[fb.lecturer]) {
-              lecturerName = users[fb.lecturer].name
-            } else {
-              // Fetch the user from API
-              try {
-                const userRes = await axios.get(`${API}/user/${fb.lecturer}`)
-                const user = userRes.data
-                lecturerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Lecturer'
-                // Update the users map
-                users[fb.lecturer] = { name: lecturerName, role: user.role }
-              } catch (err) {
-                console.error('Failed to fetch lecturer:', fb.lecturer, err)
-                lecturerName = 'Lecturer'
-              }
-            }
-          }
-          
-          return {
-            ...fb,
-            lecturerName: lecturerName
-          }
-        })
-      )
-      
-      setFeedbackList(feedbackWithNames)
-      setFeedbackCount(feedbackWithNames.length)
-      console.log('✅ Feedbacks with lecturer names:', feedbackWithNames)
-      console.log('✅ Total feedbacks count:', feedbackWithNames.length)
-    } catch (err) {
-      console.error('❌ Fetch feedbacks error:', err)
+      const mappedFeedbacks = data.map(fb => ({
+        ...fb,
+        lecturerName:
+          fb.lecturerName ||
+          (fb.lecturer && userMap[fb.lecturer]?.name) ||
+          'Lecturer'
+      }))
+      setFeedbackList(mappedFeedbacks)
+      setFeedbackCount(mappedFeedbacks.length)
+    } catch {
       setFeedbackList([])
       setFeedbackCount(0)
+    } finally {
+      setFeedbackLoading(false)
     }
   }
 
   if (!idea) return null
 
-  // Handle vote - updates real count
-  const handleVote = () => {
-    if (onVote) {
-      onVote(idea.id)
-      setVoteCount(prev => prev + 1)
+  const showNotice = (msg, type = 'info') => {
+    setMessage(msg)
+    setMessageType(type)
+    setTimeout(() => setMessage(''), 3500)
+  }
+
+  const handleVote = async () => {
+    if (voting) return
+
+    if (hasVoted) {
+      showNotice('You already voted for this idea', 'error')
+      return
+    }
+
+    if (!onVote) return
+
+    setVoting(true)
+    try {
+      const result = await onVote(idea.id)
+      if (result && result.ok === false) {
+        if ((result.message || '').toLowerCase().includes('already voted')) {
+          setHasVoted(true)
+        }
+        showNotice(result.message || 'You already voted for this idea', 'error')
+      } else {
+        setHasVoted(true)
+        await fetchVoteCount()
+        showNotice('You voted for idea successfully', 'success')
+      }
+    } finally {
+      setVoting(false)
     }
   }
 
-  // Handle feedback submission
   const handleFeedbackSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!feedback.trim()) {
-      setMessage('⚠️ Please write your feedback')
-      return
-    }
-    
-    if (currentUser?.role !== 'LECTURER' && currentUser?.role !== 'ADMIN') {
-      setMessage('⚠️ Only lecturers can give feedback')
+      showNotice('Please enter your academic feedback before submitting.', 'error')
       return
     }
 
-    setSubmitting(true)
+    if (currentUser?.role !== 'LECTURER' && currentUser?.role !== 'ADMIN') {
+      showNotice('Only lecturers can submit academic feedback.', 'error')
+      return
+    }
+
+    setSubmittingFeedback(true)
     setMessage('')
 
     try {
-      // Step 1: If PENDING, change to UNDER_REVIEW first
-      if (localIdeaStatus === 'PENDING') {
-        setMessage('⏳ Changing status to UNDER_REVIEW...')
-        
-        if (onStatusUpdate) {
-          const result = await onStatusUpdate(idea.id, 'UNDER_REVIEW')
-          if (result) {
-            setLocalIdeaStatus('UNDER_REVIEW')
-            idea.status = 'UNDER_REVIEW'
-            console.log('✅ Status changed to UNDER_REVIEW')
-          } else {
-            setMessage('❌ Failed to change status')
-            setSubmitting(false)
-            return
-          }
+      if (localIdeaStatus === 'PENDING' && onStatusUpdate) {
+        const result = await onStatusUpdate(idea.id, 'UNDER_REVIEW')
+        if (result) {
+          setLocalIdeaStatus('UNDER_REVIEW')
+          idea.status = 'UNDER_REVIEW'
         }
       }
-      
-      // Step 2: Submit feedback
+
       if (onFeedback) {
-        console.log('📤 Submitting feedback...')
-        await onFeedback(idea.id, feedback, () => {
-          fetchFeedbacks()
+        await onFeedback(idea.id, feedback.trim(), () => {
+          fetchCommentsAndFeedbacks()
           setFeedback('')
-          setMessage('✅ Feedback submitted successfully!')
-          setTimeout(() => setMessage(''), 3000)
+          showNotice('Lecturer feedback submitted successfully.', 'success')
         })
       }
-      
-    } catch (error) {
-      console.error('❌ Feedback error:', error)
-      setMessage('❌ Failed to submit feedback. Please try again.')
+    } catch {
+      showNotice('Failed to submit feedback. Please try again.', 'error')
     } finally {
-      setSubmitting(false)
+      setSubmittingFeedback(false)
     }
   }
 
-  // Update status (Approve/Reject)
   const updateIdeaStatus = async (newStatus) => {
     try {
       setUpdatingStatus(true)
-      
-      // Check if feedback exists before approving/rejecting
+
       if ((newStatus === 'APPROVED' || newStatus === 'REJECTED') && feedbackList.length === 0) {
-        setMessage('⚠️ Please provide feedback before approving or rejecting')
+        showNotice('Please provide lecturer feedback before approving or rejecting this project.', 'error')
         setUpdatingStatus(false)
         return false
       }
-      
+
       if (onStatusUpdate) {
         const result = await onStatusUpdate(idea.id, newStatus)
         if (result) {
           setLocalIdeaStatus(newStatus)
           idea.status = newStatus
-          setMessage(`✅ Idea ${newStatus} successfully!`)
-          setTimeout(() => setMessage(''), 3000)
+          showNotice(`Project status updated to ${newStatus.replace('_', ' ')}.`, 'success')
           return true
         }
       }
       return false
-      
-    } catch (error) {
-      console.error('❌ Status update error:', error)
-      setMessage('❌ Failed to update status')
-      setTimeout(() => setMessage(''), 3000)
+    } catch {
+      showNotice('Failed to update project status.', 'error')
       return false
     } finally {
       setUpdatingStatus(false)
     }
   }
 
-  const handleApprove = async () => {
-    if (feedbackList.length === 0) {
-      setMessage('⚠️ Please give feedback before approving')
-      setTimeout(() => setMessage(''), 3000)
-      return
-    }
-    await updateIdeaStatus('APPROVED')
-  }
-
-  const handleReject = async () => {
-    if (feedbackList.length === 0) {
-      setMessage('⚠️ Please give feedback before rejecting')
-      setTimeout(() => setMessage(''), 3000)
-      return
-    }
-    await updateIdeaStatus('REJECTED')
-  }
-
-  // Handle comment submission
   const handleCommentSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!comment.trim()) {
-      setMessage('⚠️ Please write a comment')
+      showNotice('Please write a comment before posting.', 'error')
       return
     }
-    
+
     if (!currentUser) {
-      setMessage('⚠️ Please login to comment')
+      showNotice('Please sign in to post a comment.', 'error')
       return
     }
-    
+
     if (currentUser.role !== 'STUDENT') {
-      setMessage('⚠️ Only students can comment')
+      showNotice('Only students can post in the student comments section.', 'error')
       return
     }
-    
-    setSubmitting(true)
+
+    setSubmittingComment(true)
     setMessage('')
 
     try {
-      console.log('📤 Submitting comment:', comment)
-      
       const res = await axios.post(`${API}/comment`, {
-        message: comment,
+        message: comment.trim(),
         ideaId: idea.id,
         userId: currentUser?.id
       })
-      
-      console.log('✅ Comment response:', res.data)
-      
+
       const newComment = {
         ...res.data,
-        userName: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Student'
+        userName: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Student',
+        createdDate: res.data?.createdDate || new Date().toISOString()
       }
-      
-      // Add new comment to list
-      setComments([...comments, newComment])
+
+      setComments(prev => [...prev, newComment])
       setCommentCount(prev => prev + 1)
       setComment('')
-      setMessage('✅ Comment added successfully!')
-      setTimeout(() => setMessage(''), 3000)
-      
-    } catch (error) {
-      console.error('❌ Comment error:', error)
-      setMessage('❌ Failed to add comment. Please try again.')
+      showNotice('Student comment posted successfully.', 'success')
+    } catch {
+      showNotice('Failed to post comment. Please try again.', 'error')
     } finally {
-      setSubmitting(false)
+      setSubmittingComment(false)
     }
   }
 
-  // Role-based permissions
   const canComment = () => currentUser && currentUser.role === 'STUDENT'
   const canGiveFeedback = () => currentUser && (currentUser.role === 'LECTURER' || currentUser.role === 'ADMIN')
   const canVote = () => {
@@ -346,180 +287,310 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
     return true
   }
   const canApproveReject = () => currentUser && (currentUser.role === 'LECTURER' || currentUser.role === 'ADMIN')
-  
-  // REAL counts from API
+
   const totalComments = commentCount || idea.commentIds?.length || 0
   const totalFeedbacks = feedbackCount || idea.feedbackIds?.length || 0
   const totalVotes = voteCount || idea.voteIds?.length || 0
 
   const hasFeedback = feedbackList.length > 0
   const displayStatus = localIdeaStatus || idea.status || 'PENDING'
+  const authorName =
+    idea.userName ||
+    (idea.user ? `${idea.user.firstName || ''} ${idea.user.lastName || ''}`.trim() : '') ||
+    'Student'
 
   return (
     <div className="idea-modal-overlay" onClick={onClose}>
       <div className="idea-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="idea-modal-close" onClick={onClose}>
-          <i className="fas fa-times" />
-        </button>
+        {/* Top Modal Header */}
+        <div className="idea-modal-topbar">
+          <div className="idea-modal-badges">
+            <span className="idea-modal-category-badge">
+              {formatCategory(idea.category)}
+            </span>
+            <span className={`idea-modal-status-badge status-${displayStatus.toLowerCase()}`}>
+              {displayStatus.replace('_', ' ')}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="idea-modal-close"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
+            <i className="fas fa-times" />
+          </button>
+        </div>
+
         <div className="idea-modal-content">
-          
-          {/* Header with REAL counts */}
+          {/* Title & Meta Info */}
           <div className="idea-modal-header">
-            <span className="idea-modal-category">{idea.category || 'General'}</span>
-            <h2>{idea.title}</h2>
+            <h2 className="idea-modal-title">{idea.title}</h2>
             <div className="idea-modal-meta">
-              <span>👤 <strong>{idea.userName || idea.user?.firstName || 'Student'}</strong></span>
-              <span>⭐ {totalVotes} votes</span>
-              <span>💬 {totalComments} comments</span>
-              <span>📝 {totalFeedbacks} feedbacks</span>
-              <span>
-                Status: <strong className={`status-${displayStatus?.toLowerCase() || 'pending'}`}>
-                  {displayStatus || 'PENDING'}
-                </strong>
+              {authorName && authorName !== 'System Admin' && authorName !== 'Admin' && (
+                <span className="idea-meta-pill">
+                  <i className="fas fa-user-graduate" />
+                  <span>By <strong>{authorName}</strong></span>
+                </span>
+              )}
+              <span className="idea-meta-pill">
+                <i className="fas fa-thumbs-up" />
+                <span><strong>{totalVotes}</strong> Votes</span>
+              </span>
+              <span className="idea-meta-pill">
+                <i className="fas fa-chalkboard-teacher" />
+                <span><strong>{totalFeedbacks}</strong> Lecturer Feedback</span>
+              </span>
+              <span className="idea-meta-pill">
+                <i className="fas fa-comments" />
+                <span><strong>{totalComments}</strong> Student Comments</span>
               </span>
             </div>
           </div>
 
-          {/* Description */}
-          <div className="idea-modal-body">
-            <h4>📝 Description</h4>
-            <p>{idea.description}</p>
+          {/* Project Description */}
+          <div className="idea-modal-description-box">
+            <div className="idea-description-label">Project Description</div>
+            <p className="idea-description-text">
+              {idea.description || 'No description provided.'}
+            </p>
           </div>
 
-          {/* Vote Button */}
-          <div className="idea-modal-actions">
-            <button 
-              className="idea-modal-vote-btn" 
-              onClick={handleVote} 
-              disabled={!canVote()}
-            >
-              {canVote() ? '⭐ Vote' : currentUser ? '🔒 Cannot Vote' : '🔒 Login to Vote'} 
-              ({totalVotes})
-            </button>
-            {currentUser && idea.userId === currentUser.id && (
-              <span className="text-muted small ml-2">(You cannot vote for your own idea)</span>
+          {/* Action Bar: Voting (for Students) & Status Review (for Lecturers/Admins) */}
+          <div className="idea-modal-action-bar">
+            <div className="idea-vote-area">
+              <button
+                type="button"
+                className="idea-modal-vote-btn"
+                onClick={handleVote}
+                disabled={!canVote() || voting}
+              >
+                <i className="fas fa-thumbs-up" />
+                <span>
+                  {voting
+                    ? 'Voting...'
+                    : hasVoted
+                    ? 'Voted'
+                    : canVote()
+                    ? 'Vote for Project'
+                    : currentUser?.role === 'STUDENT' && idea.userId === currentUser.id
+                    ? 'Your Project'
+                    : 'Votes'}
+                </span>
+                <span className="idea-vote-count-pill">{totalVotes}</span>
+              </button>
+              {currentUser && idea.userId === currentUser.id && (
+                <span className="idea-vote-note">Authors cannot vote on their own project</span>
+              )}
+            </div>
+
+            {canApproveReject() && (
+              <div className="idea-review-actions">
+                {hasFeedback && displayStatus !== 'APPROVED' && displayStatus !== 'REJECTED' && displayStatus !== 'IMPLEMENTED' && (
+                  <>
+                    <button
+                      type="button"
+                      className="idea-btn-approve"
+                      onClick={() => updateIdeaStatus('APPROVED')}
+                      disabled={updatingStatus}
+                    >
+                      <i className="fas fa-check" />
+                      <span>{updatingStatus ? 'Updating...' : 'Approve Project'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="idea-btn-reject"
+                      onClick={() => updateIdeaStatus('REJECTED')}
+                      disabled={updatingStatus}
+                    >
+                      <i className="fas fa-times" />
+                      <span>{updatingStatus ? 'Updating...' : 'Reject Project'}</span>
+                    </button>
+                  </>
+                )}
+                {!hasFeedback && displayStatus !== 'APPROVED' && displayStatus !== 'REJECTED' && displayStatus !== 'IMPLEMENTED' && (
+                  <span className="idea-review-hint">
+                    Submit lecturer feedback first to enable Approve / Reject
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
-          {/* Message */}
+          {/* Status Notice */}
           {message && (
-            <div className={`idea-modal-alert ${message.includes('✅') ? 'idea-modal-success' : message.includes('⏳') ? 'idea-modal-info' : 'idea-modal-danger'}`}>
+            <div className={`idea-modal-alert idea-alert-${messageType}`}>
               {message}
             </div>
           )}
 
-          {/* Feedback Section - Shows REAL lecturer names */}
-          <div className="idea-modal-feedback">
-            <h4>👨‍🏫 Lecturer Feedback ({totalFeedbacks})</h4>
-            
-            {feedbackList.length > 0 ? (
-              feedbackList.map((fb, index) => (
-                <div key={index} className="feedback-item">
-                  <div className="feedback-header">
-                    <strong>👨‍🏫 {fb.lecturerName || 'Lecturer'}</strong>
-                    <small>{fb.createdDate || 'Just now'}</small>
-                  </div>
-                  <p>{fb.comment || fb.message}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted small">No feedback yet from lecturers</p>
-            )}
-            
-            {canGiveFeedback() && (
-              <form onSubmit={handleFeedbackSubmit} className="mt-2">
-                <textarea 
-                  className="idea-modal-textarea" 
-                  rows="2" 
-                  placeholder="Write your feedback as a lecturer..." 
-                  value={feedback} 
-                  onChange={(e) => setFeedback(e.target.value)} 
-                />
-                <button type="submit" className="idea-modal-feedback-btn" disabled={submitting}>
-                  {submitting ? 'Submitting...' : '📤 Submit Feedback'}
-                </button>
-              </form>
-            )}
+          {/* Filter Tabs for Responsive / Separated Viewing */}
+          <div className="idea-feedback-tabs">
+            <button
+              type="button"
+              className={`idea-feedback-tab ${activeTab === 'both' ? 'active' : ''}`}
+              onClick={() => setActiveTab('both')}
+            >
+              All Feedback ({totalFeedbacks + totalComments})
+            </button>
+            <button
+              type="button"
+              className={`idea-feedback-tab lecturer-tab ${activeTab === 'lecturer' ? 'active' : ''}`}
+              onClick={() => setActiveTab('lecturer')}
+            >
+              <i className="fas fa-chalkboard-teacher" />
+              <span>Lecturer Feedback ({totalFeedbacks})</span>
+            </button>
+            <button
+              type="button"
+              className={`idea-feedback-tab student-tab ${activeTab === 'student' ? 'active' : ''}`}
+              onClick={() => setActiveTab('student')}
+            >
+              <i className="fas fa-user-graduate" />
+              <span>Student Feedback ({totalComments})</span>
+            </button>
           </div>
 
-          {/* Approve/Reject Buttons (Lecturers only) */}
-          {canApproveReject() && (
-            <div className="idea-modal-actions-row">
-              {hasFeedback && displayStatus !== 'APPROVED' && displayStatus !== 'REJECTED' && displayStatus !== 'IMPLEMENTED' && (
-                <>
-                  <button 
-                    className="btn-approve" 
-                    onClick={handleApprove}
-                    disabled={updatingStatus}
-                  >
-                    {updatingStatus ? 'Processing...' : '✅ Approve'}
-                  </button>
-                  <button 
-                    className="btn-reject" 
-                    onClick={handleReject}
-                    disabled={updatingStatus}
-                  >
-                    {updatingStatus ? 'Processing...' : '❌ Reject'}
-                  </button>
-                </>
-              )}
-              {!hasFeedback && displayStatus !== 'APPROVED' && displayStatus !== 'REJECTED' && displayStatus !== 'IMPLEMENTED' && (
-                <p className="text-muted small">⚠️ Please give feedback first to approve or reject</p>
-              )}
-              {displayStatus === 'APPROVED' && (
-                <p className="text-success">✅ This idea has been APPROVED</p>
-              )}
-              {displayStatus === 'REJECTED' && (
-                <p className="text-danger">❌ This idea has been REJECTED</p>
-              )}
-              {displayStatus === 'IMPLEMENTED' && (
-                <p className="text-muted">🚀 This idea has been IMPLEMENTED</p>
-              )}
-            </div>
-          )}
-
-          {/* Comments Section - Shows REAL student names */}
-          <div className="idea-modal-comments">
-            <h4>💬 Student Comments ({totalComments})</h4>
-            
-            {commentLoading ? (
-              <p className="text-muted small">Loading comments...</p>
-            ) : comments.length === 0 ? (
-              <p className="idea-modal-no-comments">No comments yet. Be the first!</p>
-            ) : (
-              comments.map((c, i) => (
-                <div key={i} className="idea-modal-comment">
-                  <div className="comment-header">
-                    <strong>🎓 {c.userName || 'Student'}</strong>
-                    <small>{c.createdDate || 'Just now'}</small>
+          {/* Separated Lecturer Feedback & Student Feedback Grid */}
+          <div className={`idea-feedback-split-grid mode-${activeTab}`}>
+            {/* Panel 1: Lecturer Feedback */}
+            {(activeTab === 'both' || activeTab === 'lecturer') && (
+              <div className="idea-feedback-panel panel-lecturer">
+                <div className="idea-panel-header">
+                  <div className="idea-panel-title-wrap">
+                    <span className="idea-panel-icon lecturer">
+                      <i className="fas fa-chalkboard-teacher" />
+                    </span>
+                    <div>
+                      <h4 className="idea-panel-title">Lecturer Feedback</h4>
+                      <p className="idea-panel-subtitle">Official faculty evaluation & guidance</p>
+                    </div>
                   </div>
-                  <p>{c.message}</p>
+                  <span className="idea-panel-count lecturer">{totalFeedbacks}</span>
                 </div>
-              ))
+
+                <div className="idea-panel-list">
+                  {feedbackLoading ? (
+                    <p className="idea-panel-empty">Loading lecturer feedback...</p>
+                  ) : feedbackList.length === 0 ? (
+                    <div className="idea-panel-empty">
+                      No lecturer feedback has been submitted yet.
+                    </div>
+                  ) : (
+                    feedbackList.map((fb, index) => (
+                      <div key={fb.id || index} className="idea-entry-card lecturer-entry">
+                        <div className="idea-entry-top">
+                          <div className="idea-entry-author">
+                            <span className="idea-entry-avatar lecturer">
+                              {(fb.lecturerName || 'L').charAt(0).toUpperCase()}
+                            </span>
+                            <div>
+                              <span className="idea-entry-name">{fb.lecturerName || 'Lecturer'}</span>
+                              <span className="idea-entry-role-tag lecturer">Lecturer</span>
+                            </div>
+                          </div>
+                          <span className="idea-entry-date">{formatDate(fb.createdDate)}</span>
+                        </div>
+                        <p className="idea-entry-body">{fb.comment || fb.message}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {canGiveFeedback() ? (
+                  <form onSubmit={handleFeedbackSubmit} className="idea-panel-form">
+                    <textarea
+                      className="idea-panel-textarea"
+                      rows="3"
+                      placeholder="Write academic review feedback as a lecturer..."
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                    />
+                    <button
+                      type="submit"
+                      className="idea-panel-submit lecturer"
+                      disabled={submittingFeedback}
+                    >
+                      {submittingFeedback ? 'Submitting...' : 'Submit Lecturer Feedback'}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="idea-panel-footer-note">
+                    Only faculty lecturers can post in this section.
+                  </div>
+                )}
+              </div>
             )}
-            
-            {canComment() ? (
-              <form onSubmit={handleCommentSubmit} className="mt-3">
-                <div className="comment-input-wrapper">
-                  <input 
-                    type="text" 
-                    className="idea-modal-comment-input" 
-                    placeholder="Write a comment..." 
-                    value={comment} 
-                    onChange={(e) => setComment(e.target.value)} 
-                  />
-                  <button type="submit" className="idea-modal-comment-btn" disabled={submitting}>
-                    {submitting ? 'Sending...' : '📤 Post'}
-                  </button>
+
+            {/* Panel 2: Student Feedback / Comments */}
+            {(activeTab === 'both' || activeTab === 'student') && (
+              <div className="idea-feedback-panel panel-student">
+                <div className="idea-panel-header">
+                  <div className="idea-panel-title-wrap">
+                    <span className="idea-panel-icon student">
+                      <i className="fas fa-comments" />
+                    </span>
+                    <div>
+                      <h4 className="idea-panel-title">Student Feedback</h4>
+                      <p className="idea-panel-subtitle">Peer discussion, questions & suggestions</p>
+                    </div>
+                  </div>
+                  <span className="idea-panel-count student">{totalComments}</span>
                 </div>
-              </form>
-            ) : (
-              <p className="text-muted small mt-2">
-                {currentUser ? 'Only students can comment' : 'Please login to comment'}
-              </p>
+
+                <div className="idea-panel-list">
+                  {commentLoading ? (
+                    <p className="idea-panel-empty">Loading student comments...</p>
+                  ) : comments.length === 0 ? (
+                    <div className="idea-panel-empty">
+                      No student comments yet. Start the discussion below.
+                    </div>
+                  ) : (
+                    comments.map((c, i) => (
+                      <div key={c.id || i} className="idea-entry-card student-entry">
+                        <div className="idea-entry-top">
+                          <div className="idea-entry-author">
+                            <span className="idea-entry-avatar student">
+                              {(c.userName || 'S').charAt(0).toUpperCase()}
+                            </span>
+                            <div>
+                              <span className="idea-entry-name">{c.userName || 'Student'}</span>
+                              <span className="idea-entry-role-tag student">Student</span>
+                            </div>
+                          </div>
+                          <span className="idea-entry-date">{formatDate(c.createdDate)}</span>
+                        </div>
+                        <p className="idea-entry-body">{c.message}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {canComment() ? (
+                  <form onSubmit={handleCommentSubmit} className="idea-panel-form">
+                    <textarea
+                      className="idea-panel-textarea"
+                      rows="2"
+                      placeholder="Write a comment or suggestion as a student..."
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                    />
+                    <button
+                      type="submit"
+                      className="idea-panel-submit student"
+                      disabled={submittingComment}
+                    >
+                      {submittingComment ? 'Posting...' : 'Post Comment'}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="idea-panel-footer-note">
+                    {currentUser ? 'Only students can post comments here.' : 'Sign in as a student to comment.'}
+                  </div>
+                )}
+              </div>
             )}
           </div>
-
         </div>
       </div>
     </div>

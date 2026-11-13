@@ -19,6 +19,8 @@ const ProfilePage = () => {
     department: '',
     bio: ''
   })
+  const [newPassword, setNewPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -94,6 +96,12 @@ const ProfilePage = () => {
         return
       }
 
+      if (newPassword && newPassword.trim().length > 0 && newPassword.trim().length < 6) {
+        setError('Your Password is too weak')
+        setSaving(false)
+        return
+      }
+
       const updateData = {
         firstName: user.firstName.trim(),
         lastName: user.lastName.trim(),
@@ -101,6 +109,9 @@ const ProfilePage = () => {
         phone: user.phone ? user.phone.trim() : '',
         department: user.department ? user.department.trim() : '',
         bio: user.bio ? user.bio.trim() : ''
+      }
+      if (newPassword && newPassword.trim()) {
+        updateData.password = newPassword.trim()
       }
 
       const res = await axios.put(`${AUTH_API}/profile/${userData.id}`, updateData, {
@@ -121,9 +132,11 @@ const ProfilePage = () => {
           bio: res.data.bio ?? user.bio
         }
         localStorage.setItem('user', JSON.stringify(updatedUser))
+        setNewPassword('')
+        setShowPassword(false)
 
-        setMessage('Profile updated successfully.')
-        setTimeout(() => setMessage(''), 3000)
+        setMessage('You updated profile successfully')
+        setTimeout(() => setMessage(''), 3500)
       }
     } catch (err) {
       let errorMsg = 'Could not update profile'
@@ -271,6 +284,27 @@ const ProfilePage = () => {
               value={user.bio || ''}
               onChange={handleChange}
             />
+          </div>
+
+          <div className="uic-field-group">
+            <label className="uic-field-label">New Password (leave blank to keep current)</label>
+            <div className="uic-password-field">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="uic-input uic-password-input"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className="uic-password-toggle"
+                onClick={() => setShowPassword(prev => !prev)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
+              </button>
+            </div>
           </div>
 
           <div className="uic-guidelines-box">

@@ -106,7 +106,7 @@ const AdminLecturersPage = () => {
     }
 
     if (formData.password.length < 6) {
-      showNotice('Password must be at least 6 characters long.', 'error')
+      showNotice('Your Password is too weak', 'error')
       return
     }
 
@@ -128,7 +128,7 @@ const AdminLecturersPage = () => {
 
       if (res.data) {
         await fetchLecturers()
-        showNotice(`Lecturer "${body.firstName} ${body.lastName}" added successfully.`, 'success')
+        showNotice(`You added lecturer "${body.firstName} ${body.lastName}" successfully`, 'success')
         closeAddModal()
       }
     } catch (err) {
@@ -174,7 +174,7 @@ const AdminLecturersPage = () => {
     if (!editingLecturer) return
 
     if (editForm.password && editForm.password.length < 6) {
-      showNotice('New password must be at least 6 characters long.', 'error')
+      showNotice('Your Password is too weak', 'error')
       return
     }
 
@@ -196,7 +196,7 @@ const AdminLecturersPage = () => {
       const res = await axios.put(`${AUTH_API}/profile/${editingLecturer.id}`, payload)
       if (res.data) {
         await fetchLecturers()
-        showNotice(`Lecturer "${payload.firstName} ${payload.lastName}" updated successfully.`, 'success')
+        showNotice(`You updated lecturer "${payload.firstName} ${payload.lastName}" successfully`, 'success')
         closeEditModal()
       }
     } catch (err) {
@@ -213,7 +213,7 @@ const AdminLecturersPage = () => {
     try {
       await axios.delete(`${API}/user/${id}`)
       await fetchLecturers()
-      showNotice(`Lecturer "${name}" deleted successfully.`, 'success')
+      showNotice(`You deleted lecturer "${name}" successfully`, 'success')
     } catch (err) {
       console.error('Delete lecturer error:', err)
       let errorMsg = 'Failed to delete lecturer.'

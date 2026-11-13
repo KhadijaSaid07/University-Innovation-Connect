@@ -1426,6 +1426,262 @@
   cursor: not-allowed;
 }
 
+/* ==========================================================================
+   Student Notification Bell, Dropdown & Activity Banner
+   ========================================================================== */
+.uic-notif-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.uic-notif-btn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  color: #374151;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.15s ease;
+}
+
+.uic-notif-btn:hover,
+.uic-notif-btn.open {
+  background: #F3F4F6;
+  border-color: #D1D5DB;
+  color: #4F46E5;
+}
+
+.uic-notif-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #DC2626;
+  color: #FFFFFF;
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+  line-height: 1;
+}
+
+.uic-notif-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px;
+  max-width: calc(100vw - 24px);
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(17, 24, 39, 0.14);
+  z-index: 1070;
+  overflow: hidden;
+  animation: uicMenuFade 0.15s ease;
+}
+
+.uic-notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #F3F4F6;
+  background: #F9FAFB;
+}
+
+.uic-notif-title {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.uic-notif-subtitle {
+  display: block;
+  font-size: 0.74rem;
+  color: #6B7280;
+  margin-top: 1px;
+}
+
+.uic-notif-mark-btn {
+  border: none;
+  background: #EEF2FF;
+  color: #4F46E5;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.uic-notif-mark-btn:hover {
+  background: #E0E7FF;
+}
+
+.uic-notif-list {
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.uic-notif-empty {
+  padding: 28px 20px;
+  text-align: center;
+  color: #6B7280;
+}
+
+.uic-notif-empty i {
+  font-size: 1.5rem;
+  color: #9CA3AF;
+  margin-bottom: 8px;
+}
+
+.uic-notif-empty p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.uic-notif-item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border: none;
+  border-bottom: 1px solid #F3F4F6;
+  background: #FFFFFF;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.uic-notif-item:last-child {
+  border-bottom: none;
+}
+
+.uic-notif-item.unread {
+  background: #F5F7FF;
+}
+
+.uic-notif-item:hover {
+  background: #F3F4F6;
+}
+
+.uic-notif-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.uic-notif-icon.feedback {
+  background: #EEF2FF;
+  color: #4F46E5;
+}
+
+.uic-notif-icon.vote {
+  background: #ECFDF5;
+  color: #059669;
+}
+
+.uic-notif-icon.comment {
+  background: #EFF6FF;
+  color: #2563EB;
+}
+
+.uic-notif-icon.status {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.uic-notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.uic-notif-item-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.uic-notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4F46E5;
+  flex-shrink: 0;
+}
+
+.uic-notif-item-text {
+  margin: 0;
+  font-size: 0.79rem;
+  color: #4B5563;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+/* Student Activity Notification Banner on My Ideas Page */
+.uic-student-notif-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  color: #1E1B4B;
+  font-size: 0.88rem;
+}
+
+.uic-student-notif-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.uic-student-notif-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #4F46E5;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.92rem;
+  flex-shrink: 0;
+}
+
 /* Responsive Breakpoints for All Devices (Desktop, Laptop, Tablet, Mobile) */
 @media (max-width: 1024px) {
   .uic-sidebar {

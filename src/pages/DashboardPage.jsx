@@ -6,6 +6,13 @@ import IdeaModal from '../components/IdeaModal'
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
 const API = `${BASE_URL}/v2/innovationConnect`
 
+const allCategories = [
+  'AGRICULTURE', 'EDUCATION', 'HEALTH', 'TECHNOLOGY',
+  'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
+  'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
+  'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
+]
+
 const DashboardPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -16,8 +23,17 @@ const DashboardPage = () => {
   const [error, setError] = useState('')
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [editingIdea, setEditingIdea] = useState(null)
+  const [editForm, setEditForm] = useState({ title: '', category: '', description: '' })
+  const [savingEdit, setSavingEdit] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [notice, setNotice] = useState({ text: '', type: 'success' })
+
+  const showMessage = (text, type = 'success') => {
+    setNotice({ text, type })
+    setTimeout(() => setNotice({ text: '', type: 'success' }), 4000)
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -70,18 +86,62 @@ const DashboardPage = () => {
     setShowModal(false)
   }
 
+  const openEditModal = (idea) => {
+    setEditingIdea(idea)
+    setEditForm({
+      title: idea.title || '',
+      category: idea.category || 'TECHNOLOGY',
+      description: idea.description || ''
+    })
+  }
+
+  const closeEditModal = () => {
+    setEditingIdea(null)
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    if (!editingIdea) return
+
+    const user = getUser()
+    setSavingEdit(true)
+    try {
+      await axios.put(`${API}/idea/${editingIdea.id}`, {
+        title: editForm.title.trim(),
+        category: editForm.category,
+        description: editForm.description.trim(),
+        userId: user?.id
+      })
+      const refreshRes = await axios.get(`${API}/idea`)
+      setIdeas(refreshRes.data || [])
+      setEditingIdea(null)
+      showMessage('You updated idea successfully', 'success')
+    } catch (error) {
+      showMessage(error.response?.data?.message || 'Failed to update idea', 'error')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const formatCategory = (cat) => {
+    if (!cat) return 'General'
+    return cat.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+  }
+
   const handleVote = async (id) => {
     try {
       const user = getUser()
 
       if (!user) {
-        alert('Please login to vote')
-        return
+        const msg = 'Please login to vote'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
 
       if (user?.role !== 'STUDENT') {
-        alert('Only students can vote!')
-        return
+        const msg = 'Only students can vote'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
 
       const res = await axios.post(`${API}/vote`, {
@@ -102,14 +162,20 @@ const DashboardPage = () => {
           setSelectedIdea(updatedIdea)
         }
 
-        alert('Vote added successfully!')
+        showMessage('You voted for idea successfully', 'success')
+        return { ok: true }
       }
+      return { ok: false, message: 'Failed to vote' }
     } catch (error) {
       console.error('Vote error:', error)
       if (error.response?.status === 400 || error.response?.status === 409) {
-        alert(error.response?.data?.message || 'You cannot vote for this idea')
+        const msg = error.response?.data?.message || 'You already voted for this idea'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       } else {
-        alert('Failed to vote. Please try again.')
+        const msg = 'Failed to vote. Please try again.'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
     }
   }
@@ -119,12 +185,12 @@ const DashboardPage = () => {
       const user = getUser()
 
       if (!user) {
-        alert('Please login to give feedback')
+        showMessage('Please login to give feedback', 'error')
         return
       }
 
       if (user?.role !== 'LECTURER' && user?.role !== 'ADMIN') {
-        alert('Only lecturers can give feedback!')
+        showMessage('Only lecturers can give feedback', 'error')
         return
       }
 
@@ -145,11 +211,11 @@ const DashboardPage = () => {
         }
 
         if (callback) callback()
-        alert('Feedback submitted successfully!')
+        showMessage('You submitted feedback successfully', 'success')
       }
     } catch (error) {
       console.error('Feedback error:', error)
-      alert('Failed to submit feedback. Please try again.')
+      showMessage('Failed to submit feedback. Please try again.', 'error')
     }
   }
 
@@ -209,6 +275,13 @@ const DashboardPage = () => {
 
   return (
     <div className="uic-content-shell">
+      {notice.text && (
+        <div className={`uic-alert ${notice.type === 'success' ? 'uic-alert-success' : 'uic-alert-error'}`}>
+          <i className={`fas ${notice.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
+          <span>{notice.text}</span>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="row mb-4">
         <div className="col-md-3 col-sm-6 mb-3">
@@ -330,20 +403,31 @@ const DashboardPage = () => {
                       <td>
                         <span className={`badge ${idea.status === 'PENDING' ? 'badge-warning' :
                           idea.status === 'UNDER_REVIEW' ? 'badge-primary' :
-                          idea.status === 'APPROVED' ? 'badge-success' :
-                          idea.status === 'REJECTED' ? 'badge-danger' :
-                          idea.status === 'IMPLEMENTED' ? 'badge-dark' : 'badge-secondary'}`}>
+                            idea.status === 'APPROVED' ? 'badge-success' :
+                              idea.status === 'REJECTED' ? 'badge-danger' :
+                                idea.status === 'IMPLEMENTED' ? 'badge-dark' : 'badge-secondary'}`}>
                           {idea.status || 'PENDING'}
                         </span>
                       </td>
                       <td>{idea.voteIds?.length || 0}</td>
                       <td>
-                        <button
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => openModal(idea)}
-                        >
-                          <i className="fas fa-eye mr-1" /> View Details
-                        </button>
+                        <div className="d-flex align-items-center" style={{ gap: '6px' }}>
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => openModal(idea)}
+                          >
+                            <i className="fas fa-eye mr-1" /> View
+                          </button>
+                          {isAuthor(idea) && (
+                            <button
+                              className="btn btn-sm btn-outline-warning"
+                              onClick={() => openEditModal(idea)}
+                              title="Edit your idea"
+                            >
+                              <i className="fas fa-pen mr-1" /> Edit
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -353,6 +437,83 @@ const DashboardPage = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Own Idea Modal */}
+      {editingIdea && (
+        <div
+          className="idea-modal-overlay"
+          onClick={closeEditModal}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(17, 24, 39, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            padding: '16px'
+          }}
+        >
+          <div
+            className="uic-form-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: '580px', padding: '28px' }}
+          >
+            <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+              <h5 className="m-0 fw-bold text-dark">Edit Your Idea</h5>
+              <button type="button" className="btn btn-sm btn-light" onClick={closeEditModal}>✕</button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="uic-proposal-form">
+              <div className="uic-field-group">
+                <label className="uic-field-label">Title</label>
+                <input
+                  type="text"
+                  className="uic-input"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="uic-field-group">
+                <label className="uic-field-label">Category</label>
+                <select
+                  className="uic-select"
+                  value={editForm.category}
+                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                  required
+                >
+                  {allCategories.map(cat => (
+                    <option key={cat} value={cat}>{formatCategory(cat)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="uic-field-group">
+                <label className="uic-field-label">Description</label>
+                <textarea
+                  rows="4"
+                  maxLength={250}
+                  className="uic-textarea"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="uic-form-actions mt-3">
+                <button type="button" className="uic-btn-ghost" onClick={closeEditModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="uic-btn-primary" disabled={savingEdit}>
+                  {savingEdit ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Idea Modal */}
       {showModal && selectedIdea && (

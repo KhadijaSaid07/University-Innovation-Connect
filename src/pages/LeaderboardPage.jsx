@@ -14,6 +14,12 @@ const LeaderboardPage = () => {
   const [error, setError] = useState('')
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [notice, setNotice] = useState({ text: '', type: 'success' })
+
+  const showMessage = (text, type = 'success') => {
+    setNotice({ text, type })
+    setTimeout(() => setNotice({ text: '', type: 'success' }), 4000)
+  }
 
   const getUser = () => {
     const data = localStorage.getItem('user')
@@ -62,13 +68,15 @@ const LeaderboardPage = () => {
       const user = getUser()
 
       if (!user) {
-        alert('Please sign in to vote')
-        return
+        const msg = 'Please sign in to vote'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
 
       if (user?.role !== 'STUDENT') {
-        alert('Only students can vote')
-        return
+        const msg = 'Only students can vote'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
 
       const res = await axios.post(`${API}/vote`, {
@@ -93,13 +101,20 @@ const LeaderboardPage = () => {
           const updatedIdea = sorted.find(i => i.id === id)
           setSelectedIdea(updatedIdea)
         }
+        showMessage('You voted for idea successfully', 'success')
+        return { ok: true }
       }
+      return { ok: false, message: 'Failed to vote' }
     } catch (error) {
       console.error('Vote error:', error)
       if (error.response?.status === 400 || error.response?.status === 409) {
-        alert('You have already voted for this idea')
+        const msg = error.response?.data?.message || 'You already voted for this idea'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       } else {
-        alert('Failed to vote. Please try again.')
+        const msg = 'Failed to vote. Please try again.'
+        showMessage(msg, 'error')
+        return { ok: false, message: msg }
       }
     }
   }
@@ -109,7 +124,7 @@ const LeaderboardPage = () => {
       const user = getUser()
 
       if (!user || (user?.role !== 'LECTURER' && user?.role !== 'ADMIN')) {
-        alert('Only lecturers can submit academic feedback')
+        showMessage('Only lecturers can submit academic feedback', 'error')
         return
       }
 
@@ -138,10 +153,11 @@ const LeaderboardPage = () => {
         }
 
         if (callback) callback()
+        showMessage('You submitted feedback successfully', 'success')
       }
     } catch (error) {
       console.error('Feedback error:', error)
-      alert('Failed to submit feedback. Please try again.')
+      showMessage('Failed to submit feedback. Please try again.', 'error')
     }
   }
 
@@ -183,6 +199,13 @@ const LeaderboardPage = () => {
 
   return (
     <div className="uic-content-shell">
+      {notice.text && (
+        <div className={`uic-alert ${notice.type === 'success' ? 'uic-alert-success' : 'uic-alert-error'}`}>
+          <i className={`fas ${notice.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
+          <span>{notice.text}</span>
+        </div>
+      )}
+
       <div className="uic-surface-card">
         <div className="uic-surface-header">
           <div>

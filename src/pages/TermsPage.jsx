@@ -1,29 +1,12 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import PublicNavbar from '../components/PublicNavbar'
 import './TermsPage.css'
 
 const TermsPage = () => {
   return (
     <div className="terms-page">
-      
- 
-      <nav className="terms-nav">
-        <div className="nav-container">
-          <div className="nav-brand">
-            <span className="brand-icon">🌊</span>
-            <span className="brand-text">UIC</span>
-          </div>
-          <div className="nav-links">
-            <Link to="/" className="nav-link">Home</Link>
-            <Link to="/about" className="nav-link">About</Link>
-            <Link to="/mission" className="nav-link">Mission</Link>
-            <Link to="/terms" className="nav-link active">Terms</Link>
-            <Link to="/privacy-policy" className="nav-link">Privacy</Link>
-            <Link to="/login" className="nav-link">Login</Link>
-            <Link to="/register" className="nav-btn">Register</Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNavbar />
 
     
       <section className="terms-hero">
