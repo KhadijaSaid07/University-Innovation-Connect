@@ -169,9 +169,15 @@ const AdminActivityLogPage = () => {
   if (loading) {
     return (
       <div className="admin-dashboard">
-        <div className="admin-loading">
-          <div className="admin-spinner-large"></div>
-          <p>Loading activity logs...</p>
+        <AdminSidebar
+          pageTitle="System Activity Log"
+          pageSubtitle="Audit trail of user actions, idea updates, comments, votes, and feedback"
+        />
+        <div className="admin-content">
+          <div className="uic-page-loading">
+            <div className="admin-spinner-large"></div>
+            <p>Loading activity logs...</p>
+          </div>
         </div>
       </div>
     )

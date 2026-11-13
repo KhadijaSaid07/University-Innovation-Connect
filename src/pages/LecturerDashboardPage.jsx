@@ -176,20 +176,40 @@ const LecturerDashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="lecturer-loading">
-        <div className="spinner-border text-primary" />
-        <p>Loading...</p>
+      <div className="lecturer-dashboard">
+        <LecturerNavigation
+          pageTitle="Student Proposals Review"
+          pageSubtitle="Evaluate submissions, leave academic feedback, and update approval status"
+          activeFilter={filter}
+          onSelectFilter={handleFilter}
+        />
+        <div className="lecturer-content">
+          <div className="uic-page-loading">
+            <div className="spinner-border text-primary" />
+            <p>Loading student proposals...</p>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="text-center py-5">
-        <h5 className="text-danger mt-3">{error}</h5>
-        <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
-          Try Again
-        </button>
+      <div className="lecturer-dashboard">
+        <LecturerNavigation
+          pageTitle="Student Proposals Review"
+          pageSubtitle="Evaluate submissions, leave academic feedback, and update approval status"
+          activeFilter={filter}
+          onSelectFilter={handleFilter}
+        />
+        <div className="lecturer-content">
+          <div className="uic-page-loading">
+            <h5 className="text-danger mb-3">{error}</h5>
+            <button className="uic-btn-primary" onClick={() => window.location.reload()}>
+              Try Again
+            </button>
+          </div>
+        </div>
       </div>
     )
   }

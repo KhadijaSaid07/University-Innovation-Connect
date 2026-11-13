@@ -136,9 +136,17 @@ const LecturerProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="lecturer-profile-loading">
-        <div className="spinner-border text-primary" />
-        <p>Loading profile...</p>
+      <div className="lecturer-profile-page">
+        <LecturerNavigation
+          pageTitle="Lecturer Profile"
+          pageSubtitle="Manage your academic profile and contact details"
+        />
+        <div className="lecturer-profile-content">
+          <div className="uic-page-loading">
+            <div className="spinner-border text-primary" />
+            <p>Loading profile...</p>
+          </div>
+        </div>
       </div>
     )
   }

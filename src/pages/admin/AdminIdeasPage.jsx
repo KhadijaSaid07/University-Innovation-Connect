@@ -9,7 +9,7 @@ const API = `${BASE_URL}/v2/innovationConnect`
 
 const AdminIdeasPage = () => {
   const navigate = useNavigate()
-  
+
   const [ideas, setIdeas] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -80,16 +80,16 @@ const AdminIdeasPage = () => {
     setSelectedIdea(idea)
     setShowViewModal(true)
     setViewLoading(true)
-    
+
     try {
       // Fetch comments for this idea
       const commentsRes = await axios.get(`${API}/comment/idea/${idea.id}`)
       const comments = commentsRes.data || []
-      
+
       // Fetch feedbacks for this idea
       const feedbackRes = await axios.get(`${API}/feedback/idea/${idea.id}`)
       const feedbacks = feedbackRes.data || []
-      
+
       // Add user names to comments
       const commentsWithNames = comments.map(comment => {
         const userInfo = users[comment.userId]
@@ -98,7 +98,7 @@ const AdminIdeasPage = () => {
           userName: userInfo ? userInfo.name : 'Unknown Student'
         }
       })
-      
+
       // Add lecturer names to feedbacks
       const feedbackWithNames = feedbacks.map(fb => {
         const userInfo = users[fb.lecturer]
@@ -107,7 +107,7 @@ const AdminIdeasPage = () => {
           lecturerName: userInfo ? userInfo.name : 'Unknown Lecturer'
         }
       })
-      
+
       setSelectedIdea({
         ...idea,
         comments: commentsWithNames,
@@ -115,7 +115,7 @@ const AdminIdeasPage = () => {
         commentCount: commentsWithNames.length,
         feedbackCount: feedbackWithNames.length
       })
-      
+
     } catch (err) {
       console.error('View idea error:', err)
     } finally {
@@ -131,17 +131,17 @@ const AdminIdeasPage = () => {
   // Delete idea
   const deleteIdea = async (id, title) => {
     if (!window.confirm(`🗑️ Delete idea: "${title}"?`)) return
-    
+
     try {
       await axios.delete(`${API}/idea/${id}`)
-      
+
       const res = await axios.get(`${API}/idea`)
       setIdeas(res.data)
-      
+
       setMessage(`✅ Idea "${title}" deleted successfully!`)
       setMessageType('success')
       setTimeout(() => setMessage(''), 3000)
-      
+
     } catch (err) {
       console.error('Delete idea error:', err)
       setMessage(`❌ ${err.response?.data?.message || 'Failed to delete idea'}`)
@@ -190,9 +190,15 @@ const AdminIdeasPage = () => {
   if (loading) {
     return (
       <div className="admin-dashboard">
-        <div className="admin-loading">
-          <div className="admin-spinner-large"></div>
-          <p>Loading ideas...</p>
+        <AdminSidebar
+          pageTitle="Ideas Management"
+          pageSubtitle="Inspect submissions, review feedback, and moderate proposals"
+        />
+        <div className="admin-content">
+          <div className="uic-page-loading">
+            <div className="admin-spinner-large"></div>
+            <p>Loading ideas...</p>
+          </div>
         </div>
       </div>
     )
@@ -207,7 +213,7 @@ const AdminIdeasPage = () => {
 
       <div className="admin-content">
         <div className="content-container">
-          
+
           <div className="page-header">
             <div className="page-header-left">
               <h1>💡 Ideas</h1>
@@ -271,13 +277,13 @@ const AdminIdeasPage = () => {
                         </td>
                         <td>⭐ {idea.voteIds?.length || 0}</td>
                         <td>
-                          <button 
+                          <button
                             className="admin-view-btn"
                             onClick={() => viewIdea(idea)}
                           >
                             <i className="fas fa-eye"></i> View
                           </button>
-                          <button 
+                          <button
                             className="admin-delete-btn"
                             onClick={() => deleteIdea(idea.id, idea.title)}
                           >
@@ -305,7 +311,7 @@ const AdminIdeasPage = () => {
               </button>
             </div>
             <div className="admin-modal-body">
-              
+
               {viewLoading ? (
                 <div className="admin-loading">
                   <div className="admin-spinner-small"></div>
@@ -316,7 +322,7 @@ const AdminIdeasPage = () => {
                   {/* Idea Info */}
                   <div className="view-idea-info">
                     <h2 className="view-idea-title">{selectedIdea.title}</h2>
-                    
+
                     <div className="view-idea-meta">
                       <span className="view-meta-item">
                         <strong>Author:</strong> {getAuthorName(selectedIdea)}

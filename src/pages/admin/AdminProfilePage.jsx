@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import AdminSidebar from './AdminSidebar'
 import './AdminDashboardPage.css'
@@ -16,16 +16,17 @@ const AdminProfilePage = () => {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
     role: 'ADMIN',
     phone: '',
     department: '',
     bio: ''
   })
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     const userStr = localStorage.getItem('user')
@@ -50,6 +51,7 @@ const AdminProfilePage = () => {
               firstName: data.firstName || user.firstName || '',
               lastName: data.lastName || user.lastName || '',
               email: data.email || user.email || '',
+              password: '',
               role: data.role || user.role || 'ADMIN',
               phone: data.phone || '',
               department: data.department || '',
@@ -61,6 +63,7 @@ const AdminProfilePage = () => {
               firstName: user.firstName || 'System',
               lastName: user.lastName || 'Admin',
               email: user.email || '',
+              password: '',
               role: user.role || 'ADMIN',
               phone: user.phone || '',
               department: user.department || '',
@@ -73,6 +76,7 @@ const AdminProfilePage = () => {
             firstName: user.firstName || 'System',
             lastName: user.lastName || 'Admin',
             email: user.email || '',
+            password: '',
             role: user.role || 'ADMIN',
             phone: user.phone || '',
             department: user.department || '',
@@ -97,6 +101,12 @@ const AdminProfilePage = () => {
     e.preventDefault()
     if (!admin.id) return
 
+    if (admin.password && admin.password.length < 6) {
+      setMessage('New password must be at least 6 characters long.')
+      setMessageType('error')
+      return
+    }
+
     setSaving(true)
     setMessage('')
 
@@ -110,6 +120,10 @@ const AdminProfilePage = () => {
         bio: admin.bio || ''
       }
 
+      if (admin.password && admin.password.trim()) {
+        updateData.password = admin.password
+      }
+
       const res = await axios.put(`${AUTH_API}/profile/${admin.id}`, updateData)
       if (res.data) {
         const stored = JSON.parse(localStorage.getItem('user') || '{}')
@@ -120,12 +134,13 @@ const AdminProfilePage = () => {
           email: res.data.email || admin.email,
           role: res.data.role || admin.role
         }))
-        setMessage('✅ Admin profile updated successfully!')
+        setAdmin(prev => ({ ...prev, password: '' }))
+        setMessage('Administrator profile updated successfully.')
         setMessageType('success')
-        setTimeout(() => setMessage(''), 3000)
+        setTimeout(() => setMessage(''), 3500)
       }
     } catch (err) {
-      setMessage(`❌ ${err.response?.data?.message || 'Failed to update profile'}`)
+      setMessage(err.response?.data?.message || 'Failed to update profile.')
       setMessageType('error')
       setTimeout(() => setMessage(''), 4000)
     } finally {
@@ -133,23 +148,20 @@ const AdminProfilePage = () => {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
-
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
-  const closeSidebar = () => setSidebarOpen(false)
-
   const fullName = `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || 'Admin'
 
   if (loading) {
     return (
       <div className="admin-dashboard">
-        <div className="admin-loading">
-          <div className="admin-spinner-large" />
-          <p>Loading profile...</p>
+        <AdminSidebar
+          pageTitle="Administrator Profile"
+          pageSubtitle="Manage your administrator account details"
+        />
+        <div className="admin-content">
+          <div className="uic-page-loading">
+            <div className="admin-spinner-large" />
+            <p>Loading profile...</p>
+          </div>
         </div>
       </div>
     )
@@ -158,16 +170,16 @@ const AdminProfilePage = () => {
   return (
     <div className="admin-dashboard">
       <AdminSidebar
-        pageTitle="Admin Profile"
-        pageSubtitle="Manage your administrator account details"
+        pageTitle="Administrator Profile"
+        pageSubtitle="Manage your administrator account details and security credentials"
       />
 
       <div className="admin-content">
-        <div className="content-container" style={{ maxWidth: '800px' }}>
-          <div className="page-header">
+        <div className="content-container" style={{ maxWidth: '780px' }}>
+          <div className="page-header uic-responsive-header">
             <div className="page-header-left">
-              <h1>👤 Admin Profile</h1>
-              <p>Manage your administrator account details</p>
+              <h1>Administrator Profile</h1>
+              <p>Update your personal details or change your administrator password</p>
             </div>
           </div>
 
@@ -181,12 +193,12 @@ const AdminProfilePage = () => {
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <div
                 style={{
-                  width: '80px',
-                  height: '80px',
+                  width: '72px',
+                  height: '72px',
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #7C3AED, #4A1A6B)',
+                  background: '#4F46E5',
                   color: '#fff',
-                  fontSize: '2rem',
+                  fontSize: '1.75rem',
                   fontWeight: '700',
                   display: 'flex',
                   alignItems: 'center',
@@ -196,66 +208,98 @@ const AdminProfilePage = () => {
               >
                 {fullName.charAt(0).toUpperCase()}
               </div>
-              <h2 style={{ margin: '0 0 6px 0', color: '#1A0A2E' }}>{fullName}</h2>
-              <span className="admin-badge badge-danger">👑 {admin.role}</span>
+              <h2 style={{ margin: '0 0 6px 0', color: '#111827', fontSize: '1.35rem' }}>{fullName}</h2>
+              <span className="admin-badge badge-danger">{admin.role}</span>
             </div>
 
             <form onSubmit={handleSubmit} className="admin-modal-form">
-              <div className="admin-form-group">
-                <label>First Name *</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  className="admin-form-control"
-                  value={admin.firstName}
-                  onChange={handleChange}
-                  required
-                />
+              <div className="uic-form-grid-2">
+                <div className="admin-form-group">
+                  <label>First Name <span className="uic-required">*</span></label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    className="admin-form-control"
+                    value={admin.firstName}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="admin-form-group">
+                  <label>Last Name <span className="uic-required">*</span></label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    className="admin-form-control"
+                    value={admin.lastName}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
               </div>
-              <div className="admin-form-group">
-                <label>Last Name *</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  className="admin-form-control"
-                  value={admin.lastName}
-                  onChange={handleChange}
-                  required
-                />
+
+              <div className="uic-form-grid-2">
+                <div className="admin-form-group">
+                  <label>Email Address <span className="uic-required">*</span></label>
+                  <input
+                    type="email"
+                    name="email"
+                    className="admin-form-control"
+                    value={admin.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="admin-form-group">
+                  <label>Phone Number</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    className="admin-form-control"
+                    placeholder="Enter phone number"
+                    value={admin.phone}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              <div className="admin-form-group">
-                <label>Email *</label>
-                <input
-                  type="email"
-                  name="email"
-                  className="admin-form-control"
-                  value={admin.email}
-                  onChange={handleChange}
-                  required
-                />
+
+              <div className="uic-form-grid-2">
+                <div className="admin-form-group">
+                  <label>Department</label>
+                  <input
+                    type="text"
+                    name="department"
+                    className="admin-form-control"
+                    placeholder="Enter department"
+                    value={admin.department}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label>New Password (optional)</label>
+                  <div className="uic-password-field">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      className="admin-form-control uic-password-input"
+                      placeholder="Leave blank to keep current"
+                      value={admin.password}
+                      onChange={handleChange}
+                    />
+                    <button
+                      type="button"
+                      className="uic-password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="admin-form-group">
-                <label>Phone</label>
-                <input
-                  type="text"
-                  name="phone"
-                  className="admin-form-control"
-                  placeholder="Enter phone number"
-                  value={admin.phone}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="admin-form-group">
-                <label>Department</label>
-                <input
-                  type="text"
-                  name="department"
-                  className="admin-form-control"
-                  placeholder="Enter department"
-                  value={admin.department}
-                  onChange={handleChange}
-                />
-              </div>
+
               <div className="admin-form-group">
                 <label>Bio</label>
                 <textarea
@@ -267,9 +311,10 @@ const AdminProfilePage = () => {
                   onChange={handleChange}
                 />
               </div>
+
               <div className="admin-modal-actions">
                 <button type="submit" className="admin-save-btn" disabled={saving}>
-                  {saving ? '⏳ Saving...' : '💾 Save Profile'}
+                  {saving ? 'Saving...' : 'Save Profile'}
                 </button>
               </div>
             </form>

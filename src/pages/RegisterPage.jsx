@@ -253,8 +253,9 @@ const RegisterPage = () => {
               className="auth-eye-btn"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
+              title={showPassword ? 'Hide password' : 'Show password'}
             >
-              {showPassword ? '👁️' : '👁️'}
+              <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
             </button>
 
           </div>
@@ -284,8 +285,9 @@ const RegisterPage = () => {
                   ? 'Hide confirm password'
                   : 'Show confirm password'
               }
+              title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
             >
-              {showConfirmPassword ? '👁️' : '👁️'}
+              <i className={`fas ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
             </button>
 
           </div>

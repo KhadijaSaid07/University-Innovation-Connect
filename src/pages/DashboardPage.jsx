@@ -189,18 +189,18 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-5">
+      <div className="uic-page-loading">
         <div className="spinner-border text-primary" />
-        <p className="mt-2 text-muted">Loading ideas...</p>
+        <p>Loading innovation proposals...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="text-center py-5">
-        <h5 className="text-danger mt-3">{error}</h5>
-        <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
+      <div className="uic-page-loading">
+        <h5 className="text-danger mb-3">{error}</h5>
+        <button className="uic-btn-primary" onClick={() => window.location.reload()}>
           Try Again
         </button>
       </div>
@@ -208,7 +208,7 @@ const DashboardPage = () => {
   }
 
   return (
-    <>
+    <div className="uic-content-shell">
       {/* Stats Cards */}
       <div className="row mb-4">
         <div className="col-md-3 col-sm-6 mb-3">
@@ -364,7 +364,7 @@ const DashboardPage = () => {
           currentUser={getUser()}
         />
       )}
-    </>
+    </div>
   )
 }
 

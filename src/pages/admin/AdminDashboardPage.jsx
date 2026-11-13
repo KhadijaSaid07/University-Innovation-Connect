@@ -153,9 +153,15 @@ const AdminDashboardPage = () => {
   if (loading) {
     return (
       <div className="admin-dashboard">
-        <div className="admin-loading">
-          <div className="admin-spinner-large"></div>
-          <p>Loading dashboard...</p>
+        <AdminSidebar
+          pageTitle="System Overview"
+          pageSubtitle="Real-time metrics, recent submissions, and platform activity"
+        />
+        <div className="admin-content">
+          <div className="uic-page-loading">
+            <div className="admin-spinner-large"></div>
+            <p>Loading dashboard...</p>
+          </div>
         </div>
       </div>
     )

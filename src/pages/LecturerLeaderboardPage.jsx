@@ -160,20 +160,36 @@ const LecturerLeaderboardPage = () => {
 
   if (loading) {
     return (
-      <div className="lecturer-leaderboard-loading">
-        <div className="spinner-border text-primary" />
-        <p>Loading leaderboard...</p>
+      <div className="lecturer-leaderboard-page">
+        <LecturerNavigation
+          pageTitle="Innovation Leaderboard"
+          pageSubtitle="Top-voted student ideas across the university"
+        />
+        <div className="lecturer-leaderboard-content">
+          <div className="uic-page-loading">
+            <div className="spinner-border text-primary" />
+            <p>Loading leaderboard...</p>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="lecturer-leaderboard-loading">
-        <h5 className="text-danger mt-3">{error}</h5>
-        <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
-          Try Again
-        </button>
+      <div className="lecturer-leaderboard-page">
+        <LecturerNavigation
+          pageTitle="Innovation Leaderboard"
+          pageSubtitle="Top-voted student ideas across the university"
+        />
+        <div className="lecturer-leaderboard-content">
+          <div className="uic-page-loading">
+            <h5 className="text-danger mb-3">{error}</h5>
+            <button className="uic-btn-primary" onClick={() => window.location.reload()}>
+              Try Again
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
