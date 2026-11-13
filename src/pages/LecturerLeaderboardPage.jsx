@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
+import LecturerNavigation from '../components/LecturerNavigation'
 import './LecturerLeaderboardPage.css'
 
-const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/v2/innovationConnect`
 
 const LecturerLeaderboardPage = () => {
   const navigate = useNavigate()
-  
+
   const [ideas, setIdeas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showModal, setShowModal] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const getUser = () => {
     const data = localStorage.getItem('user')
@@ -28,7 +29,7 @@ const LecturerLeaderboardPage = () => {
     const fetchData = async () => {
       try {
         const res = await axios.get(`${API}/idea`)
-        const data = res.data
+        const data = res.data || []
         const sorted = [...data].sort((a, b) => (b.voteIds?.length || 0) - (a.voteIds?.length || 0))
         setIdeas(sorted)
       } catch (err) {
@@ -43,20 +44,11 @@ const LecturerLeaderboardPage = () => {
 
   const goBack = () => navigate('/lecturer-dashboard')
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
-
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
-  const closeSidebar = () => setSidebarOpen(false)
-
   const openModal = (idea) => {
     setSelectedIdea(idea)
     setShowModal(true)
   }
-  
+
   const closeModal = () => {
     setSelectedIdea(null)
     setShowModal(false)
@@ -69,22 +61,22 @@ const LecturerLeaderboardPage = () => {
         alert('Only students can vote!')
         return
       }
-      
+
       await axios.post(`${API}/vote`, {
         ideaId: id,
         userId: user?.id
       })
-      
+
       const refreshRes = await axios.get(`${API}/idea`)
-      const sorted = [...refreshRes.data].sort((a, b) => (b.voteIds?.length || 0) - (a.voteIds?.length || 0))
+      const sorted = [...(refreshRes.data || [])].sort((a, b) => (b.voteIds?.length || 0) - (a.voteIds?.length || 0))
       setIdeas(sorted)
-      
+
       if (selectedIdea && selectedIdea.id === id) {
         const updatedIdea = refreshRes.data.find(i => i.id === id)
         setSelectedIdea(updatedIdea)
       }
     } catch (error) {
-      if (error.response?.status === 400) {
+      if (error.response?.status === 400 || error.response?.status === 409) {
         alert('You have already voted for this idea')
       } else {
         alert('Failed to vote')
@@ -99,24 +91,24 @@ const LecturerLeaderboardPage = () => {
         alert('Only lecturers can give feedback!')
         return
       }
-      
+
       await axios.post(`${API}/feedback`, {
         comment: comment,
         idea: id,
         lecturer: user?.id
       })
-      
+
       const refreshRes = await axios.get(`${API}/idea`)
-      const sorted = [...refreshRes.data].sort((a, b) => (b.voteIds?.length || 0) - (a.voteIds?.length || 0))
+      const sorted = [...(refreshRes.data || [])].sort((a, b) => (b.voteIds?.length || 0) - (a.voteIds?.length || 0))
       setIdeas(sorted)
-      
+
       if (selectedIdea && selectedIdea.id === id) {
         const updatedIdea = refreshRes.data.find(i => i.id === id)
         setSelectedIdea(updatedIdea)
       }
-      
+
       if (callback) callback()
-    } catch (error) {
+    } catch {
       alert('Failed to submit feedback')
     }
   }
@@ -128,21 +120,21 @@ const LecturerLeaderboardPage = () => {
         alert('Only lecturers can update status!')
         return false
       }
-      
+
       await axios.put(`${API}/idea/${id}/status?status=${newStatus}`)
-      
+
       const refreshRes = await axios.get(`${API}/idea`)
-      const sorted = [...refreshRes.data].sort((a, b) => (b.voteIds?.length || 0) - (a.voteIds?.length || 0))
+      const sorted = [...(refreshRes.data || [])].sort((a, b) => (b.voteIds?.length || 0) - (a.voteIds?.length || 0))
       setIdeas(sorted)
-      
+
       if (selectedIdea && selectedIdea.id === id) {
         const updatedIdea = refreshRes.data.find(i => i.id === id)
         setSelectedIdea(updatedIdea)
       }
-      
+
       alert(`Idea ${newStatus} successfully!`)
       return true
-    } catch (error) {
+    } catch {
       alert('Failed to update status')
       return false
     }
@@ -157,12 +149,7 @@ const LecturerLeaderboardPage = () => {
     return 'Unknown'
   }
 
-  const getRankBadge = (index) => {
-    if (index === 0) return '🥇'
-    if (index === 1) return '🥈'
-    if (index === 2) return '🥉'
-    return `#${index + 1}`
-  }
+  const getRankBadge = (index) => `#${index + 1}`
 
   const getRankClass = (index) => {
     if (index === 0) return 'rank-gold'
@@ -183,7 +170,6 @@ const LecturerLeaderboardPage = () => {
   if (error) {
     return (
       <div className="lecturer-leaderboard-loading">
-        <div style={{ fontSize: '3rem' }}>⚠️</div>
         <h5 className="text-danger mt-3">{error}</h5>
         <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
           Try Again
@@ -194,67 +180,25 @@ const LecturerLeaderboardPage = () => {
 
   return (
     <div className="lecturer-leaderboard-page">
-      
-      {sidebarOpen && <div className="sidebar-overlay show" onClick={closeSidebar} />}
-
-      <aside className={`lecturer-leaderboard-sidebar ${sidebarOpen ? 'show' : ''}`}>
-        <div className="sidebar-menu">
-          <div className="sidebar-brand">
-            <span className="brand-icon">👨‍🏫</span>
-            <span className="brand-text">Lecturer</span>
-          </div>
-          <nav className="sidebar-nav">
-            <Link to="/lecturer-dashboard" className="sidebar-link">
-              <i className="fas fa-tachometer-alt" /> Dashboard
-            </Link>
-            <Link to="/lecturer-leaderboard" className="sidebar-link active">
-              <i className="fas fa-trophy" /> Leaderboard
-            </Link>
-            <Link to="/lecturer-profile" className="sidebar-link">
-              <i className="fas fa-user" /> Profile
-            </Link>
-            <button className="sidebar-link" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt" /> Logout
-            </button>
-          </nav>
-        </div>
-      </aside>
-
-      <header className="lecturer-leaderboard-header">
-        <div className="header-container">
-          <div className="header-left">
-            <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
-              <i className="fas fa-bars" />
-            </button>
-            <div className="header-brand">
-              <span className="brand-icon">👨‍🏫</span>
-              <span className="brand-text">Leaderboard</span>
-            </div>
-          </div>
-          <div className="header-right">
-            <button className="logout-btn" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt" /> Logout
-            </button>
-          </div>
-        </div>
-      </header>
+      <LecturerNavigation
+        pageTitle="Innovation Leaderboard"
+        pageSubtitle="Top-voted student ideas across the university"
+      />
 
       <div className="lecturer-leaderboard-content">
         <div className="leaderboard-container">
-          
           <div className="leaderboard-header">
-            <h1>🏆 Top Student Ideas</h1>
-            <p>Ideas with the most votes from students</p>
+            <h1>Top Student Ideas</h1>
+            <p>Ranked by student community votes</p>
           </div>
 
           <div className="leaderboard-card">
             {ideas.length === 0 ? (
               <div className="empty-state">
-                <div style={{ fontSize: '4rem' }}>🏆</div>
                 <h5>No Ideas Yet</h5>
                 <p>Ideas will appear here once students start voting.</p>
                 <button className="btn-back-dash" onClick={goBack}>
-                  ← Back to Dashboard
+                  Back to Dashboard
                 </button>
               </div>
             ) : (
@@ -280,10 +224,10 @@ const LecturerLeaderboardPage = () => {
                         <td>{getStudentName(idea)}</td>
                         <td>{idea.category}</td>
                         <td>
-                          <span className="badge-votes">⭐ {idea.voteIds?.length || 0}</span>
+                          <span className="badge-votes">{idea.voteIds?.length || 0} votes</span>
                         </td>
                         <td>
-                          <button 
+                          <button
                             className="btn-view-idea"
                             onClick={() => openModal(idea)}
                           >

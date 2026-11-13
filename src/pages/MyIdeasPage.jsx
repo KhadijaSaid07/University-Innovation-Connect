@@ -3,20 +3,29 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
 
-const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/v2/innovationConnect`
+
+const allCategories = [
+  'AGRICULTURE', 'EDUCATION', 'HEALTH', 'TECHNOLOGY',
+  'ENVIRONMENT', 'BUSINESS', 'FINANCE', 'SECURITY',
+  'TRANSPORTATION', 'WATER_AND_HYGIENE', 'TOURISM',
+  'BLUE_ECONOMY', 'RENEWABLE_ENERGY', 'FINTECH', 'OTHERS'
+]
 
 const MyIdeasPage = () => {
   const navigate = useNavigate()
-  
-  // State
+
   const [ideas, setIdeas] = useState([])
   const [stats, setStats] = useState({ total: 0, votes: 0, comments: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [editingIdea, setEditingIdea] = useState(null)
+  const [editForm, setEditForm] = useState({ title: '', category: '', description: '' })
+  const [savingEdit, setSavingEdit] = useState(false)
 
-  // Get logged in user
   const getUser = () => {
     const data = localStorage.getItem('user')
     if (data) {
@@ -25,33 +34,28 @@ const MyIdeasPage = () => {
     return null
   }
 
-  // Fetch my ideas
   useEffect(() => {
     const fetchMyIdeas = async () => {
       try {
         const user = getUser()
-        
+
         if (!user?.id) {
-          setError('Please login first')
+          setError('Please sign in to view your ideas.')
           setLoading(false)
           return
         }
 
-        console.log('📤 Fetching ideas for user:', user.id)
         const res = await axios.get(`${API}/user/${user.id}/ideas`)
-        const data = res.data
-        console.log('✅ My ideas:', data)
-        
+        const data = res.data || []
+
         setIdeas(data)
-        
-        // Calculate stats using voteIds and commentIds
+
         const votes = data.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
         const comments = data.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
         setStats({ total: data.length, votes, comments })
-
       } catch (err) {
         console.error('Fetch error:', err)
-        setError('Could not load your ideas')
+        setError('Could not load your submitted ideas.')
       } finally {
         setLoading(false)
       }
@@ -59,11 +63,8 @@ const MyIdeasPage = () => {
     fetchMyIdeas()
   }, [])
 
-  // Navigate
   const goToPost = () => navigate('/post-idea')
-  const goBack = () => navigate('/dashboard')
 
-  // Modal functions
   const openModal = (idea) => {
     setSelectedIdea(idea)
     setShowModal(true)
@@ -74,268 +75,288 @@ const MyIdeasPage = () => {
     setShowModal(false)
   }
 
-  // Delete idea
-  const deleteIdea = async (id, title) => {
-    if (!window.confirm(`🗑️ Delete "${title}"?`)) return
-    
-    try {
-      await axios.delete(`${API}/idea/${id}`)
-      
-      const updated = ideas.filter(i => i.id !== id)
-      setIdeas(updated)
-      
-      // Update stats using voteIds and commentIds
-      const votes = updated.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
-      const comments = updated.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
-      setStats({ total: updated.length, votes, comments })
-      
-      alert('✅ Idea deleted successfully!')
+  const openEditModal = (idea) => {
+    setEditingIdea(idea)
+    setEditForm({
+      title: idea.title || '',
+      category: idea.category || 'TECHNOLOGY',
+      description: idea.description || ''
+    })
+  }
 
+  const closeEditModal = () => {
+    setEditingIdea(null)
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    if (!editingIdea) return
+
+    setSavingEdit(true)
+    try {
+      const res = await axios.put(`${API}/idea/${editingIdea.id}`, {
+        title: editForm.title.trim(),
+        category: editForm.category,
+        description: editForm.description.trim()
+      })
+
+      if (res.data) {
+        const updated = ideas.map(i => i.id === editingIdea.id ? res.data : i)
+        setIdeas(updated)
+        setEditingIdea(null)
+      }
     } catch (err) {
-      console.error('Delete error:', err)
-      alert('❌ Failed to delete idea')
+      alert(err.response?.data?.message || 'Failed to update idea')
+    } finally {
+      setSavingEdit(false)
     }
   }
 
-  // Handle vote
+  const deleteIdea = async (id, title) => {
+    if (!window.confirm(`Delete "${title}"? This action cannot be undone.`)) return
+
+    try {
+      await axios.delete(`${API}/idea/${id}`)
+
+      const updated = ideas.filter(i => i.id !== id)
+      setIdeas(updated)
+
+      const votes = updated.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
+      const comments = updated.reduce((sum, i) => sum + (i.commentIds?.length || 0), 0)
+      setStats({ total: updated.length, votes, comments })
+    } catch (err) {
+      console.error('Delete error:', err)
+      alert('Failed to delete idea')
+    }
+  }
+
   const handleVote = async (id) => {
     try {
       const user = getUser()
-      
+
       if (!user) {
-        alert('Please login to vote')
+        alert('Please sign in to vote')
         return
       }
-      
+
       if (user?.role !== 'STUDENT') {
-        alert('Only students can vote!')
+        alert('Only students can vote')
         return
       }
-      
+
       const res = await axios.post(`${API}/vote`, {
         ideaId: id,
         userId: user?.id
       })
-      
+
       if (res.data) {
-        // Refresh ideas to get updated vote counts
         const refreshRes = await axios.get(`${API}/user/${user.id}/ideas`)
         const updatedData = refreshRes.data
         setIdeas(updatedData)
-        
-        // Update stats using voteIds
+
         const newVotes = updatedData.reduce((sum, i) => sum + (i.voteIds?.length || 0), 0)
         setStats(prev => ({ ...prev, votes: newVotes }))
-        
+
         if (selectedIdea && selectedIdea.id === id) {
           const updatedIdea = updatedData.find(i => i.id === id)
           setSelectedIdea(updatedIdea)
         }
-        
-        alert('✅ Vote added successfully!')
       }
-      
     } catch (error) {
       console.error('Vote error:', error)
-      if (error.response?.status === 400) {
-        alert('You have already voted for this idea')
-      } else {
-        alert('Failed to vote. Please try again.')
-      }
+      alert(error.response?.data?.message || 'Failed to vote. Please try again.')
     }
   }
 
-  // Handle feedback
   const handleFeedback = async (id, comment, callback) => {
     try {
       const user = getUser()
-      
-      if (!user) {
-        alert('Please login to give feedback')
+
+      if (!user || (user?.role !== 'LECTURER' && user?.role !== 'ADMIN')) {
+        alert('Only lecturers can submit academic feedback')
         return
       }
-      
-      if (user?.role !== 'LECTURER' && user?.role !== 'ADMIN') {
-        alert('Only lecturers can give feedback!')
-        return
-      }
-      
+
       const res = await axios.post(`${API}/feedback`, {
         comment: comment,
         idea: id,
         lecturer: user?.id
       })
-      
+
       if (res.data) {
-        // Refresh ideas
         const refreshRes = await axios.get(`${API}/user/${user.id}/ideas`)
         const updatedData = refreshRes.data
         setIdeas(updatedData)
-        
+
         if (selectedIdea && selectedIdea.id === id) {
           const updatedIdea = updatedData.find(i => i.id === id)
           setSelectedIdea(updatedIdea)
         }
-        
+
         if (callback) callback()
-        alert('✅ Feedback submitted successfully!')
       }
-      
     } catch (error) {
       console.error('Feedback error:', error)
       alert('Failed to submit feedback. Please try again.')
     }
   }
 
-  // Get author name
-  const getAuthorName = (idea) => {
-    if (idea.userName) {
-      return idea.userName
-    }
-    if (idea.user) {
-      const firstName = idea.user.firstName || ''
-      const lastName = idea.user.lastName || ''
-      const fullName = `${firstName} ${lastName}`.trim()
-      if (fullName) return fullName
-    }
-    return 'Student'
+  const canEditIdea = (idea) => {
+    return idea.status === 'PENDING' || idea.status === 'UNDER_REVIEW'
   }
 
-  // Check if current user is the author
-  const isAuthor = (idea) => {
-    const user = getUser()
-    if (!user) return false
-    return idea.userId === user.id
+  const formatCategory = (cat) => {
+    if (!cat) return 'General'
+    return cat.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
   }
 
-  // Loading state
   if (loading) {
     return (
-      <div className="text-center py-5">
+      <div className="uic-page-loading">
         <div className="spinner-border text-primary" />
-        <p className="mt-2 text-muted">Loading your ideas...</p>
+        <p>Loading your submitted ideas...</p>
       </div>
     )
   }
 
-  // Error state
   if (error) {
     return (
-      <div className="text-center py-5">
-        <div style={{ fontSize: '3rem' }}>⚠️</div>
-        <h5 className="text-danger mt-3">{error}</h5>
-        <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
-          Try Again
+      <div className="uic-page-loading">
+        <h5 className="text-danger mb-3">{error}</h5>
+        <button className="uic-btn-primary" onClick={() => window.location.reload()}>
+          Retry
         </button>
       </div>
     )
   }
 
   return (
-    <div className="container-fluid">
-      
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h3 mb-0">📁 My Ideas</h1>
-        <div>
-          <button onClick={goBack} className="btn btn-secondary btn-sm me-2">
-            ← Back
-          </button>
-          <button onClick={goToPost} className="btn btn-primary btn-sm">
-            <i className="fas fa-plus" /> New Idea
-          </button>
+    <div className="uic-content-shell">
+      {/* Summary Metrics */}
+      <div className="uic-stats-row">
+        <div className="uic-stat-card">
+          <div className="uic-stat-icon indigo">
+            <i className="fas fa-folder-open" />
+          </div>
+          <div>
+            <div className="uic-stat-label">Submitted Ideas</div>
+            <div className="uic-stat-value">{stats.total}</div>
+          </div>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="row">
-        <div className="col-md-4 mb-3">
-          <div className="card border-left-primary shadow h-100">
-            <div className="card-body">
-              <div className="text-xs font-weight-bold text-primary text-uppercase">💡 My Ideas</div>
-              <div className="h5 font-weight-bold">{stats.total}</div>
-            </div>
+        <div className="uic-stat-card">
+          <div className="uic-stat-icon emerald">
+            <i className="fas fa-thumbs-up" />
+          </div>
+          <div>
+            <div className="uic-stat-label">Total Votes Received</div>
+            <div className="uic-stat-value">{stats.votes}</div>
           </div>
         </div>
-        <div className="col-md-4 mb-3">
-          <div className="card border-left-success shadow h-100">
-            <div className="card-body">
-              <div className="text-xs font-weight-bold text-success text-uppercase">⭐ Total Votes</div>
-              <div className="h5 font-weight-bold">{stats.votes}</div>
-            </div>
+
+        <div className="uic-stat-card">
+          <div className="uic-stat-icon sky">
+            <i className="fas fa-comments" />
           </div>
-        </div>
-        <div className="col-md-4 mb-3">
-          <div className="card border-left-info shadow h-100">
-            <div className="card-body">
-              <div className="text-xs font-weight-bold text-info text-uppercase">💬 Total Comments</div>
-              <div className="h5 font-weight-bold">{stats.comments}</div>
-            </div>
+          <div>
+            <div className="uic-stat-label">Community Comments</div>
+            <div className="uic-stat-value">{stats.comments}</div>
           </div>
         </div>
       </div>
 
-      {/* Ideas Table */}
-      <div className="card shadow">
-        <div className="card-header py-3">
-          <h6 className="m-0 font-weight-bold text-primary">📝 Ideas You've Posted</h6>
+      {/* Ideas Table Card */}
+      <div className="uic-surface-card">
+        <div className="uic-surface-header">
+          <div>
+            <h3 className="uic-surface-title">Your Innovation Submissions</h3>
+            <p className="uic-surface-subtitle">
+              Track evaluation status, edit pending proposals, or inspect faculty feedback
+            </p>
+          </div>
+          <button onClick={goToPost} className="uic-btn-primary">
+            <i className="fas fa-plus" />
+            <span>Submit New Idea</span>
+          </button>
         </div>
-        <div className="card-body">
+
+        <div className="uic-surface-body">
           {ideas.length === 0 ? (
-            <div className="text-center py-5">
-              <div style={{ fontSize: '4rem' }}>📭</div>
-              <h5 className="text-gray-800 mt-3">No Ideas Yet</h5>
-              <button onClick={goToPost} className="btn btn-primary mt-2">
-                Post Your First Idea
+            <div className="uic-empty-state">
+              <div className="uic-empty-icon">
+                <i className="fas fa-lightbulb" />
+              </div>
+              <h4>No ideas submitted yet</h4>
+              <p>Share your first innovation proposal with students and faculty.</p>
+              <button onClick={goToPost} className="uic-btn-primary mt-2">
+                <i className="fas fa-plus" />
+                <span>Post Your First Idea</span>
               </button>
             </div>
           ) : (
             <div className="table-responsive">
-              <table className="table table-bordered">
+              <table className="uic-clean-table">
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Title</th>
-                    <th>Author</th>
+                    <th>Proposal Title</th>
                     <th>Category</th>
                     <th>Status</th>
                     <th>Votes</th>
-                    <th>Actions</th>
+                    <th>Comments</th>
+                    <th className="text-end">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ideas.map((idea, i) => (
                     <tr key={idea.id}>
-                      <td>{i + 1}</td>
-                      <td>{idea.title}</td>
+                      <td className="text-muted fw-semibold">{i + 1}</td>
                       <td>
-                        {getAuthorName(idea)}
-                        {isAuthor(idea) && <span className="ml-1 text-muted">(You)</span>}
+                        <div className="fw-semibold text-dark">{idea.title}</div>
+                        {idea.description && (
+                          <div className="text-muted small text-truncate" style={{ maxWidth: '340px' }}>
+                            {idea.description}
+                          </div>
+                        )}
                       </td>
-                      <td>{idea.category}</td>
                       <td>
-                        <span className={`badge ${idea.status === 'PENDING' ? 'badge-warning' : 
-                          idea.status === 'UNDER_REVIEW' ? 'badge-primary' :
-                          idea.status === 'APPROVED' ? 'badge-success' : 
-                          idea.status === 'REJECTED' ? 'badge-danger' : 
-                          idea.status === 'IMPLEMENTED' ? 'badge-dark' : 'badge-secondary'}`}>
-                          {idea.status || 'PENDING'}
+                        <span className="uic-tag-pill">{formatCategory(idea.category)}</span>
+                      </td>
+                      <td>
+                        <span className={`uic-status-pill ${(idea.status || 'PENDING').toLowerCase()}`}>
+                          {(idea.status || 'PENDING').replace('_', ' ')}
                         </span>
                       </td>
-                      <td>⭐ {idea.voteIds?.length || 0}</td>
+                      <td className="fw-semibold">{idea.voteIds?.length || 0}</td>
+                      <td>{idea.commentIds?.length || 0}</td>
                       <td>
-                        <button 
-                          className="btn btn-sm btn-primary me-1"
-                          onClick={() => openModal(idea)}
-                        >
-                          <i className="fas fa-eye" /> View
-                        </button>
-                        <button 
-                          className="btn btn-sm btn-danger"
-                          onClick={() => deleteIdea(idea.id, idea.title)}
-                        >
-                          <i className="fas fa-trash" /> Delete
-                        </button>
+                        <div className="uic-table-actions">
+                          <button
+                            className="uic-action-btn view"
+                            onClick={() => openModal(idea)}
+                            title="View Details"
+                          >
+                            <i className="fas fa-eye" />
+                            <span>View</span>
+                          </button>
+                          {canEditIdea(idea) && (
+                            <button
+                              className="uic-action-btn edit"
+                              onClick={() => openEditModal(idea)}
+                              title="Edit Proposal"
+                            >
+                              <i className="fas fa-pen" />
+                              <span>Edit</span>
+                            </button>
+                          )}
+                          <button
+                            className="uic-action-btn delete"
+                            onClick={() => deleteIdea(idea.id, idea.title)}
+                            title="Delete Proposal"
+                          >
+                            <i className="fas fa-trash-alt" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -346,7 +367,83 @@ const MyIdeasPage = () => {
         </div>
       </div>
 
-      {/* Idea Modal */}
+      {/* Edit Idea Modal */}
+      {editingIdea && (
+        <div
+          className="idea-modal-overlay"
+          onClick={closeEditModal}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(17, 24, 39, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            padding: '16px'
+          }}
+        >
+          <div
+            className="uic-form-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: '580px', padding: '28px' }}
+          >
+            <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+              <h5 className="m-0 fw-bold text-dark">Edit Proposal</h5>
+              <button className="btn btn-sm btn-light" onClick={closeEditModal}>✕</button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="uic-proposal-form">
+              <div className="uic-field-group">
+                <label className="uic-field-label">Title</label>
+                <input
+                  type="text"
+                  className="uic-input"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="uic-field-group">
+                <label className="uic-field-label">Category</label>
+                <select
+                  className="uic-select"
+                  value={editForm.category}
+                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                  required
+                >
+                  {allCategories.map(cat => (
+                    <option key={cat} value={cat}>{formatCategory(cat)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="uic-field-group">
+                <label className="uic-field-label">Description</label>
+                <textarea
+                  rows="4"
+                  maxLength={250}
+                  className="uic-textarea"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="uic-form-actions mt-3">
+                <button type="button" className="uic-btn-ghost" onClick={closeEditModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="uic-btn-primary" disabled={savingEdit}>
+                  {savingEdit ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showModal && selectedIdea && (
         <IdeaModal
           idea={selectedIdea}

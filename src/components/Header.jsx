@@ -1,163 +1,173 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import './Header.css'
+import './PortalLayout.css'
 
-const Header = () => {
+const Header = ({ onToggleSidebar = () => {} }) => {
   const navigate = useNavigate()
   const location = useLocation()
+  const dropdownRef = useRef(null)
 
   const [user, setUser] = useState({
-    name: '',
+    name: 'Student',
     email: '',
-    role: '',
-    idNumber: ''
+    role: 'STUDENT'
   })
+  const [dropdownOpen, setDropdownOpen] = useState(false)
 
-  const [loading, setLoading] = useState(true)
-
-  // Load user data from localStorage
   const loadUser = () => {
     const data = localStorage.getItem('user')
-
     if (data) {
       try {
         const parsed = JSON.parse(data)
-
+        const fullName = `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim() || parsed.name || 'Student'
         setUser({
-          name: parsed.firstName || parsed.name || '',
+          name: fullName,
           email: parsed.email || '',
-          role: parsed.role || '',
-          idNumber: parsed.idNumber || ''
+          role: parsed.role || 'STUDENT'
         })
       } catch {
-        setUser({
-          name: '',
-          email: '',
-          role: '',
-          idNumber: ''
-        })
+        setUser({ name: 'Student', email: '', role: 'STUDENT' })
       }
     }
-
-    setLoading(false)
   }
 
-  // Load user on mount and when route changes (to catch profile updates)
   useEffect(() => {
     loadUser()
-  }, [location.pathname]) // Re-run when URL changes
+    setDropdownOpen(false)
+  }, [location.pathname, location.search])
 
-  // Also listen for storage changes (if profile updated in another tab)
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === 'user') {
-        loadUser()
-      }
+      if (e.key === 'user') loadUser()
     }
-
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    setDropdownOpen(false)
     navigate('/login')
   }
 
-  const initial = user.name
-    ? user.name.charAt(0).toUpperCase()
-    : 'U'
+  const getPageMeta = () => {
+    const params = new URLSearchParams(location.search)
+    const status = params.get('status')
+    switch (location.pathname) {
+      case '/dashboard':
+        return status === 'APPROVED'
+          ? { title: 'Approved Ideas', subtitle: 'Ideas reviewed and approved by faculty' }
+          : { title: 'Innovation Feed', subtitle: 'Browse, discuss, and vote on student proposals' }
+      case '/post-idea':
+        return { title: 'Submit New Idea', subtitle: 'Share a solution to a university or community challenge' }
+      case '/my-ideas':
+        return { title: 'My Ideas', subtitle: 'Manage your submitted proposals and track review status' }
+      case '/leaderboard':
+        return { title: 'Leaderboard', subtitle: 'Top-voted student innovations across SUZA' }
+      case '/profile':
+        return { title: 'Profile Settings', subtitle: 'Update your personal information and password' }
+      default:
+        return { title: 'University Innovation Connect', subtitle: 'Student Portal' }
+    }
+  }
+
+  const pageMeta = getPageMeta()
+  const initial = user.name ? user.name.charAt(0).toUpperCase() : 'S'
 
   return (
-    <nav className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+    <header className="uic-topbar uic-topbar-static">
+      <div className="uic-topbar-left">
+        <button
+          type="button"
+          className="uic-mobile-toggle"
+          onClick={onToggleSidebar}
+          aria-label="Toggle navigation"
+        >
+          <i className="fas fa-bars" />
+        </button>
 
-      {/* Mobile Menu */}
-      <button
-        id="sidebarToggleTop"
-        className="btn btn-link d-md-none rounded-circle mr-3"
-      >
-        <i className="fas fa-bars"></i>
-      </button>
-
-      <div className="ml-auto">
-        <ul className="navbar-nav">
-
-          <li className="nav-item dropdown no-arrow">
-
-            <a
-              className="nav-link dropdown-toggle"
-              href="#"
-              id="userDropdown"
-              data-toggle="dropdown"
-            >
-
-              <span className="mr-2 d-none d-lg-inline text-gray-600 small">
-                {loading ? 'Loading...' : user.name || 'Guest'}
-              </span>
-
-              <span
-                className="img-profile rounded-circle d-flex align-items-center justify-content-center"
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  background: 'linear-gradient(135deg,#7C3AED,#6D28D9)',
-                  color: '#fff',
-                  fontWeight: '700'
-                }}
-              >
-                {initial}
-              </span>
-
-            </a>
-
-            <div className="dropdown-menu dropdown-menu-right shadow">
-
-              <div className="dropdown-header">
-                <div className="font-weight-bold">
-                  {user.name || 'User'}
-                </div>
-
-                <div className="small text-muted">
-                  {user.email || 'No email'}
-                </div>
-
-                <div className="small text-muted mt-1">
-                  <span className="badge badge-primary">
-                    {user.role || 'Role'}
-                  </span>
-
-                  {user.idNumber && (
-                    <span className="badge badge-secondary ml-1">
-                      {user.idNumber}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="dropdown-divider"></div>
-
-              <Link className="dropdown-item" to="/profile">
-                <i className="fas fa-user fa-sm fa-fw mr-2"></i>
-                Profile
-              </Link>
-
-              <button
-                className="dropdown-item"
-                onClick={handleLogout}
-              >
-                <i className="fas fa-sign-out-alt fa-sm fa-fw mr-2"></i>
-                Logout
-              </button>
-
-            </div>
-
-          </li>
-
-        </ul>
+        <div className="uic-page-title-group">
+          <h1 className="uic-page-title">{pageMeta.title}</h1>
+          <p className="uic-page-subtitle">{pageMeta.subtitle}</p>
+        </div>
       </div>
 
-    </nav>
+      <div className="uic-topbar-right">
+        {location.pathname !== '/post-idea' && (
+          <Link to="/post-idea" className="uic-quick-btn">
+            <i className="fas fa-plus" />
+            <span>Submit Idea</span>
+          </Link>
+        )}
+
+        <div className="uic-topbar-user-wrapper" ref={dropdownRef}>
+          <button
+            type="button"
+            className={`uic-topbar-user-btn ${dropdownOpen ? 'open' : ''}`}
+            onClick={() => setDropdownOpen(prev => !prev)}
+          >
+            <div className="uic-user-avatar" style={{ width: '32px', height: '32px', fontSize: '0.82rem' }}>
+              {initial}
+            </div>
+            <div className="uic-topbar-user-text">
+              <span className="uic-topbar-user-name">{user.name}</span>
+              <span className="uic-topbar-user-role">{user.role.toLowerCase()}</span>
+            </div>
+            <i className="fas fa-chevron-down uic-topbar-chevron" />
+          </button>
+
+          {dropdownOpen && (
+            <div className="uic-topbar-dropdown">
+              <div className="uic-dropdown-user-header">
+                <div className="uic-dropdown-user-name">{user.name}</div>
+                {user.email && <div className="uic-dropdown-user-email">{user.email}</div>}
+                <span className="uic-dropdown-role-badge">{user.role}</span>
+              </div>
+
+              <Link
+                to="/profile"
+                className="uic-dropdown-item"
+                onClick={() => setDropdownOpen(false)}
+              >
+                <i className="fas fa-user" />
+                <span>Profile</span>
+              </Link>
+
+              <Link
+                to="/my-ideas"
+                className="uic-dropdown-item"
+                onClick={() => setDropdownOpen(false)}
+              >
+                <i className="fas fa-folder-open" />
+                <span>My Ideas</span>
+              </Link>
+
+              <div className="uic-dropdown-divider" />
+
+              <button
+                type="button"
+                className="uic-dropdown-item danger"
+                onClick={handleLogout}
+              >
+                <i className="fas fa-sign-out-alt" />
+                <span>Logout</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
   )
 }
 

@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import './ProfilePage.css'
 
-const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
-const AUTH_API = `${import.meta.env.VITE_API_URL}/auth`
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/v2/innovationConnect`
+const AUTH_API = `${BASE_URL}/auth`
 
 const ProfilePage = () => {
   const navigate = useNavigate()
-  
-  // State
+
   const [user, setUser] = useState({
     firstName: '',
     lastName: '',
@@ -24,7 +24,6 @@ const ProfilePage = () => {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
-  // Get logged in user
   const getUser = () => {
     const data = localStorage.getItem('user')
     if (data) {
@@ -33,19 +32,15 @@ const ProfilePage = () => {
     return null
   }
 
-  // Fetch profile from backend
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const userData = getUser()
-        
+
         if (userData?.id) {
-          console.log('📤 Fetching profile for user:', userData.id)
           const res = await axios.get(`${API}/user/${userData.id}`)
-          console.log('✅ Profile data:', res.data)
-          
           const data = res.data
-          
+
           setUser({
             firstName: data.firstName || '',
             lastName: data.lastName || '',
@@ -71,7 +66,7 @@ const ProfilePage = () => {
         }
       } catch (err) {
         console.error('Fetch error:', err)
-        setError('Could not load profile')
+        setError('Could not load profile details.')
       } finally {
         setLoading(false)
       }
@@ -79,13 +74,11 @@ const ProfilePage = () => {
     fetchProfile()
   }, [])
 
-  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target
     setUser({ ...user, [name]: value })
   }
 
-  // Handle form submit - Using the auth/profile endpoint
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -94,60 +87,49 @@ const ProfilePage = () => {
 
     try {
       const userData = getUser()
-      
+
       if (!userData?.id) {
-        setError('User not found. Please login again.')
+        setError('User session not found. Please sign in again.')
         setSaving(false)
         return
       }
 
-      // Prepare update data
       const updateData = {
         firstName: user.firstName.trim(),
         lastName: user.lastName.trim(),
-        email: user.email.trim()
+        email: user.email.trim(),
+        phone: user.phone ? user.phone.trim() : '',
+        department: user.department ? user.department.trim() : '',
+        bio: user.bio ? user.bio.trim() : ''
       }
 
-      // Only include password if provided
-      // Only include optional fields if they have values
-      if (user.phone) updateData.phone = user.phone.trim()
-      if (user.department) updateData.department = user.department.trim()
-      if (user.bio) updateData.bio = user.bio.trim()
-
-      console.log('📤 Updating profile:', updateData)
-
-      // Use the auth/profile endpoint
       const res = await axios.put(`${AUTH_API}/profile/${userData.id}`, updateData, {
         headers: {
           'Content-Type': 'application/json'
         }
       })
 
-      console.log('✅ Update response:', res.data)
-
       if (res.data) {
-        // Update local storage
         const updatedUser = {
           ...userData,
           firstName: res.data.firstName || user.firstName,
           lastName: res.data.lastName || user.lastName,
           email: res.data.email || user.email,
-          role: res.data.role || user.role
+          role: res.data.role || user.role,
+          phone: res.data.phone ?? user.phone,
+          department: res.data.department ?? user.department,
+          bio: res.data.bio ?? user.bio
         }
         localStorage.setItem('user', JSON.stringify(updatedUser))
-        
-        setMessage('✅ Profile updated successfully!')
+
+        setMessage('Profile updated successfully.')
         setTimeout(() => setMessage(''), 3000)
       }
-
     } catch (err) {
-      console.error('❌ Update error:', err)
-      console.error('Response:', err.response?.data)
-      
       let errorMsg = 'Could not update profile'
       if (err.response?.data?.message) {
         errorMsg = err.response.data.message
-      } else if (err.response?.data) {
+      } else if (typeof err.response?.data === 'string') {
         errorMsg = err.response.data
       }
       setError(errorMsg)
@@ -156,173 +138,178 @@ const ProfilePage = () => {
     }
   }
 
-  // Go back
-  const goBack = () => navigate('/dashboard')
-
-  // Loading state
   if (loading) {
     return (
-      <div className="profile-loading">
+      <div className="uic-page-loading">
         <div className="spinner-border text-primary" />
-        <p className="mt-2 text-muted">Loading profile...</p>
+        <p>Loading your profile...</p>
       </div>
     )
   }
 
-  // Get full name
-  const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
-  const initial = user.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'
+  const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Student'
+  const initial = user.firstName ? user.firstName.charAt(0).toUpperCase() : 'S'
 
   return (
-    <div className="profile-page">
-      
-      {/* Header */}
-      <div className="profile-header">
-        <div className="header-container">
-          <h1 className="h3 mb-0">👤 My Profile</h1>
-          <button onClick={goBack} className="btn btn-secondary btn-sm">
-            ← Back
+    <div className="uic-centered-page">
+      <div className="uic-form-card">
+        <div className="uic-form-card-header">
+          <div className="d-flex align-items-center gap-3">
+            <div className="uic-profile-avatar-lg">{initial}</div>
+            <div>
+              <h2 className="uic-form-card-title mb-1">{fullName}</h2>
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                <span className="uic-dropdown-role-badge m-0">{user.role || 'STUDENT'}</span>
+                <span className="text-muted small">{user.email}</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            className="uic-btn-secondary"
+          >
+            <i className="fas fa-arrow-left" />
+            <span>Dashboard</span>
           </button>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="profile-content">
-        <div className="profile-container">
-          
-          {/* Profile Card */}
-          <div className="profile-card">
-            
-            {/* Avatar */}
-            <div className="profile-avatar-section">
-              <div className="profile-avatar">{initial}</div>
-              <h4 className="profile-name">{fullName}</h4>
-              <p className="profile-role">
-                <span className="badge-role">{user.role || 'Student'}</span>
-              </p>
-            </div>
+        {message && (
+          <div className="uic-alert uic-alert-success">
+            <i className="fas fa-check-circle" />
+            <span>{message}</span>
+          </div>
+        )}
+        {error && (
+          <div className="uic-alert uic-alert-error">
+            <i className="fas fa-exclamation-circle" />
+            <span>{error}</span>
+          </div>
+        )}
 
-            {/* Messages */}
-            {message && <div className="alert alert-success">{message}</div>}
-            {error && <div className="alert alert-danger">{error}</div>}
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="profile-form">
-              
-              <div className="form-group">
-                <label>👤 First Name</label>
+        <form onSubmit={handleSubmit} className="uic-proposal-form">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <div className="uic-field-group">
+                <label className="uic-field-label">First Name</label>
                 <input
                   type="text"
                   name="firstName"
-                  className="form-control"
+                  className="uic-input"
                   value={user.firstName}
                   onChange={handleChange}
                   required
                 />
               </div>
+            </div>
 
-              <div className="form-group">
-                <label>👤 Last Name</label>
+            <div className="col-md-6">
+              <div className="uic-field-group">
+                <label className="uic-field-label">Last Name</label>
                 <input
                   type="text"
                   name="lastName"
-                  className="form-control"
+                  className="uic-input"
                   value={user.lastName}
                   onChange={handleChange}
                   required
                 />
               </div>
+            </div>
+          </div>
 
-              <div className="form-group">
-                <label>📧 Email</label>
+          <div className="row g-3">
+            <div className="col-md-6">
+              <div className="uic-field-group">
+                <label className="uic-field-label">University Email</label>
                 <input
                   type="email"
                   name="email"
-                  className="form-control"
+                  className="uic-input"
                   value={user.email}
                   onChange={handleChange}
                   required
                 />
-                <small className="text-muted">Email can be changed</small>
               </div>
+            </div>
 
-              <div className="form-group">
-                <label>📞 Phone Number</label>
+            <div className="col-md-6">
+              <div className="uic-field-group">
+                <label className="uic-field-label">Phone Number</label>
                 <input
                   type="text"
                   name="phone"
-                  className="form-control"
-                  placeholder="Enter phone number"
+                  className="uic-input"
+                  placeholder="e.g., +255 700 000 000"
                   value={user.phone || ''}
                   onChange={handleChange}
                 />
               </div>
-
-              <div className="form-group">
-                <label>🏛️ Department</label>
-                <input
-                  type="text"
-                  name="department"
-                  className="form-control"
-                  placeholder="Enter department"
-                  value={user.department || ''}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>📝 Bio</label>
-                <textarea
-                  name="bio"
-                  className="form-control"
-                  rows="3"
-                  placeholder="Tell us about yourself..."
-                  value={user.bio || ''}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-buttons">
-                <button type="submit" className="btn-save" disabled={saving}>
-                  {saving ? 'Saving...' : '💾 Save Changes'}
-                </button>
-                <button
-                  type="reset"
-                  className="btn-reset"
-                  onClick={() => {
-                    // Reset to current values
-                    const userData = getUser()
-                    if (userData) {
-                      setUser({
-                        firstName: userData.firstName || '',
-                        lastName: userData.lastName || '',
-                        email: userData.email || '',
-                        role: userData.role || '',
-                        phone: userData.phone || '',
-                        department: userData.department || '',
-                        bio: userData.bio || ''
-                      })
-                    }
-                    setMessage('')
-                    setError('')
-                  }}
-                >
-                  🔄 Reset
-                </button>
-              </div>
-            </form>
-
-            {/* Account Info */}
-            <div className="account-info">
-              <h6 className="account-title">📋 Account Information</h6>
-              <div className="account-details">
-                <div><strong>Role:</strong> {user.role || 'Student'}</div>
-                <div><strong>Status:</strong> Active</div>
-                <div><strong>ID:</strong> {getUser()?.id || 'N/A'}</div>
-              </div>
             </div>
           </div>
-        </div>
+
+          <div className="uic-field-group">
+            <label className="uic-field-label">Academic Department / Faculty</label>
+            <input
+              type="text"
+              name="department"
+              className="uic-input"
+              placeholder="e.g., Computer Science & Information Technology"
+              value={user.department || ''}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="uic-field-group">
+            <label className="uic-field-label">Short Bio & Research Interests</label>
+            <textarea
+              name="bio"
+              className="uic-textarea"
+              rows="3"
+              placeholder="Share your academic interests, skills, or innovation focus areas..."
+              value={user.bio || ''}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="uic-guidelines-box">
+            <div className="d-flex justify-content-between flex-wrap gap-2 small text-muted">
+              <span><strong>Account Role:</strong> {user.role || 'STUDENT'}</span>
+              <span><strong>Account Status:</strong> Active</span>
+              <span><strong>User ID:</strong> #{getUser()?.id || 'N/A'}</span>
+            </div>
+          </div>
+
+          <div className="uic-form-actions">
+            <button
+              type="button"
+              className="uic-btn-ghost"
+              onClick={() => {
+                const userData = getUser()
+                if (userData) {
+                  setUser({
+                    firstName: userData.firstName || '',
+                    lastName: userData.lastName || '',
+                    email: userData.email || '',
+                    role: userData.role || '',
+                    phone: userData.phone || '',
+                    department: userData.department || '',
+                    bio: userData.bio || ''
+                  })
+                }
+                setMessage('')
+                setError('')
+              }}
+            >
+              Reset
+            </button>
+
+            <button type="submit" className="uic-btn-primary" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Profile Changes'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

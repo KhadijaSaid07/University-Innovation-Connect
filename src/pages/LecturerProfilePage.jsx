@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import LecturerNavigation from '../components/LecturerNavigation'
 import './LecturerProfilePage.css'
 
-const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
-const AUTH_API = `${import.meta.env.VITE_API_URL}/auth`
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/v2/innovationConnect`
+const AUTH_API = `${BASE_URL}/auth`
 
 const LecturerProfilePage = () => {
   const navigate = useNavigate()
-  
+
   const [lecturer, setLecturer] = useState({
     firstName: '',
     lastName: '',
@@ -22,7 +24,6 @@ const LecturerProfilePage = () => {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const getUser = () => {
     const data = localStorage.getItem('user')
@@ -36,11 +37,11 @@ const LecturerProfilePage = () => {
     const fetchProfile = async () => {
       try {
         const user = getUser()
-        
+
         if (user?.id) {
           const res = await axios.get(`${API}/user/${user.id}`)
           const data = res.data
-          
+
           setLecturer({
             firstName: data.firstName || '',
             lastName: data.lastName || '',
@@ -87,7 +88,7 @@ const LecturerProfilePage = () => {
 
     try {
       const user = getUser()
-      
+
       if (!user?.id) {
         setError('User not found. Please login again.')
         setSaving(false)
@@ -97,13 +98,12 @@ const LecturerProfilePage = () => {
       const updateData = {
         firstName: lecturer.firstName.trim(),
         lastName: lecturer.lastName.trim(),
-        email: lecturer.email.trim()
+        email: lecturer.email.trim(),
+        phone: lecturer.phone ? lecturer.phone.trim() : '',
+        department: lecturer.department ? lecturer.department.trim() : '',
+        specialization: lecturer.specialization ? lecturer.specialization.trim() : '',
+        bio: lecturer.bio ? lecturer.bio.trim() : ''
       }
-
-      if (lecturer.phone) updateData.phone = lecturer.phone.trim()
-      if (lecturer.department) updateData.department = lecturer.department.trim()
-      if (lecturer.specialization) updateData.specialization = lecturer.specialization.trim()
-      if (lecturer.bio) updateData.bio = lecturer.bio.trim()
 
       const res = await axios.put(`${AUTH_API}/profile/${user.id}`, updateData)
 
@@ -113,11 +113,15 @@ const LecturerProfilePage = () => {
           firstName: res.data.firstName || lecturer.firstName,
           lastName: res.data.lastName || lecturer.lastName,
           email: res.data.email || lecturer.email,
-          role: res.data.role || user.role
+          role: res.data.role || user.role,
+          phone: res.data.phone ?? lecturer.phone,
+          department: res.data.department ?? lecturer.department,
+          specialization: res.data.specialization ?? lecturer.specialization,
+          bio: res.data.bio ?? lecturer.bio
         }
         localStorage.setItem('user', JSON.stringify(updatedUser))
-        
-        setMessage('✅ Profile updated successfully!')
+
+        setMessage('Profile updated successfully.')
         setTimeout(() => setMessage(''), 3000)
       }
     } catch (err) {
@@ -129,15 +133,6 @@ const LecturerProfilePage = () => {
   }
 
   const goBack = () => navigate('/lecturer-dashboard')
-
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
-
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
-  const closeSidebar = () => setSidebarOpen(false)
 
   if (loading) {
     return (
@@ -153,64 +148,22 @@ const LecturerProfilePage = () => {
 
   return (
     <div className="lecturer-profile-page">
-      
-      {sidebarOpen && <div className="sidebar-overlay show" onClick={closeSidebar} />}
-
-      <aside className={`lecturer-profile-sidebar ${sidebarOpen ? 'show' : ''}`}>
-        <div className="sidebar-menu">
-          <div className="sidebar-brand">
-            <span className="brand-icon">👨‍🏫</span>
-            <span className="brand-text">Lecturer</span>
-          </div>
-          <nav className="sidebar-nav">
-            <Link to="/lecturer-dashboard" className="sidebar-link">
-              <i className="fas fa-tachometer-alt" /> Dashboard
-            </Link>
-            <Link to="/lecturer-leaderboard" className="sidebar-link">
-              <i className="fas fa-trophy" /> Leaderboard
-            </Link>
-            <Link to="/lecturer-profile" className="sidebar-link active">
-              <i className="fas fa-user" /> Profile
-            </Link>
-            <button className="sidebar-link" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt" /> Logout
-            </button>
-          </nav>
-        </div>
-      </aside>
-
-      <header className="lecturer-profile-header">
-        <div className="header-container">
-          <div className="header-left">
-            <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
-              <i className="fas fa-bars" />
-            </button>
-            <div className="header-brand">
-              <span className="brand-icon">👨‍🏫</span>
-              <span className="brand-text">Lecturer Profile</span>
-            </div>
-          </div>
-          <div className="header-right">
-            <button className="logout-btn" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt" /> Logout
-            </button>
-          </div>
-        </div>
-      </header>
+      <LecturerNavigation
+        pageTitle="Lecturer Profile"
+        pageSubtitle="Manage your academic profile and contact details"
+      />
 
       <div className="lecturer-profile-content">
         <div className="profile-container">
-          
           <button onClick={goBack} className="btn-back">
             ← Back to Dashboard
           </button>
 
           <div className="profile-card">
-            
             <div className="profile-avatar-section">
               <div className="profile-avatar">{initial}</div>
               <h2 className="profile-name">{fullName}</h2>
-              <span className="profile-role">👨‍🏫 Lecturer</span>
+              <span className="profile-role">Faculty Lecturer</span>
             </div>
 
             {message && (
@@ -221,9 +174,8 @@ const LecturerProfilePage = () => {
             )}
 
             <form onSubmit={handleSubmit} className="profile-form">
-              
               <div className="form-group">
-                <label>👤 First Name</label>
+                <label>First Name</label>
                 <input
                   type="text"
                   name="firstName"
@@ -235,7 +187,7 @@ const LecturerProfilePage = () => {
               </div>
 
               <div className="form-group">
-                <label>👤 Last Name</label>
+                <label>Last Name</label>
                 <input
                   type="text"
                   name="lastName"
@@ -247,7 +199,7 @@ const LecturerProfilePage = () => {
               </div>
 
               <div className="form-group">
-                <label>📧 Email</label>
+                <label>Email</label>
                 <input
                   type="email"
                   name="email"
@@ -259,7 +211,7 @@ const LecturerProfilePage = () => {
               </div>
 
               <div className="form-group">
-                <label>📞 Phone Number</label>
+                <label>Phone Number</label>
                 <input
                   type="text"
                   name="phone"
@@ -271,7 +223,7 @@ const LecturerProfilePage = () => {
               </div>
 
               <div className="form-group">
-                <label>🏛️ Department</label>
+                <label>Department</label>
                 <input
                   type="text"
                   name="department"
@@ -283,7 +235,7 @@ const LecturerProfilePage = () => {
               </div>
 
               <div className="form-group">
-                <label>🎯 Specialization</label>
+                <label>Specialization</label>
                 <input
                   type="text"
                   name="specialization"
@@ -295,7 +247,7 @@ const LecturerProfilePage = () => {
               </div>
 
               <div className="form-group">
-                <label>📝 Bio</label>
+                <label>Bio</label>
                 <textarea
                   name="bio"
                   className="form-control"
@@ -308,7 +260,7 @@ const LecturerProfilePage = () => {
 
               <div className="form-buttons">
                 <button type="submit" className="btn-save" disabled={saving}>
-                  {saving ? 'Saving...' : '💾 Save Changes'}
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
                 <button
                   type="reset"
@@ -330,13 +282,13 @@ const LecturerProfilePage = () => {
                     setError('')
                   }}
                 >
-                  🔄 Reset
+                  Reset
                 </button>
               </div>
             </form>
 
             <div className="account-info">
-              <h6 className="account-title">📋 Account Information</h6>
+              <h6 className="account-title">Account Information</h6>
               <div className="account-details">
                 <div><strong>Role:</strong> Lecturer</div>
                 <div><strong>Status:</strong> Active</div>
@@ -346,7 +298,6 @@ const LecturerProfilePage = () => {
           </div>
         </div>
       </div>
-
     </div>
   )
 }

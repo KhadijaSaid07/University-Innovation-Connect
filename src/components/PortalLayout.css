@@ -1,0 +1,678 @@
+/* ==========================================================================
+   UIC Unified Portal Navigation (Sidebar + Top Navbar)
+   Clean, human-crafted design for Student, Lecturer, and Admin portals
+   ========================================================================== */
+
+.uic-sidebar {
+  width: 256px;
+  min-width: 256px;
+  background: #111827;
+  color: #F9FAFB;
+  min-height: 100vh;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1030;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  transition: transform 0.25s ease;
+  user-select: none;
+}
+
+/* Brand Header */
+.uic-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  height: 64px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none !important;
+  color: #FFFFFF !important;
+}
+
+.uic-brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #4F46E5;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+}
+
+.uic-brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.uic-brand-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #F9FAFB;
+  letter-spacing: -0.01em;
+}
+
+.uic-brand-subtitle {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #9CA3AF;
+  margin-top: 2px;
+}
+
+/* Navigation Scroll Area */
+.uic-sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.uic-sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.uic-sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+.uic-nav-section-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6B7280;
+  padding: 14px 12px 6px;
+}
+
+.uic-nav-section-label:first-child {
+  padding-top: 4px;
+}
+
+.uic-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #D1D5DB !important;
+  text-decoration: none !important;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.uic-nav-item-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.uic-nav-item i {
+  width: 18px;
+  text-align: center;
+  font-size: 0.92rem;
+  color: #9CA3AF;
+  transition: color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.uic-nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #FFFFFF !important;
+}
+
+.uic-nav-item:hover i {
+  color: #E5E7EB;
+}
+
+.uic-nav-item.active {
+  background: #4F46E5;
+  color: #FFFFFF !important;
+  font-weight: 600;
+}
+
+.uic-nav-item.active i {
+  color: #FFFFFF;
+}
+
+.uic-nav-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #E5E7EB;
+  line-height: 1.3;
+}
+
+.uic-nav-item.active .uic-nav-badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+}
+
+/* Sidebar User Footer with Clickable Menu */
+.uic-sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.uic-sidebar-user-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #F9FAFB;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  text-align: left;
+}
+
+.uic-sidebar-user-btn:hover,
+.uic-sidebar-user-btn.open {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.uic-sidebar-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.uic-user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #4F46E5;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.uic-user-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.uic-user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #F9FAFB;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uic-user-role {
+  font-size: 0.72rem;
+  color: #9CA3AF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uic-sidebar-chevron {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  transition: transform 0.2s ease;
+}
+
+.uic-sidebar-user-btn.open .uic-sidebar-chevron {
+  transform: rotate(180deg);
+}
+
+/* Popup Menu inside Sidebar Footer */
+.uic-sidebar-user-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 12px;
+  right: 12px;
+  background: #1F2937;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  padding: 6px;
+  z-index: 1050;
+  animation: uicMenuFade 0.15s ease;
+}
+
+.uic-sidebar-menu-header {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 4px;
+}
+
+.uic-sidebar-menu-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #F9FAFB;
+}
+
+.uic-sidebar-menu-email {
+  font-size: 0.72rem;
+  color: #9CA3AF;
+  word-break: break-all;
+}
+
+.uic-sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: #E5E7EB !important;
+  text-decoration: none !important;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.uic-sidebar-menu-item i {
+  width: 16px;
+  text-align: center;
+  color: #9CA3AF;
+  font-size: 0.85rem;
+}
+
+.uic-sidebar-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF !important;
+}
+
+.uic-sidebar-menu-item.danger {
+  color: #FCA5A5 !important;
+}
+
+.uic-sidebar-menu-item.danger i {
+  color: #F87171;
+}
+
+.uic-sidebar-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #FECACA !important;
+}
+
+/* ==========================================================================
+   Top Navbar (Header)
+   ========================================================================== */
+
+.uic-topbar {
+  height: 64px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E5E7EB;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 256px;
+  z-index: 1020;
+  transition: left 0.25s ease;
+}
+
+.uic-topbar-static {
+  position: sticky;
+  left: 0;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.uic-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.uic-mobile-toggle {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  color: #374151;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.15s ease;
+}
+
+.uic-mobile-toggle:hover {
+  background: #F3F4F6;
+}
+
+.uic-page-title-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.uic-page-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uic-page-subtitle {
+  font-size: 0.76rem;
+  color: #6B7280;
+  margin: 0;
+}
+
+.uic-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.uic-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: #4F46E5;
+  color: #FFFFFF !important;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.uic-quick-btn:hover {
+  background: #4338CA;
+  color: #FFFFFF !important;
+}
+
+/* Topbar User Dropdown Trigger */
+.uic-topbar-user-wrapper {
+  position: relative;
+}
+
+.uic-topbar-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px 5px 6px;
+  border-radius: 999px;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.uic-topbar-user-btn:hover,
+.uic-topbar-user-btn.open {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+}
+
+.uic-topbar-user-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.uic-topbar-user-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.uic-topbar-user-role {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #6B7280;
+  text-transform: capitalize;
+}
+
+.uic-topbar-chevron {
+  font-size: 0.7rem;
+  color: #6B7280;
+  margin-left: 2px;
+  transition: transform 0.2s ease;
+}
+
+.uic-topbar-user-btn.open .uic-topbar-chevron {
+  transform: rotate(180deg);
+}
+
+/* Topbar Dropdown Menu */
+.uic-topbar-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 240px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(17, 24, 39, 0.1);
+  padding: 6px;
+  z-index: 1060;
+  animation: uicMenuFade 0.15s ease;
+}
+
+.uic-dropdown-user-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid #F3F4F6;
+  margin-bottom: 4px;
+}
+
+.uic-dropdown-user-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.uic-dropdown-user-email {
+  font-size: 0.76rem;
+  color: #6B7280;
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.uic-dropdown-role-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: #EEF2FF;
+  color: #4F46E5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.uic-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151 !important;
+  text-decoration: none !important;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.uic-dropdown-item i {
+  width: 16px;
+  text-align: center;
+  color: #6B7280;
+  font-size: 0.88rem;
+}
+
+.uic-dropdown-item:hover {
+  background: #F3F4F6;
+  color: #111827 !important;
+}
+
+.uic-dropdown-item:hover i {
+  color: #4F46E5;
+}
+
+.uic-dropdown-divider {
+  height: 1px;
+  background: #F3F4F6;
+  margin: 4px 0;
+}
+
+.uic-dropdown-item.danger {
+  color: #DC2626 !important;
+}
+
+.uic-dropdown-item.danger i {
+  color: #DC2626;
+}
+
+.uic-dropdown-item.danger:hover {
+  background: #FEF2F2;
+  color: #B91C1C !important;
+}
+
+/* Mobile Backdrop Overlay */
+.uic-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.5);
+  z-index: 1025;
+}
+
+@keyframes uicMenuFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Student Layout Adjustment */
+.uic-student-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #F9FAFB;
+}
+
+.uic-student-main {
+  flex: 1;
+  margin-left: 256px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.uic-student-body {
+  flex: 1;
+  padding: 24px 28px;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .uic-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .uic-sidebar.show {
+    transform: translateX(0);
+  }
+
+  .uic-sidebar-backdrop.show {
+    display: block;
+  }
+
+  .uic-topbar {
+    left: 0 !important;
+    padding: 0 16px;
+  }
+
+  .uic-mobile-toggle {
+    display: inline-flex;
+  }
+
+  .uic-student-main {
+    margin-left: 0;
+  }
+
+  .uic-student-body {
+    padding: 18px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .uic-topbar-user-text {
+    display: none;
+  }
+
+  .uic-quick-btn span {
+    display: none;
+  }
+
+  .uic-page-subtitle {
+    display: none;
+  }
+}
+

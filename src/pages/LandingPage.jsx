@@ -3,23 +3,63 @@ import { Link } from 'react-router-dom'
 import './LandingPage.css'
 
 const LandingPage = () => {
+  let currentUser = null
+  try {
+    const raw = localStorage.getItem('user')
+    if (raw) currentUser = JSON.parse(raw)
+  } catch {
+    currentUser = null
+  }
+
+  const getDashboardPath = () => {
+    if (!currentUser?.role) return '/dashboard'
+    const role = currentUser.role.toUpperCase()
+    if (role === 'ADMIN') return '/admin-dashboard'
+    if (role === 'LECTURER') return '/lecturer-dashboard'
+    return '/dashboard'
+  }
+
+  const userFullName = currentUser
+    ? (`${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.name || 'Dashboard')
+    : ''
+
   return (
     <div className="landing-page">
-      
-      
       <nav className="landing-nav">
         <div className="nav-container">
-          <div className="nav-brand">
-            <span className="brand-icon">🌊</span>
-            <span className="brand-text">UIC</span>
-          </div>
+          <Link to="/" className="nav-brand" style={{ textDecoration: 'none' }}>
+            <span
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                background: '#4F46E5',
+                color: '#FFFFFF',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.95rem'
+              }}
+            >
+              <i className="fas fa-lightbulb" />
+            </span>
+            <span className="brand-text">UIC Platform</span>
+          </Link>
           <div className="nav-links">
             <Link to="/about" className="nav-link">About</Link>
             <Link to="/mission" className="nav-link">Mission</Link>
             <Link to="/terms" className="nav-link">Terms</Link>
             <Link to="/privacy-policy" className="nav-link">Privacy</Link>
-            <Link to="/login" className="nav-link">Login</Link>
-            <Link to="/register" className="nav-btn">Get Started</Link>
+            {currentUser ? (
+              <Link to={getDashboardPath()} className="nav-btn">
+                <i className="fas fa-user-circle mr-1" /> {userFullName}
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="nav-link">Sign In</Link>
+                <Link to="/register" className="nav-btn">Create Account</Link>
+              </>
+            )}
           </div>
         </div>
       </nav>

@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import './Auth.css'
 
-const API = `${import.meta.env.VITE_API_URL}/auth`
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/auth`
 
 const RegisterPage = () => {
   const navigate = useNavigate()
@@ -76,18 +77,8 @@ const RegisterPage = () => {
     }
 
     // Password length
-    if (password.length < 8 || password.length > 72) {
-      return 'Password must be between 8 and 72 characters'
-    }
-
-    // Password requirements
-    const hasLowercase = /[a-z]/.test(password)
-    const hasUppercase = /[A-Z]/.test(password)
-    const hasNumber = /\d/.test(password)
-    const hasSpecialCharacter = /[@$!%*?&]/.test(password)
-
-    if (!hasLowercase || !hasUppercase || !hasNumber || !hasSpecialCharacter) {
-      return 'Password must contain uppercase, lowercase, number and special character'
+    if (password.length < 4 || password.length > 72) {
+      return 'Password must be between 4 and 72 characters'
     }
 
     // Confirm password
@@ -249,7 +240,7 @@ const RegisterPage = () => {
             <input
               name="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Password (min 8 characters)"
+              placeholder="Password"
               value={form.password}
               onChange={handleChange}
               className="auth-input"
@@ -297,29 +288,6 @@ const RegisterPage = () => {
               {showConfirmPassword ? '👁️' : '👁️'}
             </button>
 
-          </div>
-
-          {/* Password requirements */}
-          <div className="password-requirements">
-            <small>
-              Password must contain:
-            </small>
-
-            <small>
-              • At least 8 characters
-            </small>
-
-            <small>
-              • Uppercase and lowercase letters
-            </small>
-
-            <small>
-              • At least one number
-            </small>
-
-            <small>
-              • At least one special character (@ $ ! % * ? &)
-            </small>
           </div>
 
           {/* Submit */}

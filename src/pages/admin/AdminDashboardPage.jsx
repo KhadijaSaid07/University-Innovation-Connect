@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
+import AdminSidebar from './AdminSidebar'
 import './AdminDashboardPage.css'
 
-const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/v2/innovationConnect`
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate()
@@ -15,17 +17,10 @@ const AdminDashboardPage = () => {
   })
   const [recentUsers, setRecentUsers] = useState([])
   const [recentIdeas, setRecentIdeas] = useState([])
+  const [recentLogs, setRecentLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [admin, setAdmin] = useState({ name: '', email: '' })
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  const getUser = () => {
-    const data = localStorage.getItem('user')
-    if (data) {
-      try { return JSON.parse(data) } catch { return null }
-    }
-    return null
-  }
 
   useEffect(() => {
     const userStr = localStorage.getItem('user')
@@ -51,11 +46,12 @@ const AdminDashboardPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const usersRes = await axios.get(`${API}/user`)
-        const users = usersRes.data
-        
-        const ideasRes = await axios.get(`${API}/idea`)
-        const ideas = ideasRes.data
+        const [usersRes, ideasRes] = await Promise.all([
+          axios.get(`${API}/user`),
+          axios.get(`${API}/idea`)
+        ])
+        const users = usersRes.data || []
+        const ideas = ideasRes.data || []
         
         const students = users.filter(u => u.role === 'STUDENT').length
         const lecturers = users.filter(u => u.role === 'LECTURER').length
@@ -93,6 +89,13 @@ const AdminDashboardPage = () => {
           return { ...idea, authorName }
         })
         setRecentIdeas(ideasWithAuthors)
+
+        try {
+          const logsRes = await axios.get(`${API}/activity-log`)
+          setRecentLogs((logsRes.data || []).slice(0, 8))
+        } catch (logErr) {
+          console.error('Fetch activity logs error:', logErr)
+        }
         
       } catch (err) {
         console.error('Fetch error:', err)
@@ -112,6 +115,41 @@ const AdminDashboardPage = () => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
   const closeSidebar = () => setSidebarOpen(false)
 
+  const formatTime = (dateStr) => {
+    if (!dateStr) return 'Recently'
+    try {
+      const d = new Date(dateStr)
+      if (isNaN(d.getTime())) return String(dateStr)
+      return d.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch {
+      return String(dateStr)
+    }
+  }
+
+  const getActionIcon = (action) => {
+    const icons = {
+      USER_REGISTERED: '🎓',
+      USER_LOGIN: '🔑',
+      LECTURER_CREATED: '👨‍🏫',
+      ADMIN_CREATED: '👑',
+      PROFILE_UPDATED: '✏️',
+      USER_DELETED: '🗑️',
+      IDEA_CREATED: '💡',
+      IDEA_UPDATED: '📝',
+      IDEA_DELETED: '🗑️',
+      IDEA_STATUS_CHANGED: '🔄',
+      COMMENT_ADDED: '💬',
+      FEEDBACK_ADDED: '📋',
+      VOTE_CAST: '⭐'
+    }
+    return icons[action] || '📌'
+  }
+
   if (loading) {
     return (
       <div className="admin-dashboard">
@@ -125,54 +163,10 @@ const AdminDashboardPage = () => {
 
   return (
     <div className="admin-dashboard">
-      
-      {sidebarOpen && <div className="sidebar-overlay show" onClick={closeSidebar} />}
-
-      <aside className={`admin-sidebar ${sidebarOpen ? 'show' : ''}`}>
-        <div className="sidebar-brand">
-          <span className="brand-icon">👑</span>
-          <span className="brand-text">Admin</span>
-        </div>
-        <nav className="sidebar-nav">
-          <Link to="/admin-dashboard" className="sidebar-link active">
-            <i className="fas fa-tachometer-alt"></i> Dashboard
-          </Link>
-          <Link to="/admin-users" className="sidebar-link">
-            <i className="fas fa-users"></i> Users
-          </Link>
-          <Link to="/admin-ideas" className="sidebar-link">
-            <i className="fas fa-lightbulb"></i> Ideas
-          </Link>
-          <Link to="/admin-lecturers" className="sidebar-link">
-            <i className="fas fa-chalkboard-teacher"></i> Lecturers
-          </Link>
-          <button className="sidebar-link" onClick={handleLogout}>
-            <i className="fas fa-sign-out-alt"></i> Logout
-          </button>
-        </nav>
-      </aside>
-
-      <header className="admin-header">
-        <div className="header-container">
-          <div className="header-left">
-            <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
-              <i className="fas fa-bars"></i>
-            </button>
-            <div className="header-brand">
-              <span className="brand-icon">👑</span>
-              <span className="brand-text">Admin Panel</span>
-            </div>
-          </div>
-          <div className="header-right">
-            <div className="admin-user">
-              <span className="admin-name">{admin.name}</span>
-              <span className="admin-avatar">
-                {admin.name ? admin.name.charAt(0).toUpperCase() : 'A'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AdminSidebar
+        pageTitle="System Overview"
+        pageSubtitle="Real-time metrics, recent submissions, and platform activity"
+      />
 
       <div className="admin-content">
         <div className="content-container">
@@ -311,6 +305,52 @@ const AdminDashboardPage = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Recent Activity Log Widget */}
+          <div className="recent-card" style={{ marginTop: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0 }}>📋 Recent Activity Log</h3>
+              <Link
+                to="/admin-activity-logs"
+                className="admin-view-btn"
+                style={{ textDecoration: 'none', padding: '6px 14px', fontSize: '0.85rem' }}
+              >
+                View All Activity →
+              </Link>
+            </div>
+            {recentLogs.length === 0 ? (
+              <p className="empty-text">No recent activities recorded yet</p>
+            ) : (
+              <div className="table-responsive">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Event</th>
+                      <th>Description</th>
+                      <th>Actor</th>
+                      <th>Role</th>
+                      <th>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentLogs.map((log, i) => (
+                      <tr key={log.id || i}>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          {getActionIcon(log.action)} <strong>{log.action?.replace(/_/g, ' ')}</strong>
+                        </td>
+                        <td>{log.description}</td>
+                        <td>{log.actorName || 'System'}</td>
+                        <td><span className="badge">{log.actorRole || 'ADMIN'}</span></td>
+                        <td style={{ whiteSpace: 'nowrap', fontSize: '0.82rem', color: '#8B6BA8' }}>
+                          {formatTime(log.createdDate)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
         </div>

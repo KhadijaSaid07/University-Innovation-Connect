@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import './IdeaModal.css'
 
-const API = '/api/v2/innovationConnect'
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/v2/innovationConnect`
 
 const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentUser }) => {
   const [feedback, setFeedback] = useState('')

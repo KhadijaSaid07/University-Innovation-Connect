@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
+import LecturerNavigation from '../components/LecturerNavigation'
 import './LecturerDashboardPage.css'
 
-const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/v2/innovationConnect`
 
 const LecturerDashboardPage = () => {
-  const navigate = useNavigate()
-  
+  const location = useLocation()
+
   const [lecturer, setLecturer] = useState({ name: '', email: '' })
   const [ideas, setIdeas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -16,7 +18,6 @@ const LecturerDashboardPage = () => {
   const [selectedIdea, setSelectedIdea] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [filter, setFilter] = useState('all')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const getUser = () => {
     const data = localStorage.getItem('user')
@@ -27,12 +28,22 @@ const LecturerDashboardPage = () => {
   }
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const filterParam = params.get('filter')
+    if (filterParam) {
+      setFilter(filterParam)
+    } else {
+      setFilter('all')
+    }
+  }, [location.search])
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const user = getUser()
         const res = await axios.get(`${API}/idea`)
-        setIdeas(res.data)
-        
+        setIdeas(res.data || [])
+
         if (user) {
           setLecturer({
             name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Lecturer',
@@ -47,15 +58,6 @@ const LecturerDashboardPage = () => {
     }
     fetchData()
   }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
-
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
-  const closeSidebar = () => setSidebarOpen(false)
 
   const openModal = (idea) => {
     setSelectedIdea(idea)
@@ -86,17 +88,16 @@ const LecturerDashboardPage = () => {
         alert('Only students can vote!')
         return
       }
-      
+
       await axios.post(`${API}/vote`, {
         ideaId: id,
         userId: user?.id
       })
-      
+
       const refreshRes = await axios.get(`${API}/idea`)
-      setIdeas(refreshRes.data)
-      
+      setIdeas(refreshRes.data || [])
     } catch (error) {
-      if (error.response?.status === 400) {
+      if (error.response?.status === 400 || error.response?.status === 409) {
         alert('You have already voted for this idea')
       } else {
         alert('Failed to vote')
@@ -111,26 +112,25 @@ const LecturerDashboardPage = () => {
         alert('Only lecturers can give feedback!')
         return
       }
-      
+
       const currentIdea = ideas.find(i => i.id === id)
       if (currentIdea && currentIdea.status === 'PENDING') {
         await axios.put(`${API}/idea/${id}/status?status=UNDER_REVIEW`)
       }
-      
+
       await axios.post(`${API}/feedback`, {
         comment: comment,
         idea: id,
         lecturer: user?.id
       })
-      
+
       const refreshRes = await axios.get(`${API}/idea`)
-      setIdeas(refreshRes.data)
-      
+      setIdeas(refreshRes.data || [])
+
       if (callback) callback()
-      alert('✅ Feedback submitted successfully!')
-      
+      alert('Feedback submitted successfully!')
     } catch (error) {
-      alert(`❌ ${error.response?.data?.message || 'Failed to submit feedback'}`)
+      alert(`${error.response?.data?.message || 'Failed to submit feedback'}`)
     }
   }
 
@@ -141,7 +141,7 @@ const LecturerDashboardPage = () => {
         alert('Only lecturers can update status!')
         return false
       }
-      
+
       if (newStatus === 'APPROVED' || newStatus === 'REJECTED') {
         const feedbackRes = await axios.get(`${API}/feedback/idea/${id}`)
         if (feedbackRes.data?.length === 0) {
@@ -149,16 +149,16 @@ const LecturerDashboardPage = () => {
           return false
         }
       }
-      
+
       await axios.put(`${API}/idea/${id}/status?status=${newStatus}`)
-      
+
       const refreshRes = await axios.get(`${API}/idea`)
-      setIdeas(refreshRes.data)
+      setIdeas(refreshRes.data || [])
       setFilter('all')
-      alert(`✅ Idea ${newStatus} successfully!`)
+      alert(`Idea ${newStatus} successfully!`)
       return true
     } catch (error) {
-      alert(`❌ ${error.response?.data?.message || 'Failed to update status'}`)
+      alert(`${error.response?.data?.message || 'Failed to update status'}`)
       return false
     }
   }
@@ -186,7 +186,6 @@ const LecturerDashboardPage = () => {
   if (error) {
     return (
       <div className="text-center py-5">
-        <div style={{ fontSize: '3rem' }}>⚠️</div>
         <h5 className="text-danger mt-3">{error}</h5>
         <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
           Try Again
@@ -197,99 +196,51 @@ const LecturerDashboardPage = () => {
 
   return (
     <div className="lecturer-dashboard">
-      
-      {sidebarOpen && <div className="sidebar-overlay show" onClick={closeSidebar} />}
-
-      <aside className={`lecturer-sidebar ${sidebarOpen ? 'show' : ''}`}>
-        <div className="sidebar-menu">
-          <div className="sidebar-brand">
-            <span className="brand-icon">👨‍🏫</span>
-            <span className="brand-text">Lecturer</span>
-          </div>
-          <nav className="sidebar-nav">
-            <Link to="/lecturer-dashboard" className="sidebar-link active">
-              <i className="fas fa-tachometer-alt" /> Dashboard
-            </Link>
-            <Link to="/lecturer-leaderboard" className="sidebar-link">
-              <i className="fas fa-trophy" /> Leaderboard
-            </Link>
-            <Link to="/lecturer-profile" className="sidebar-link">
-              <i className="fas fa-user" /> Profile
-            </Link>
-            <button className="sidebar-link" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt" /> Logout
-            </button>
-          </nav>
-        </div>
-      </aside>
-
-      <header className="lecturer-header">
-        <div className="header-container">
-          <div className="header-left">
-            <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
-              <i className="fas fa-bars" />
-            </button>
-            <div className="header-brand">
-              <span className="brand-icon">👨‍🏫</span>
-              <span className="brand-text">Lecturer Portal</span>
-            </div>
-          </div>
-          <div className="header-right">
-            <div className="header-user">
-              <div className="user-avatar">
-                {lecturer.name ? lecturer.name.charAt(0).toUpperCase() : 'L'}
-              </div>
-              <div className="user-info">
-                <span className="user-name">{lecturer.name || 'Lecturer'}</span>
-                <span className="user-role">Lecturer</span>
-              </div>
-              <button className="logout-btn" onClick={handleLogout}>
-                <i className="fas fa-sign-out-alt" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <LecturerNavigation
+        pageTitle="Student Proposals Review"
+        pageSubtitle="Evaluate submissions, leave academic feedback, and update approval status"
+        activeFilter={filter}
+        onSelectFilter={handleFilter}
+      />
 
       <div className="lecturer-content">
         <div className="content-container">
-          
           <div className="welcome-banner">
             <div className="welcome-text">
-              <h1>👋 Welcome, {lecturer.name || 'Lecturer'}!</h1>
-              <p>Review student ideas and provide feedback.</p>
+              <h1>Welcome, {lecturer.name || 'Lecturer'}</h1>
+              <p>Review student ideas and provide constructive feedback.</p>
             </div>
             <div className="welcome-badge">
-              {lecturer.email && <span>📧 {lecturer.email}</span>}
+              {lecturer.email && <span>{lecturer.email}</span>}
             </div>
           </div>
 
           <div className="filter-section">
-            <button 
+            <button
               className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
               onClick={() => handleFilter('all')}
             >
               All ({getCount('all')})
             </button>
-            <button 
+            <button
               className={`filter-btn ${filter === 'PENDING' ? 'active' : ''}`}
               onClick={() => handleFilter('PENDING')}
             >
               Pending ({getCount('PENDING')})
             </button>
-            <button 
+            <button
               className={`filter-btn ${filter === 'UNDER_REVIEW' ? 'active' : ''}`}
               onClick={() => handleFilter('UNDER_REVIEW')}
             >
-              Reviewing ({getCount('UNDER_REVIEW')})
+              Under Review ({getCount('UNDER_REVIEW')})
             </button>
-            <button 
+            <button
               className={`filter-btn ${filter === 'APPROVED' ? 'active' : ''}`}
               onClick={() => handleFilter('APPROVED')}
             >
               Approved ({getCount('APPROVED')})
             </button>
-            <button 
+            <button
               className={`filter-btn ${filter === 'REJECTED' ? 'active' : ''}`}
               onClick={() => handleFilter('REJECTED')}
             >
@@ -299,7 +250,7 @@ const LecturerDashboardPage = () => {
 
           <div className="recent-ideas">
             <div className="section-header">
-              <h3>📝 {filter === 'all' ? 'All Student Ideas' : filter + ' Ideas'}</h3>
+              <h3>{filter === 'all' ? 'All Student Ideas' : `${filter.replace('_', ' ')} Ideas`}</h3>
             </div>
             <div className="table-responsive">
               <table className="ideas-table">
@@ -318,7 +269,7 @@ const LecturerDashboardPage = () => {
                   {filteredIdeas.length === 0 ? (
                     <tr>
                       <td colSpan="7" className="text-center">
-                        {filter === 'all' ? 'No ideas submitted yet' : `No ${filter.toLowerCase()} ideas found`}
+                        {filter === 'all' ? 'No ideas submitted yet' : `No ${filter.toLowerCase().replace('_', ' ')} ideas found`}
                       </td>
                     </tr>
                   ) : (
@@ -329,16 +280,16 @@ const LecturerDashboardPage = () => {
                         <td>{getStudentName(idea)}</td>
                         <td>{idea.category}</td>
                         <td>
-                          <span className={`status-badge ${idea.status === 'PENDING' ? 'status-pending' : 
+                          <span className={`status-badge ${idea.status === 'PENDING' ? 'status-pending' :
                             idea.status === 'UNDER_REVIEW' ? 'status-under-review' :
-                            idea.status === 'APPROVED' ? 'status-approved' : 
+                            idea.status === 'APPROVED' ? 'status-approved' :
                             idea.status === 'REJECTED' ? 'status-rejected' : 'status-pending'}`}>
                             {idea.status || 'PENDING'}
                           </span>
                         </td>
-                        <td>⭐ {idea.voteIds?.length || 0}</td>
+                        <td>{idea.voteIds?.length || 0}</td>
                         <td>
-                          <button 
+                          <button
                             className="btn-review-idea"
                             onClick={() => openModal(idea)}
                           >

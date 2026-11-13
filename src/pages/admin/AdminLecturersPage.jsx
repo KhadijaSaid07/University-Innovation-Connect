@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
+import AdminSidebar from './AdminSidebar'
 import './AdminDashboardPage.css'
 
-const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
-const AUTH_API = `${import.meta.env.VITE_API_URL}/auth`
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/v2/innovationConnect`
+const AUTH_API = `${BASE_URL}/auth`
 
 const AdminLecturersPage = () => {
   const navigate = useNavigate()
@@ -95,7 +97,9 @@ const AdminLecturersPage = () => {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
-        password: formData.password
+        password: formData.password,
+        department: formData.department?.trim() || '',
+        specialization: formData.specialization?.trim() || ''
       }
       
       console.log('📤 Adding lecturer with body:', body)
@@ -230,51 +234,10 @@ const AdminLecturersPage = () => {
 
   return (
     <div className="admin-dashboard">
-      
-      {sidebarOpen && <div className="sidebar-overlay show" onClick={closeSidebar} />}
-
-      <aside className={`admin-sidebar ${sidebarOpen ? 'show' : ''}`}>
-        <div className="sidebar-brand">
-          <span className="brand-icon">👑</span>
-          <span className="brand-text">Admin</span>
-        </div>
-        <nav className="sidebar-nav">
-          <Link to="/admin-dashboard" className="sidebar-link">
-            <i className="fas fa-tachometer-alt"></i> Dashboard
-          </Link>
-          <Link to="/admin-users" className="sidebar-link">
-            <i className="fas fa-users"></i> Users
-          </Link>
-          <Link to="/admin-ideas" className="sidebar-link">
-            <i className="fas fa-lightbulb"></i> Ideas
-          </Link>
-          <Link to="/admin-lecturers" className="sidebar-link active">
-            <i className="fas fa-chalkboard-teacher"></i> Lecturers
-          </Link>
-          <button className="sidebar-link" onClick={handleLogout}>
-            <i className="fas fa-sign-out-alt"></i> Logout
-          </button>
-        </nav>
-      </aside>
-
-      <header className="admin-header">
-        <div className="header-container">
-          <div className="header-left">
-            <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
-              <i className="fas fa-bars"></i>
-            </button>
-            <div className="header-brand">
-              <span className="brand-icon">👑</span>
-              <span className="brand-text">Admin Panel</span>
-            </div>
-          </div>
-          <div className="header-right">
-            <button className="logout-btn" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt"></i> Logout
-            </button>
-          </div>
-        </div>
-      </header>
+      <AdminSidebar
+        pageTitle="Lecturers Directory"
+        pageSubtitle="Create and manage academic faculty accounts"
+      />
 
       <div className="admin-content">
         <div className="content-container">

@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import IdeaModal from '../components/IdeaModal'
 
-const API = `${import.meta.env.VITE_API_URL}/v2/innovationConnect`
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/v2/innovationConnect`
 
 const LeaderboardPage = () => {
   const navigate = useNavigate()
-  
+
   const [ideas, setIdeas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -26,32 +27,25 @@ const LeaderboardPage = () => {
     const fetchLeaderboard = async () => {
       try {
         const ideasRes = await axios.get(`${API}/idea`)
-        const ideasData = ideasRes.data
-        
-        // Use voteIds and commentIds from the DTO
-        const ideasWithCounts = ideasData.map((idea) => {
-          return {
-            ...idea,
-            voteCount: idea.voteIds?.length || 0,
-            commentCount: idea.commentIds?.length || 0
-          }
-        })
-        
-        // Sort by vote count (descending)
+        const ideasData = ideasRes.data || []
+
+        const ideasWithCounts = ideasData.map((idea) => ({
+          ...idea,
+          voteCount: idea.voteIds?.length || 0,
+          commentCount: idea.commentIds?.length || 0
+        }))
+
         const sorted = [...ideasWithCounts].sort((a, b) => b.voteCount - a.voteCount)
         setIdeas(sorted)
-        
       } catch (err) {
         console.error('Fetch error:', err)
-        setError('Could not load leaderboard')
+        setError('Could not load the innovation leaderboard.')
       } finally {
         setLoading(false)
       }
     }
     fetchLeaderboard()
   }, [])
-
-  const goBack = () => navigate('/dashboard')
 
   const openModal = (idea) => {
     setSelectedIdea(idea)
@@ -66,49 +60,43 @@ const LeaderboardPage = () => {
   const handleVote = async (id) => {
     try {
       const user = getUser()
-      
+
       if (!user) {
-        alert('Please login to vote')
+        alert('Please sign in to vote')
         return
       }
-      
+
       if (user?.role !== 'STUDENT') {
-        alert('Only students can vote!')
+        alert('Only students can vote')
         return
       }
-      
+
       const res = await axios.post(`${API}/vote`, {
         ideaId: id,
         userId: user?.id
       })
-      
+
       if (res.data) {
-        // Refresh ideas to get updated data
         const ideasRes = await axios.get(`${API}/idea`)
-        const ideasData = ideasRes.data
-        
-        const ideasWithCounts = ideasData.map((idea) => {
-          return {
-            ...idea,
-            voteCount: idea.voteIds?.length || 0,
-            commentCount: idea.commentIds?.length || 0
-          }
-        })
-        
+        const ideasData = ideasRes.data || []
+
+        const ideasWithCounts = ideasData.map((idea) => ({
+          ...idea,
+          voteCount: idea.voteIds?.length || 0,
+          commentCount: idea.commentIds?.length || 0
+        }))
+
         const sorted = [...ideasWithCounts].sort((a, b) => b.voteCount - a.voteCount)
         setIdeas(sorted)
-        
+
         if (selectedIdea && selectedIdea.id === id) {
           const updatedIdea = sorted.find(i => i.id === id)
           setSelectedIdea(updatedIdea)
         }
-        
-        alert('✅ Vote added successfully!')
       }
-      
     } catch (error) {
       console.error('Vote error:', error)
-      if (error.response?.status === 400) {
+      if (error.response?.status === 400 || error.response?.status === 409) {
         alert('You have already voted for this idea')
       } else {
         alert('Failed to vote. Please try again.')
@@ -119,48 +107,38 @@ const LeaderboardPage = () => {
   const handleFeedback = async (id, comment, callback) => {
     try {
       const user = getUser()
-      
-      if (!user) {
-        alert('Please login to give feedback')
+
+      if (!user || (user?.role !== 'LECTURER' && user?.role !== 'ADMIN')) {
+        alert('Only lecturers can submit academic feedback')
         return
       }
-      
-      if (user?.role !== 'LECTURER' && user?.role !== 'ADMIN') {
-        alert('Only lecturers can give feedback!')
-        return
-      }
-      
+
       const res = await axios.post(`${API}/feedback`, {
         comment: comment,
         idea: id,
         lecturer: user?.id
       })
-      
+
       if (res.data) {
-        // Refresh ideas to get updated data
         const ideasRes = await axios.get(`${API}/idea`)
-        const ideasData = ideasRes.data
-        
-        const ideasWithCounts = ideasData.map((idea) => {
-          return {
-            ...idea,
-            voteCount: idea.voteIds?.length || 0,
-            commentCount: idea.commentIds?.length || 0
-          }
-        })
-        
+        const ideasData = ideasRes.data || []
+
+        const ideasWithCounts = ideasData.map((idea) => ({
+          ...idea,
+          voteCount: idea.voteIds?.length || 0,
+          commentCount: idea.commentIds?.length || 0
+        }))
+
         const sorted = [...ideasWithCounts].sort((a, b) => b.voteCount - a.voteCount)
         setIdeas(sorted)
-        
+
         if (selectedIdea && selectedIdea.id === id) {
           const updatedIdea = sorted.find(i => i.id === id)
           setSelectedIdea(updatedIdea)
         }
-        
+
         if (callback) callback()
-        alert('✅ Feedback submitted successfully!')
       }
-      
     } catch (error) {
       console.error('Feedback error:', error)
       alert('Failed to submit feedback. Please try again.')
@@ -178,106 +156,108 @@ const LeaderboardPage = () => {
     return 'Student'
   }
 
-  const getRankBadge = (index) => {
-    if (index === 0) return '🥇'
-    if (index === 1) return '🥈'
-    if (index === 2) return '🥉'
-    return `#${index + 1}`
-  }
-
-  const getRankClass = (index) => {
-    if (index === 0) return 'rank-gold'
-    if (index === 1) return 'rank-silver'
-    if (index === 2) return 'rank-bronze'
-    return ''
+  const formatCategory = (cat) => {
+    if (!cat) return 'General'
+    return cat.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
   }
 
   if (loading) {
     return (
-      <div className="text-center py-5">
+      <div className="uic-page-loading">
         <div className="spinner-border text-primary" />
-        <p className="mt-2 text-muted">Loading leaderboard...</p>
+        <p>Loading innovation rankings...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="text-center py-5">
-        <div style={{ fontSize: '3rem' }}>⚠️</div>
-        <h5 className="text-danger mt-3">{error}</h5>
-        <button className="btn btn-primary mt-3" onClick={() => window.location.reload()}>
-          Try Again
+      <div className="uic-page-loading">
+        <h5 className="text-danger mb-3">{error}</h5>
+        <button className="uic-btn-primary" onClick={() => window.location.reload()}>
+          Retry
         </button>
       </div>
     )
   }
 
   return (
-    <div className="container-fluid">
-      
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h3 mb-0">🏆 Leaderboard</h1>
-        <button onClick={goBack} className="btn btn-secondary btn-sm">
-          ← Back
-        </button>
-      </div>
-
-      <div className="card shadow">
-        <div className="card-header py-3">
-          <h6 className="m-0 font-weight-bold text-primary">🏆 Top Ideas by Votes</h6>
+    <div className="uic-content-shell">
+      <div className="uic-surface-card">
+        <div className="uic-surface-header">
+          <div>
+            <h3 className="uic-surface-title">Top Ideas Ranked by Community Votes</h3>
+            <p className="uic-surface-subtitle">
+              Discover the most supported student innovation proposals across the university
+            </p>
+          </div>
+          <button onClick={() => navigate('/post-idea')} className="uic-btn-primary">
+            <i className="fas fa-plus" />
+            <span>Submit Idea</span>
+          </button>
         </div>
-        <div className="card-body">
+
+        <div className="uic-surface-body">
           {ideas.length === 0 ? (
-            <div className="text-center py-5">
-              <div style={{ fontSize: '4rem' }}>🏆</div>
-              <h5 className="text-gray-800 mt-3">No Ideas Yet</h5>
-              <p className="text-muted">Ideas will appear here once people start voting.</p>
-              <button className="btn btn-primary mt-2" onClick={() => navigate('/post-idea')}>
-                Post Your First Idea
+            <div className="uic-empty-state">
+              <div className="uic-empty-icon">
+                <i className="fas fa-trophy" />
+              </div>
+              <h4>No Ranked Ideas Yet</h4>
+              <p>Ideas will appear here as students submit and vote on proposals.</p>
+              <button className="uic-btn-primary mt-2" onClick={() => navigate('/post-idea')}>
+                Submit First Idea
               </button>
             </div>
           ) : (
             <div className="table-responsive">
-              <table className="table table-bordered">
+              <table className="uic-clean-table">
                 <thead>
                   <tr>
                     <th>Rank</th>
-                    <th>Title</th>
+                    <th>Proposal Title</th>
                     <th>Author</th>
                     <th>Category</th>
+                    <th>Status</th>
                     <th>Votes</th>
                     <th>Comments</th>
-                    <th>Action</th>
+                    <th className="text-end">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ideas.map((idea, index) => (
-                    <tr key={idea.id} className={getRankClass(index)}>
+                    <tr key={idea.id}>
                       <td>
-                        <span style={{ fontSize: '1.5rem' }}>
-                          {getRankBadge(index)}
+                        <span className={`uic-rank-pill rank-${index + 1}`}>
+                          #{index + 1}
                         </span>
                       </td>
-                      <td>{idea.title}</td>
+                      <td>
+                        <div className="fw-semibold text-dark">{idea.title}</div>
+                      </td>
                       <td>{getAuthorName(idea)}</td>
-                      <td>{idea.category}</td>
                       <td>
-                        <span className="badge badge-success">
-                          ⭐ {idea.voteCount || 0}
+                        <span className="uic-tag-pill">{formatCategory(idea.category)}</span>
+                      </td>
+                      <td>
+                        <span className={`uic-status-pill ${(idea.status || 'PENDING').toLowerCase()}`}>
+                          {(idea.status || 'PENDING').replace('_', ' ')}
                         </span>
                       </td>
                       <td>
-                        <span className="badge badge-info">
-                          💬 {idea.commentCount || 0}
+                        <span className="fw-bold text-dark">
+                          <i className="fas fa-thumbs-up text-primary me-1" />
+                          {idea.voteCount || 0}
                         </span>
                       </td>
-                      <td>
-                        <button 
-                          className="btn btn-sm btn-primary"
+                      <td>{idea.commentCount || 0}</td>
+                      <td className="text-end">
+                        <button
+                          className="uic-action-btn view"
                           onClick={() => openModal(idea)}
                         >
-                          <i className="fas fa-eye" /> View Details
+                          <i className="fas fa-eye" />
+                          <span>Inspect</span>
                         </button>
                       </td>
                     </tr>

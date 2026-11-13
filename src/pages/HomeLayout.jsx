@@ -1,30 +1,28 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { Outlet } from 'react-router-dom'
-import DashboardPage from './DashboardPage'
-
+import '../components/PortalLayout.css'
 
 const HomeLayout = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   return (
-    <>
-      <div id="wrapper">
-      <Sidebar />
-      <div id="content-wrapper" className="d-flex flex-column">
-            <div id="content">
-            <Header />
-            <div className="container-fluid">
-             
-             <Outlet />
+    <div className="uic-student-shell">
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
-            </div>
-            </div>
-            <Footer />
+      <div className="uic-student-main">
+        <Header onToggleSidebar={() => setSidebarOpen(prev => !prev)} />
+        <main className="uic-student-body">
+          <Outlet />
+        </main>
+        <Footer />
       </div>
-      </div>
-
-    </>
+    </div>
   )
 }
 

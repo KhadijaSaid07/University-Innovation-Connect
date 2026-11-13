@@ -1,18 +1,31 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
+import axios from 'axios'
 import AdminSidebar from './AdminSidebar'
 import './AdminDashboardPage.css'
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api'
+const API = `${BASE_URL}/v2/innovationConnect`
+const AUTH_API = `${BASE_URL}/auth`
+
 const AdminProfilePage = () => {
   const navigate = useNavigate()
-  
+
   const [admin, setAdmin] = useState({
-    name: '',
+    id: null,
+    firstName: '',
+    lastName: '',
     email: '',
-    role: '',
-    idNumber: ''
+    role: 'ADMIN',
+    phone: '',
+    department: '',
+    bio: ''
   })
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState('')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     const userStr = localStorage.getItem('user')
@@ -22,31 +35,121 @@ const AdminProfilePage = () => {
     }
     try {
       const user = JSON.parse(userStr)
-      if (user.role !== 'Admin') {
+      if (user.role?.toUpperCase() !== 'ADMIN') {
         navigate('/login')
         return
       }
-      setAdmin({
-        name: user.name || 'Admin',
-        email: user.email || '',
-        role: user.role || 'Admin',
-        idNumber: user.idNumber || 'ADMIN-001'
-      })
-      setLoading(false)
-    } catch (e) {
+
+      const fetchProfile = async () => {
+        try {
+          if (user.id) {
+            const res = await axios.get(`${API}/user/${user.id}`)
+            const data = res.data
+            setAdmin({
+              id: data.id || user.id,
+              firstName: data.firstName || user.firstName || '',
+              lastName: data.lastName || user.lastName || '',
+              email: data.email || user.email || '',
+              role: data.role || user.role || 'ADMIN',
+              phone: data.phone || '',
+              department: data.department || '',
+              bio: data.bio || ''
+            })
+          } else {
+            setAdmin({
+              id: user.id,
+              firstName: user.firstName || 'System',
+              lastName: user.lastName || 'Admin',
+              email: user.email || '',
+              role: user.role || 'ADMIN',
+              phone: user.phone || '',
+              department: user.department || '',
+              bio: user.bio || ''
+            })
+          }
+        } catch {
+          setAdmin({
+            id: user.id,
+            firstName: user.firstName || 'System',
+            lastName: user.lastName || 'Admin',
+            email: user.email || '',
+            role: user.role || 'ADMIN',
+            phone: user.phone || '',
+            department: user.department || '',
+            bio: user.bio || ''
+          })
+        } finally {
+          setLoading(false)
+        }
+      }
+      fetchProfile()
+    } catch {
       navigate('/login')
     }
   }, [navigate])
 
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setAdmin(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!admin.id) return
+
+    setSaving(true)
+    setMessage('')
+
+    try {
+      const updateData = {
+        firstName: admin.firstName.trim(),
+        lastName: admin.lastName.trim(),
+        email: admin.email.trim(),
+        phone: admin.phone || '',
+        department: admin.department || '',
+        bio: admin.bio || ''
+      }
+
+      const res = await axios.put(`${AUTH_API}/profile/${admin.id}`, updateData)
+      if (res.data) {
+        const stored = JSON.parse(localStorage.getItem('user') || '{}')
+        localStorage.setItem('user', JSON.stringify({
+          ...stored,
+          firstName: res.data.firstName || admin.firstName,
+          lastName: res.data.lastName || admin.lastName,
+          email: res.data.email || admin.email,
+          role: res.data.role || admin.role
+        }))
+        setMessage('✅ Admin profile updated successfully!')
+        setMessageType('success')
+        setTimeout(() => setMessage(''), 3000)
+      }
+    } catch (err) {
+      setMessage(`❌ ${err.response?.data?.message || 'Failed to update profile'}`)
+      setMessageType('error')
+      setTimeout(() => setMessage(''), 4000)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
+  const closeSidebar = () => setSidebarOpen(false)
+
+  const fullName = `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || 'Admin'
+
   if (loading) {
     return (
       <div className="admin-dashboard">
-        <AdminSidebar />
-        <div className="admin-main">
-          <div className="admin-loading">
-            <div className="admin-spinner-large" />
-            <p>Loading profile...</p>
-          </div>
+        <div className="admin-loading">
+          <div className="admin-spinner-large" />
+          <p>Loading profile...</p>
         </div>
       </div>
     )
@@ -54,52 +157,124 @@ const AdminProfilePage = () => {
 
   return (
     <div className="admin-dashboard">
-      <AdminSidebar />
-      
-      <div className="admin-main">
-        
-        <header className="admin-header">
-          <div className="admin-header-left">
-            <h1>👤 Profile</h1>
-            <p>Admin account information</p>
-          </div>
-        </header>
+      <AdminSidebar
+        pageTitle="Admin Profile"
+        pageSubtitle="Manage your administrator account details"
+      />
 
-        <div className="admin-profile-card">
-          
-          <div className="admin-profile-avatar">
-            <div className="admin-avatar-large">
-              {admin.name ? admin.name.charAt(0).toUpperCase() : 'A'}
-            </div>
-            <h2>{admin.name}</h2>
-            <span className="admin-role-badge">🛡️ {admin.role}</span>
-          </div>
-
-          <div className="admin-profile-info">
-            <div className="admin-profile-item">
-              <label>Full Name</label>
-              <p>{admin.name}</p>
-            </div>
-            <div className="admin-profile-item">
-              <label>Email Address</label>
-              <p>{admin.email}</p>
-            </div>
-            <div className="admin-profile-item">
-              <label>Role</label>
-              <p><span className="admin-badge">{admin.role}</span></p>
-            </div>
-            <div className="admin-profile-item">
-              <label>ID Number</label>
-              <p>{admin.idNumber}</p>
-            </div>
-            <div className="admin-profile-item">
-              <label>Status</label>
-              <p><span className="admin-status-active">✅ Active</span></p>
+      <div className="admin-content">
+        <div className="content-container" style={{ maxWidth: '800px' }}>
+          <div className="page-header">
+            <div className="page-header-left">
+              <h1>👤 Admin Profile</h1>
+              <p>Manage your administrator account details</p>
             </div>
           </div>
 
+          {message && (
+            <div className={`admin-alert ${messageType === 'success' ? 'admin-alert-success' : 'admin-alert-danger'}`}>
+              {message}
+            </div>
+          )}
+
+          <div className="recent-card" style={{ padding: '30px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #7C3AED, #4A1A6B)',
+                  color: '#fff',
+                  fontSize: '2rem',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 12px'
+                }}
+              >
+                {fullName.charAt(0).toUpperCase()}
+              </div>
+              <h2 style={{ margin: '0 0 6px 0', color: '#1A0A2E' }}>{fullName}</h2>
+              <span className="admin-badge badge-danger">👑 {admin.role}</span>
+            </div>
+
+            <form onSubmit={handleSubmit} className="admin-modal-form">
+              <div className="admin-form-group">
+                <label>First Name *</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  className="admin-form-control"
+                  value={admin.firstName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="admin-form-group">
+                <label>Last Name *</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  className="admin-form-control"
+                  value={admin.lastName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="admin-form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  name="email"
+                  className="admin-form-control"
+                  value={admin.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="admin-form-group">
+                <label>Phone</label>
+                <input
+                  type="text"
+                  name="phone"
+                  className="admin-form-control"
+                  placeholder="Enter phone number"
+                  value={admin.phone}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="admin-form-group">
+                <label>Department</label>
+                <input
+                  type="text"
+                  name="department"
+                  className="admin-form-control"
+                  placeholder="Enter department"
+                  value={admin.department}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="admin-form-group">
+                <label>Bio</label>
+                <textarea
+                  name="bio"
+                  rows="3"
+                  className="admin-form-control"
+                  placeholder="Administrator bio..."
+                  value={admin.bio}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="admin-modal-actions">
+                <button type="submit" className="admin-save-btn" disabled={saving}>
+                  {saving ? '⏳ Saving...' : '💾 Save Profile'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-
       </div>
     </div>
   )
