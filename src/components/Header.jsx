@@ -47,8 +47,23 @@ const Header = ({ onToggleSidebar = () => {} }) => {
     }
   }
 
-  const fetchNotifications = async (studentId) => {
+  const fetchNotifications = async (studentId, force = false) => {
     if (!studentId) return
+    const cacheKey = `uic_notifs_cache_${studentId}`
+    if (!force) {
+      try {
+        const cachedRaw = sessionStorage.getItem(cacheKey)
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw)
+          if (Date.now() - cached.ts < 60000 && Array.isArray(cached.items)) {
+            setNotifications(cached.items)
+            return
+          }
+        }
+      } catch {
+        // ignore cache error
+      }
+    }
     try {
       const ideasRes = await axios.get(`${API}/user/${studentId}/ideas`)
       const myIdeas = ideasRes.data || []
@@ -140,6 +155,11 @@ const Header = ({ onToggleSidebar = () => {} }) => {
       })
 
       setNotifications(items)
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), items }))
+      } catch {
+        // ignore storage quota error
+      }
     } catch {
       // ignore
     }
@@ -155,7 +175,7 @@ const Header = ({ onToggleSidebar = () => {} }) => {
     if (user.id) {
       fetchNotifications(user.id)
     }
-  }, [user.id, location.pathname])
+  }, [user.id])
 
   useEffect(() => {
     const handleStorageChange = (e) => {

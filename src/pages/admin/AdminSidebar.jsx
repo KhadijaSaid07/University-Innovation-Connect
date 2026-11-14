@@ -55,18 +55,28 @@ const AdminSidebar = ({
 
     const fetchCounts = async () => {
       try {
+        const cachedRaw = sessionStorage.getItem('uic_admin_counts_cache')
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw)
+          if (Date.now() - cached.ts < 30000 && cached.data) {
+            setCounts(cached.data)
+            return
+          }
+        }
         const [usersRes, ideasRes] = await Promise.all([
           axios.get(`${API}/user`),
           axios.get(`${API}/idea`)
         ])
         const users = usersRes.data || []
         const ideas = ideasRes.data || []
-        setCounts({
+        const nextCounts = {
           users: users.length,
           lecturers: users.filter(u => u.role === 'LECTURER').length,
           ideas: ideas.length,
           pendingIdeas: ideas.filter(i => i.status === 'PENDING').length
-        })
+        }
+        setCounts(nextCounts)
+        sessionStorage.setItem('uic_admin_counts_cache', JSON.stringify({ ts: Date.now(), data: nextCounts }))
       } catch {
         // ignore background count error
       }

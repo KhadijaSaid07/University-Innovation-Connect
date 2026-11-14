@@ -34,8 +34,9 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
         month: 'short',
         day: 'numeric',
         year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
       })
     } catch {
       return String(dateStr)
@@ -75,58 +76,40 @@ const IdeaModal = ({ idea, onClose, onVote, onFeedback, onStatusUpdate, currentU
     setCommentLoading(true)
     setFeedbackLoading(true)
 
-    let userMap = {}
-    try {
-      const usersRes = await axios.get(`${API}/user`)
-      ;(usersRes.data || []).forEach(u => {
-        userMap[u.id] = {
-          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User',
-          role: u.role
-        }
-      })
-    } catch {
-      // Fallback to DTO names if user list fails
-    }
+    const [commentRes, feedbackRes] = await Promise.allSettled([
+      axios.get(`${API}/comment/idea/${idea.id}`),
+      axios.get(`${API}/feedback/idea/${idea.id}`)
+    ])
 
-    // Fetch student comments
-    try {
-      const res = await axios.get(`${API}/comment/idea/${idea.id}`)
-      const data = res.data || []
-      const mappedComments = data.map(c => ({
-        ...c,
-        userName:
-          c.userName ||
-          (c.userId && userMap[c.userId]?.name) ||
-          'Student'
-      }))
-      setComments(mappedComments)
-      setCommentCount(mappedComments.length)
-    } catch {
+    if (commentRes.status === 'fulfilled') {
+      const data = commentRes.value.data || []
+      setComments(
+        data.map(c => ({
+          ...c,
+          userName: c.userName || 'Student'
+        }))
+      )
+      setCommentCount(data.length)
+    } else {
       setComments([])
       setCommentCount(0)
-    } finally {
-      setCommentLoading(false)
     }
+    setCommentLoading(false)
 
-    // Fetch lecturer feedbacks
-    try {
-      const res = await axios.get(`${API}/feedback/idea/${idea.id}`)
-      const data = res.data || []
-      const mappedFeedbacks = data.map(fb => ({
-        ...fb,
-        lecturerName:
-          fb.lecturerName ||
-          (fb.lecturer && userMap[fb.lecturer]?.name) ||
-          'Lecturer'
-      }))
-      setFeedbackList(mappedFeedbacks)
-      setFeedbackCount(mappedFeedbacks.length)
-    } catch {
+    if (feedbackRes.status === 'fulfilled') {
+      const data = feedbackRes.value.data || []
+      setFeedbackList(
+        data.map(fb => ({
+          ...fb,
+          lecturerName: fb.lecturerName || 'Lecturer'
+        }))
+      )
+      setFeedbackCount(data.length)
+    } else {
       setFeedbackList([])
       setFeedbackCount(0)
-    } finally {
-      setFeedbackLoading(false)
     }
+    setFeedbackLoading(false)
   }
 
   if (!idea) return null

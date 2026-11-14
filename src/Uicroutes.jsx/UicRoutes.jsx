@@ -1,5 +1,5 @@
 import React from 'react'
-import { createBrowserRouter, createRoutesFromElements, Route, Navigate } from 'react-router-dom'
+import { createHashRouter, createRoutesFromElements, Route, Navigate } from 'react-router-dom'
 
 import ProtectedRoute from '../components/ProtectedRoute'
 import HomeLayout from '../pages/HomeLayout'
@@ -28,7 +28,7 @@ import AdminLecturersPage from '../pages/admin/AdminLecturersPage'
 import AdminActivityLogPage from '../pages/admin/AdminActivityLogPage'
 import AdminProfilePage from '../pages/admin/AdminProfilePage'
 
-const UicRoutes = createBrowserRouter(
+const UicRoutes = createHashRouter(
   createRoutesFromElements(
     <Route>
       {/* Public Routes */}

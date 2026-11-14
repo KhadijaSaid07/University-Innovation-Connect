@@ -57,14 +57,24 @@ const LecturerNavigation = ({
 
     const fetchCounts = async () => {
       try {
+        const cachedRaw = sessionStorage.getItem('uic_lecturer_counts_cache')
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw)
+          if (Date.now() - cached.ts < 30000 && cached.data) {
+            setCounts(cached.data)
+            return
+          }
+        }
         const res = await axios.get(`${API}/idea`)
         const ideas = res.data || []
-        setCounts({
+        const nextCounts = {
           all: ideas.length,
           pending: ideas.filter(i => i.status === 'PENDING').length,
           underReview: ideas.filter(i => i.status === 'UNDER_REVIEW').length,
           approved: ideas.filter(i => i.status === 'APPROVED' || i.status === 'IMPLEMENTED').length
-        })
+        }
+        setCounts(nextCounts)
+        sessionStorage.setItem('uic_lecturer_counts_cache', JSON.stringify({ ts: Date.now(), data: nextCounts }))
       } catch {
         // ignore count fetch error
       }
